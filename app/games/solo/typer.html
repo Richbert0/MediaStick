@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tipp-Rennen</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fff;font-family:-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:18px;padding:20px}
+h1{color:#FFD700;font-size:1.3rem;letter-spacing:2px}
+.box{background:#1a1a2e;border:2px solid rgba(255,215,0,.25);border-radius:20px;padding:28px;max-width:600px;width:100%;display:flex;flex-direction:column;gap:16px}
+.stats{display:flex;gap:20px;font-size:.85rem;color:#888}
+.stats b{color:#FFD700;font-size:1rem}
+#text-display{font-size:1.3rem;line-height:2;letter-spacing:.03em;padding:16px;background:rgba(0,0,0,.3);border-radius:12px;min-height:80px;word-break:break-all}
+.char{transition:background .08s}
+.char.done{color:#2ecc71}
+.char.wrong{color:#e74c3c;background:rgba(231,76,60,.2);border-radius:2px}
+.char.current{background:rgba(255,215,0,.35);border-radius:2px;animation:blink .7s infinite}
+@keyframes blink{0%,100%{background:rgba(255,215,0,.35)}50%{background:rgba(255,215,0,.15)}}
+#inp{width:100%;padding:14px 18px;background:rgba(255,255,255,.07);border:2px solid rgba(255,215,0,.3);border-radius:12px;color:#fff;font-size:1.1rem;outline:none;transition:border-color .2s;font-family:inherit}
+#inp:focus{border-color:#FFD700}
+.timer-bar{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.timer-fill{height:100%;background:linear-gradient(90deg,#e74c3c,#FFD700);border-radius:3px;transition:width .1s linear}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button{padding:10px 22px;background:linear-gradient(135deg,#FFD700,#FFA500);border:none;border-radius:10px;color:#000;font-weight:800;cursor:pointer}
+button.out{background:rgba(255,215,0,.1);border:1.5px solid rgba(255,215,0,.3);color:#FFD700}
+.diff{display:flex;gap:6px}
+.d-btn{padding:7px 14px;background:rgba(255,215,0,.06);border:1.5px solid rgba(255,215,0,.2);border-radius:8px;color:#888;cursor:pointer;font-size:.78rem;font-weight:700}
+.d-btn.active{background:#FFD700;color:#000;border-color:transparent}
+</style>
+</head>
+<body>
+<h1>⌨️ Tipp-Rennen</h1>
+<div class="box">
+  <div class="diff">
+    <button class="d-btn active" onclick="setDiff(1,this)">Leicht</button>
+    <button class="d-btn" onclick="setDiff(2,this)">Mittel</button>
+    <button class="d-btn" onclick="setDiff(3,this)">Profi</button>
+  </div>
+  <div class="stats">WPM: <b id="wpm">0</b> &nbsp; Genauigkeit: <b id="acc">100%</b> &nbsp; Highscore: <b id="hi">0</b> WPM</div>
+  <div class="timer-bar"><div class="timer-fill" id="tfill" style="width:100%"></div></div>
+  <div id="text-display"></div>
+  <input id="inp" placeholder="Hier tippen um zu starten…" autocomplete="off" autocorrect="off" spellcheck="false" oninput="onInput(this.value)">
+</div>
+<div class="btns">
+  <button onclick="startGame()">↻ Neu</button>
+  <button class="out" onclick="if(window.top!==window.self)window.top.postMessage({type:'openPage',url:'SPIELE.html',label:'🎮 Spiele'},'*')">✕ Zurück</button>
+</div>
+<script>
+const WORDS1='die der das und ein ist hat von zu mir dir wir sie es war mit auf aus bei dem den des für gibt ihm ihn ihr uns wie auch noch mal sehr gut viel mehr alle kann dann wenn sich durch über sein'.split(' ');
+const WORDS2='Sonne Baum Haus Auto Zeit Mann Frau Kind Weg Buch Welt Nacht Licht Herz Hand Bild Raum Wort Kraft Stadt Abend Leben Spiel Musik Reise Traum Stein Blume Himmel Winter'.split(' ');
+const WORDS3='Frühling Gesellschaft Entwicklung Wissenschaft Möglichkeit Verantwortung Entscheidung Verstehen Veränderung Gleichgewicht Wahrscheinlichkeit Kommunikation Zusammenarbeit Aufmerksamkeit'.split(' ');
+let diff=1,text='',pos=0,errors=0,startTime=null,running=false,timer,timeLeft=60;
+function setDiff(d,btn){diff=d;document.querySelectorAll('.d-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');startGame();}
+function hi(){return parseInt(localStorage.getItem('typer_hi_'+diff)||'0');}
+function mkText(){
+  const pool=diff===1?WORDS1:diff===2?WORDS2:WORDS3;
+  const words=[];while(words.join(' ').length<150)words.push(pool[Math.floor(Math.random()*pool.length)]);
+  return words.join(' ');
+}
+function startGame(){
+  clearInterval(timer);running=false;startTime=null;pos=0;errors=0;timeLeft=60;
+  text=mkText();
+  document.getElementById('wpm').textContent='0';
+  document.getElementById('acc').textContent='100%';
+  document.getElementById('tfill').style.width='100%';
+  document.getElementById('hi').textContent=hi();
+  document.getElementById('inp').value='';
+  document.getElementById('inp').disabled=false;
+  document.getElementById('inp').focus();
+  renderText();
+}
+function renderText(){
+  const d=document.getElementById('text-display');
+  d.innerHTML=text.split('').map((c,i)=>{
+    let cls='char';
+    if(i<pos)cls+=' done';
+    else if(i===pos)cls+=' current';
+    return `<span class="${cls}">${c}</span>`;
+  }).join('');
+}
+function onInput(val){
+  if(!running&&val.length>0){
+    running=true;startTime=Date.now();
+    timer=setInterval(()=>{
+      timeLeft-=0.1;document.getElementById('tfill').style.width=Math.max(0,timeLeft/60*100)+'%';
+      if(timeLeft<=0)endGame();
+      else if(running)calcWPM();
+    },100);
+  }
+  if(!running)return;
+  const typed=val[val.length-1]||'';
+  const expected=text[pos];
+  if(typed===expected){pos++;errors+=0;}
+  else if(typed!==undefined){errors++;}
+  document.getElementById('inp').value='';
+  renderText();
+  calcWPM();
+  if(pos>=text.length){endGame();}
+}
+function calcWPM(){
+  if(!startTime)return;
+  const mins=(Date.now()-startTime)/60000;
+  const wpm=Math.round((pos/5)/Math.max(mins,0.01));
+  const acc=pos>0?Math.round((1-errors/(pos+errors))*100):100;
+  document.getElementById('wpm').textContent=wpm;
+  document.getElementById('acc').textContent=acc+'%';
+}
+function endGame(){
+  clearInterval(timer);running=false;
+  document.getElementById('inp').disabled=true;
+  const mins=(Date.now()-startTime)/60000;
+  const wpm=Math.round((pos/5)/Math.max(mins,0.01));
+  const best=Math.max(wpm,hi());localStorage.setItem('typer_hi_'+diff,best);
+  document.getElementById('hi').textContent=best;
+  document.getElementById('wpm').textContent=wpm;
+  document.getElementById('text-display').innerHTML+=`<div style="margin-top:10px;color:#FFD700;font-weight:800">🏆 ${wpm} WPM – ${Math.round((1-errors/(pos+errors||1))*100)}% Genauigkeit</div>`;
+}
+startGame();
+</script>
+</body>
+</html>

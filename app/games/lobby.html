@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lobby – MediaCenter</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--card:#1a1a2e;--hover:#252540;--gold:#FFD700;--gold2:#FFA500;--glow:rgba(255,215,0,.35);--txt:#fff;--sub:#888;--green:#2ecc71;--red:#e74c3c}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(180deg,rgba(26,26,46,.97),rgba(10,10,10,.97));border-bottom:2px solid var(--gold);padding:14px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo{font-size:1.05rem;font-weight:900;text-transform:uppercase;letter-spacing:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:#444;transition:.3s}
+.ws-dot.on{background:var(--green);box-shadow:0 0 6px rgba(46,204,113,.7)}
+.ws-dot.err{background:var(--red)}
+main{flex:1;padding:20px;max-width:700px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:20px}
+.card{background:var(--card);border:1px solid rgba(255,215,0,.15);border-radius:16px;overflow:hidden}
+.card-head{padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:.88rem;font-weight:800;color:var(--gold)}
+.card-body{padding:16px 18px}
+.inp{width:100%;padding:10px 14px;background:var(--hover);border:1.5px solid rgba(255,215,0,.15);border-radius:9px;color:var(--txt);font-size:.88rem;outline:none;transition:.2s;font-family:inherit}
+.inp:focus{border-color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border:1.5px solid var(--gold);background:rgba(255,215,0,.08);color:var(--gold);border-radius:10px;cursor:pointer;font-size:.82rem;font-weight:700;transition:.2s;font-family:inherit;white-space:nowrap}
+.btn:hover{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border-color:transparent;box-shadow:0 4px 14px var(--glow)}
+.btn-sm{padding:6px 14px;font-size:.75rem}
+.btn-danger{border-color:var(--red);color:var(--red);background:rgba(231,76,60,.08)}
+.btn-danger:hover{background:var(--red);color:#fff;border-color:transparent}
+.rooms-list{display:flex;flex-direction:column;gap:8px}
+.room-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;transition:.2s}
+.room-row:hover{border-color:rgba(255,215,0,.25)}
+.room-game{font-weight:800;font-size:.88rem;flex:1}
+.room-cnt{font-size:.75rem;color:var(--sub)}
+.players-grid{display:flex;flex-wrap:wrap;gap:8px}
+.player-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;font-size:.78rem;font-weight:700}
+.player-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.empty{color:var(--sub);font-size:.82rem;padding:10px 0;text-align:center}
+.game-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.gc{padding:8px 16px;border-radius:20px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,215,0,.2);color:var(--sub);cursor:pointer;font-size:.8rem;font-weight:700;transition:.2s;font-family:inherit}
+.gc:hover,.gc.sel{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.45);color:var(--gold)}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">🎮 Lobby</span>
+  <div class="ws-dot" id="wdot"></div>
+  <span id="wlbl" style="font-size:.75rem;color:var(--sub)">Verbinde…</span>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+    <span id="my-name" style="font-size:.78rem;font-weight:700;color:var(--gold)"></span>
+    <button class="btn btn-sm" onclick="changeName()">✏️ Name</button>
+  </div>
+</header>
+<main>
+  <!-- Online Players -->
+  <div class="card">
+    <div class="card-head"><span class="card-title">👥 Online-Spieler</span><span id="pcnt" style="font-size:.75rem;color:var(--sub)">0</span></div>
+    <div class="card-body"><div class="players-grid" id="pgrid"><div class="empty">Keine Spieler online</div></div></div>
+  </div>
+  <!-- Create Room -->
+  <div class="card">
+    <div class="card-head"><span class="card-title">➕ Raum erstellen</span></div>
+    <div class="card-body">
+      <div class="game-chips" id="game-chips">
+        <button class="gc sel" data-game="quiz"  onclick="selGame(this,'quiz')">❓ Quiz</button>
+        <button class="gc"     data-game="ttt"   onclick="selGame(this,'ttt')">✖️ TicTacToe</button>
+        <button class="gc"     data-game="custom" onclick="selGame(this,'custom')">🎲 Eigenes</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input class="inp" id="room-name" placeholder="Raumname (optional)" maxlength="30" style="flex:1">
+        <button class="btn" onclick="createRoom()">🚀 Erstellen</button>
+      </div>
+    </div>
+  </div>
+  <!-- Open Rooms -->
+  <div class="card">
+    <div class="card-head"><span class="card-title">🏠 Offene Räume</span><button class="btn btn-sm" onclick="listRooms()">🔄</button></div>
+    <div class="card-body"><div class="rooms-list" id="rlist"><div class="empty">Keine Räume</div></div></div>
+  </div>
+</main>
+
+<script>
+var ws=null,wsReady=false,myId=null,myName=localStorage.getItem('mc_playerName')||'';
+var onlinePlayers={}, selGameId='quiz', curRoom=null, reconnTimer=null, reconnDelay=2000;
+
+function connect(){
+  clearTimeout(reconnTimer);
+  try{
+    ws=new WebSocket('ws://'+((location.hostname||'127.0.0.1').trim()||'127.0.0.1')+':8765');
+    ws.onopen=function(){
+      wsReady=true;reconnDelay=2000;
+      document.getElementById('wdot').className='ws-dot on';
+      document.getElementById('wlbl').textContent='Verbunden';
+      if(myName)joinLobby();
+    };
+    ws.onclose=function(){
+      wsReady=false;document.getElementById('wdot').className='ws-dot err';
+      document.getElementById('wlbl').textContent='Getrennt – verbinde…';
+      reconnTimer=setTimeout(connect,reconnDelay);reconnDelay=Math.min(reconnDelay*1.5,12000);
+    };
+    ws.onerror=function(){document.getElementById('wdot').className='ws-dot err';wsReady=false;};
+    ws.onmessage=function(e){
+      try{var d=JSON.parse(e.data);handleMsg(d);}catch{}
+    };
+  }catch{reconnTimer=setTimeout(connect,reconnDelay);}
+}
+function send(obj){if(ws&&wsReady)ws.send(JSON.stringify(obj));}
+function handleMsg(d){
+  if(d.action==='welcome'){myId=d.id;if(myName)joinLobby();}
+  if(d.action==='player_list')updatePlayers(d.players||[]);
+  if(d.action==='room_list')renderRooms(d.rooms||[]);
+  if(d.action==='room_created'){curRoom=d.roomId;alert('Raum erstellt! ID: '+d.roomId);}
+  if(d.action==='room_error')alert('Fehler: '+d.message);
+  if(d.action==='room_joined'){renderRooms([]);listRooms();}
+}
+function joinLobby(){
+  if(!myName)return;
+  send({action:'global_chat_join',name:myName});
+  send({action:'get_player_list'});
+  document.getElementById('my-name').textContent=myName;
+  listRooms();
+}
+function changeName(){
+  var n=prompt('Name:',myName);if(!n||!n.trim())return;
+  myName=n.trim();localStorage.setItem('mc_playerName',myName);
+  document.getElementById('my-name').textContent=myName;
+  joinLobby();
+}
+function updatePlayers(list){
+  var g=document.getElementById('pgrid');
+  document.getElementById('pcnt').textContent=list.length;
+  if(!list.length){g.innerHTML='<div class="empty">Keine Spieler online</div>';return;}
+  g.innerHTML=list.map(p=>'<div class="player-chip"><span class="player-dot"></span>'+esc(p.name||p.id)+'</div>').join('');
+}
+function selGame(el,g){
+  selGameId=g;
+  document.querySelectorAll('.gc').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function createRoom(){
+  if(!myName){alert('Bitte erst Namen setzen!');return;}
+  send({action:'create_room',game:selGameId,name:document.getElementById('room-name').value||''});
+}
+function listRooms(){send({action:'list_rooms'});}
+function joinRoom(id){if(!myName){alert('Bitte erst Namen setzen!');return;}send({action:'join_room',roomId:id});}
+function renderRooms(list){
+  var r=document.getElementById('rlist');
+  if(!list.length){r.innerHTML='<div class="empty">Keine offenen Räume</div>';return;}
+  r.innerHTML=list.map(rm=>'<div class="room-row">'
+    +'<span class="room-game">'+esc(rm.game||'Spiel')+'</span>'
+    +'<span class="room-cnt">'+rm.players+' Spieler</span>'
+    +'<button class="btn btn-sm" onclick="joinRoom(\''+esc(rm.roomId)+'\')">Beitreten</button>'
+    +'</div>').join('');
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+if(!myName){var n=prompt('Dein Name:','');if(n&&n.trim()){myName=n.trim();localStorage.setItem('mc_playerName',myName);}}
+connect();
+setInterval(listRooms,10000);
+</script>
+</body>
+</html>

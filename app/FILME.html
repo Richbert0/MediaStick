@@ -1,0 +1,305 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Filme – MediaCenter</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+.filter-bar{display:flex;gap:8px;padding:12px 20px;flex-wrap:wrap;align-items:center}
+body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);}
+.filter-bar .search-wrap{flex:1;min-width:160px}
+.sort-sel{padding:9px 12px;background:var(--hover);border:1.5px solid var(--border);border-radius:9px;color:var(--txt);font-size:.82rem;outline:none;cursor:pointer}
+.sort-sel option{background:var(--card)}
+
+#player{position:fixed;inset:0;z-index:5000;background:#000;display:none;flex-direction:column}
+#player.show{display:flex}
+#vid{flex:1;width:100%;object-fit:contain;cursor:pointer;background:#000;min-height:0}
+.ctl{background:linear-gradient(0deg,rgba(0,0,0,.98),rgba(0,0,0,.5) 80%,transparent);padding:14px 16px 10px;display:flex;flex-direction:column;gap:9px;flex-shrink:0}
+.seek-row{display:flex;align-items:center;gap:8px}
+.seek-bar{flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;cursor:pointer;position:relative;transition:height .12s}
+.seek-bar:hover,.seek-bar.drag{height:8px}
+.seek-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;pointer-events:none;position:relative;transition:none}
+.seek-fill::after{content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:13px;height:13px;border-radius:50%;background:var(--gold);opacity:0;transition:opacity .15s;box-shadow:0 0 8px var(--glow)}
+.seek-bar:hover .seek-fill::after,.seek-bar.drag .seek-fill::after{opacity:1}
+.ctl-btns{display:flex;align-items:center;gap:8px}
+.vcb{background:none;border:none;color:#fff;font-size:1.25rem;cursor:pointer;padding:4px 6px;opacity:.8;transition:opacity .15s;line-height:1;border-radius:6px}
+.vcb:hover{opacity:1;background:rgba(255,255,255,.08)}
+.vol-row{display:flex;align-items:center;gap:5px;margin-left:auto}
+.v-time{font-size:.75rem;color:rgba(255,255,255,.55);white-space:nowrap;font-variant-numeric:tabular-nums}
+.v-title{font-size:.85rem;font-weight:700;color:var(--gold);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.vol-sl{-webkit-appearance:none;appearance:none;width:70px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;outline:none;cursor:pointer}
+.vol-sl::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--gold);cursor:pointer}
+.pip-btn{font-size:.7rem;padding:3px 8px;background:rgba(255,215,0,.1);border:1px solid var(--border);border-radius:6px;color:var(--gold);cursor:pointer;white-space:nowrap}
+.pip-btn:hover{background:rgba(255,215,0,.25)}
+
+.thumb-drop{border:2px dashed var(--border);border-radius:12px;padding:22px;text-align:center;cursor:pointer;color:var(--sub);font-size:.85rem;transition:.2s}
+.thumb-drop:hover,.thumb-drop.drag{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,.04)}
+#thumb-prev{max-width:100%;border-radius:8px;margin-top:10px;display:none}
+#loader{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9900;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#loader p{color:var(--sub);font-size:.82rem}
+</style>
+</head>
+<body>
+<div class="mc-page">
+  <div class="filter-bar">
+    <div class="search-wrap" style="flex:1;min-width:160px">
+      <span class="si">🔍</span>
+      <input class="mc-input" id="srch" placeholder="Film suchen…" oninput="render()">
+    </div>
+    <select class="sort-sel" id="srt" onchange="render()">
+      <option value="az">A–Z</option>
+      <option value="za">Z–A</option>
+      <option value="si">Größe ↑</option>
+      <option value="sd">Größe ↓</option>
+    </select>
+  </div>
+  <div class="mc-page-body">
+    <div class="section-head">
+      <span class="section-title" id="lbl">Filme</span>
+    </div>
+    <div class="media-grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- PLAYER -->
+<div id="player">
+  <video id="vid" preload="metadata"></video>
+  <div class="ctl" id="ctl">
+    <div class="seek-row">
+      <span class="v-time" id="tc">0:00</span>
+      <div class="seek-bar" id="sbar" onmousedown="seekMD(event)" ontouchstart="seekTD(event)">
+        <div class="seek-fill" id="sfill"></div>
+      </div>
+      <span class="v-time" id="td">0:00</span>
+    </div>
+    <div class="ctl-btns">
+      <button class="vcb" onclick="skip(-10)">⏪</button>
+      <button class="vcb" id="pbtn" onclick="tplay()">▶</button>
+      <button class="vcb" onclick="skip(10)">⏩</button>
+      <span class="v-title" id="vtit"></span>
+      <button class="pip-btn" onclick="doPip()">PiP</button>
+      <div class="vol-row">
+        <span style="font-size:.9rem;color:rgba(255,255,255,.6)">🔊</span>
+        <input class="vol-sl" type="range" min="0" max="1" step="0.05" value="1" oninput="document.getElementById('vid').volume=+this.value" id="vsl">
+      </div>
+      <button class="vcb" onclick="doFs()">⛶</button>
+      <button class="vcb" onclick="closeP()" style="color:var(--red)">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- THUMB MODAL -->
+<div class="mc-modal-bg hidden" id="tmb">
+  <div class="mc-modal">
+    <div class="mc-modal-head">
+      <h3>🖼️ Thumbnail</h3>
+      <button class="mc-modal-close" onclick="closeTM()">✕</button>
+    </div>
+    <div class="mc-modal-body">
+      <p style="font-size:.78rem;color:var(--sub);margin-bottom:10px" id="tmb-name"></p>
+      <div class="thumb-drop" id="tdrop" onclick="document.getElementById('tfile').click()">
+        📷 Bild wählen oder hierher ziehen<br>
+        <img id="thumb-prev">
+      </div>
+      <input type="file" id="tfile" accept="image/*" style="display:none" onchange="tSel(this)">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" style="flex:1" onclick="tUp()">✅ Speichern</button>
+        <button class="btn btn-ghost" onclick="tCap()">📸 Frame</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="loader"><div class="mc-spinner"></div><p>Lade Bibliothek…</p></div>
+
+<script src="/js/app.js"></script>
+<script>
+var movies=[], thumbs={}, curM=null, sdrag=false, htimer=null, tTarget=null, tData=null;
+
+async function loadLib(force){
+  document.getElementById('loader').style.display='flex';
+  if(force){await fetch('/api/library?r='+Date.now()).catch(()=>{});}
+  var lib=await MC.loadLibrary();
+  var th=await MC.api('/api/thumbnail');
+  thumbs=th.thumbnails||{};
+  movies=lib.movies||[];
+  document.getElementById('loader').style.display='none';
+  render();
+}
+
+function getFiltered(){
+  var q=(document.getElementById('srch').value||'').toLowerCase();
+  var s=document.getElementById('srt').value;
+  var l=q?movies.filter(m=>m.name.toLowerCase().includes(q)):movies.slice();
+  if(s==='az')l.sort((a,b)=>a.name.localeCompare(b.name));
+  else if(s==='za')l.sort((a,b)=>b.name.localeCompare(a.name));
+  else if(s==='si')l.sort((a,b)=>a.size-b.size);
+  else if(s==='sd')l.sort((a,b)=>b.size-a.size);
+  return l;
+}
+
+function render(){
+  var list=getFiltered();
+  document.getElementById('lbl').textContent=list.length+' Film'+(list.length!==1?'e':'');
+  var g=document.getElementById('grid');
+  if(!list.length){
+    g.innerHTML='<div class="empty-state" style="grid-column:1/-1">'
+      +'<div class="es-icon">🎬</div>'
+      +'<div class="es-title">Keine Filme gefunden</div>'
+      +'<div class="es-sub">Noch keine Filme vorhanden. Lade MP4, MKV, AVI oder WebM-Dateien hoch.</div>'
+      +'<button class="es-upload-btn" onclick="window.parent&&window.parent.postMessage({type:\'navigate\',page:\'upload.html\',label:\'☁️ Upload\'},\'*\')">'
+      +'<span class="eu-icon">☁️</span> Jetzt Filme hochladen</button>'
+      +'</div>';
+    g._l=[];return;
+  }
+  g._l=list;
+  g.innerHTML=list.map(function(m,i){
+    var tu=thumbs[m.path]?'/'+thumbs[m.path]:(m.thumbnail?'/'+m.thumbnail:null);
+    var th=tu?'<img src="'+MC.esc(tu)+'" onerror="this.style.display=\'none\'" loading="lazy">'
+             :'<span style="font-size:2.5rem">🎬</span>';
+    var nm=m.name.replace(/\.[^.]+$/,'');
+    return '<div class="media-card" onclick="play('+i+')">'
+      +'<div class="card-thumb">'+th
+      +'<div class="card-overlay"><div class="card-play">▶</div></div>'
+      +'</div>'
+      +'<div class="card-info">'
+      +'<div class="card-title" title="'+MC.esc(m.name)+'">'+MC.esc(nm)+'</div>'
+      +'<div class="card-meta">'+MC.fmtSize(m.size)+'</div>'
+      +'</div>'
+      +'<div class="card-actions">'
+      +'<button class="card-act-btn" onclick="event.stopPropagation();openTM('+i+')" title="Thumbnail">🖼️</button>'
+      +'<button class="card-act-btn" onclick="event.stopPropagation();trash('+i+')" style="color:var(--red)">🗑️</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function gl(){return document.getElementById('grid')._l||[];}
+
+function play(i){
+  var m=gl()[i];if(!m)return;
+  curM=m;
+  var vid=document.getElementById('vid');
+  vid.src='/api/media?file='+encodeURIComponent(m.path);
+  document.getElementById('vtit').textContent=m.name.replace(/\.[^.]+$/,'');
+  document.getElementById('player').classList.add('show');
+  document.body.style.overflow='hidden';
+  vid.play().catch(()=>{});
+  window.parent&&window.parent.postMessage({type:'videoPlaying'},'*');
+}
+function closeP(){
+  var vid=document.getElementById('vid');
+  saveP(curM,vid.currentTime);
+  vid.pause();vid.src='';
+  document.getElementById('player').classList.remove('show');
+  document.body.style.overflow='';
+  window.parent&&window.parent.postMessage({type:'videoStopped'},'*');
+}
+function tplay(){var v=document.getElementById('vid');v.paused?v.play():v.pause();}
+function skip(s){var v=document.getElementById('vid');v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));}
+function doFs(){var p=document.getElementById('player');if(document.fullscreenElement)document.exitFullscreen();else p.requestFullscreen&&p.requestFullscreen();}
+function doPip(){var v=document.getElementById('vid');if(document.pictureInPictureElement)document.exitPictureInPicture();else v.requestPictureInPicture&&v.requestPictureInPicture().catch(()=>{});}
+
+var vid=document.getElementById('vid'),pbtn=document.getElementById('pbtn');
+vid.addEventListener('play',()=>pbtn.textContent='⏸');
+vid.addEventListener('pause',()=>pbtn.textContent='▶');
+vid.addEventListener('timeupdate',function(){
+  if(sdrag)return;
+  var p=vid.duration>0?vid.currentTime/vid.duration:0;
+  document.getElementById('sfill').style.width=(p*100)+'%';
+  document.getElementById('tc').textContent=MC.fmtTime(vid.currentTime);
+  document.getElementById('td').textContent=MC.fmtTime(vid.duration);
+});
+vid.addEventListener('loadedmetadata',function(){
+  var p=getP(curM);
+  if(p>5){vid.currentTime=p;MC.toast('⏩ '+MC.fmtTime(p)+' wiederhergestellt','ok',1800);}
+});
+vid.addEventListener('ended',()=>saveP(curM,0));
+vid.addEventListener('click',tplay);
+vid.addEventListener('dblclick',doFs);
+
+document.getElementById('player').addEventListener('mousemove',function(){
+  document.getElementById('ctl').style.opacity='1';
+  clearTimeout(htimer);
+  htimer=setTimeout(()=>{if(!vid.paused)document.getElementById('ctl').style.opacity='0';},3200);
+});
+
+function seekMD(e){
+  if(!vid.duration)return;
+  var bar=document.getElementById('sbar');bar.classList.add('drag');sdrag=true;
+  function mv(ev){var r=bar.getBoundingClientRect();var p=Math.max(0,Math.min((ev.clientX-r.left)/r.width,1));document.getElementById('sfill').style.width=(p*100)+'%';document.getElementById('tc').textContent=MC.fmtTime(p*vid.duration);}
+  function up(ev){bar.classList.remove('drag');sdrag=false;var r=bar.getBoundingClientRect();vid.currentTime=Math.max(0,Math.min((ev.clientX-r.left)/r.width,1))*vid.duration;document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);mv(e);
+}
+function seekTD(e){
+  if(!vid.duration)return;e.preventDefault();
+  var bar=document.getElementById('sbar');bar.classList.add('drag');
+  function pt(ev){return ev.touches[0]||ev.changedTouches[0];}
+  function mv(ev){var r=bar.getBoundingClientRect();var p=Math.max(0,Math.min((pt(ev).clientX-r.left)/r.width,1));document.getElementById('sfill').style.width=(p*100)+'%';}
+  function up(ev){bar.classList.remove('drag');var r=bar.getBoundingClientRect();vid.currentTime=Math.max(0,Math.min((pt(ev).clientX-r.left)/r.width,1))*vid.duration;bar.removeEventListener('touchmove',mv);bar.removeEventListener('touchend',up);}
+  bar.addEventListener('touchmove',mv,{passive:false});bar.addEventListener('touchend',up);mv(e);
+}
+
+document.addEventListener('keydown',function(e){
+  if(!document.getElementById('player').classList.contains('show'))return;
+  if(e.key==='Escape'){closeP();return;}
+  if(e.key===' '||e.key==='k'){e.preventDefault();tplay();}
+  if(e.key==='ArrowRight')skip(10);
+  if(e.key==='ArrowLeft')skip(-10);
+  if(e.key==='f'||e.key==='F')doFs();
+  if(e.key==='m'||e.key==='M'){vid.muted=!vid.muted;}
+});
+
+function saveP(m,t){if(!m)return;try{var k='fp_'+encodeURIComponent(m.path);t>5?localStorage.setItem(k,t):localStorage.removeItem(k);}catch{}}
+function getP(m){if(!m)return 0;try{return parseFloat(localStorage.getItem('fp_'+encodeURIComponent(m.path)))||0;}catch{return 0;}}
+
+async function trash(i){
+  var m=gl()[i];if(!m||!confirm('In Papierkorb: '+m.name+'?'))return;
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'move',path:m.path,type:'video'})});
+  if(r.success){MC.toast('🗑️ Verschoben','ok');movies=movies.filter(x=>x.path!==m.path);render();}
+  else MC.toast('Fehler: '+r.error,'err');
+}
+
+function openTM(i){tTarget=gl()[i];tData=null;document.getElementById('tmb-name').textContent=tTarget.name;document.getElementById('thumb-prev').style.display='none';document.getElementById('tmb').classList.remove('hidden');}
+function closeTM(){document.getElementById('tmb').classList.add('hidden');tTarget=null;tData=null;}
+function tSel(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=e=>{tData=e.target.result;var p=document.getElementById('thumb-prev');p.src=tData;p.style.display='block';};r.readAsDataURL(f);}
+function tCap(){if(!vid.src){MC.toast('Erst Film abspielen','err');return;}var c=document.createElement('canvas');c.width=vid.videoWidth||640;c.height=vid.videoHeight||360;c.getContext('2d').drawImage(vid,0,0);tData=c.toDataURL('image/jpeg',.85);var p=document.getElementById('thumb-prev');p.src=tData;p.style.display='block';MC.toast('Frame erfasst','ok');}
+async function tUp(){
+  if(!tTarget||!tData){MC.toast('Kein Bild','err');return;}
+  var blob=await(await fetch(tData)).blob();
+  var fd=new FormData();fd.append('media_path',tTarget.path);fd.append('thumbnail',blob,'t.jpg');
+  var r=await MC.api('/api/thumbnail',{method:'POST',body:fd});
+  if(r.success){MC.toast('✅ Thumbnail gespeichert','ok');thumbs[tTarget.path]=r.path;closeTM();render();}
+  else MC.toast('Fehler: '+r.error,'err');
+}
+var dd=document.getElementById('tdrop');
+dd.addEventListener('dragover',e=>{e.preventDefault();dd.classList.add('drag');});
+dd.addEventListener('dragleave',()=>dd.classList.remove('drag'));
+dd.addEventListener('drop',e=>{e.preventDefault();dd.classList.remove('drag');var f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/')){var dt=new DataTransfer();dt.items.add(f);document.getElementById('tfile').files=dt.files;tSel(document.getElementById('tfile'));}});
+document.getElementById('tmb').addEventListener('click',e=>{if(e.target===document.getElementById('tmb'))closeTM();});
+
+/* Volume vom Parent anfordern */
+try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
+loadLib();
+/* Volume + Mutex + Remote-Keys vom Parent */
+window.addEventListener('message',e=>{
+  if(!e.data)return;
+  var vid=document.getElementById('vid');
+  if(e.data.type==='set-volume'){if(vid)vid.volume=Math.max(0,Math.min(1,e.data.vol||0));}
+  if(e.data.type==='media-pause-all'){if(vid&&!vid.paused)vid.pause();}
+  if(e.data.type==='remote-key'){
+    var pl=document.getElementById('player');
+    var isOpen=pl&&pl.classList.contains('show');
+    var k=e.data.key;
+    if(isOpen&&vid){
+      if(k===' '||k==='Enter'){vid.paused?vid.play():vid.pause();}
+      else if(k==='ArrowRight'){vid.currentTime=Math.min((vid.duration||0),vid.currentTime+10);}
+      else if(k==='ArrowLeft'){vid.currentTime=Math.max(0,vid.currentTime-10);}
+      else if(k==='Escape'){vid.pause();pl.classList.remove('show');}
+    }
+  }
+});
+</script>
+</body>
+</html>

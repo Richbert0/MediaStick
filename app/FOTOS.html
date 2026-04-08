@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Fotos – MediaCenter</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+.filter-bar{display:flex;gap:8px;padding:12px 20px;flex-wrap:wrap;align-items:center}
+body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);}
+.filter-bar .search-wrap{flex:1;min-width:160px}
+.view-btns{display:flex;gap:4px}
+.view-btn{padding:7px 10px;background:var(--hover);border:1px solid var(--border);border-radius:8px;color:var(--sub);cursor:pointer;transition:.15s;font-size:.82rem}
+.view-btn.active{background:rgba(255,215,0,.12);color:var(--gold);border-color:rgba(255,215,0,.3)}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:16px 20px}
+.photo-grid.list{display:flex;flex-direction:column;gap:0}
+@media(max-width:600px){.photo-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;padding:10px}}
+.photo-card{position:relative;overflow:hidden;border-radius:10px;cursor:pointer;background:var(--card);border:1px solid var(--border);transition:.2s;aspect-ratio:1}
+.photo-card:hover{border-color:rgba(255,215,0,.4);transform:scale(1.02);box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.photo-card:hover .photo-overlay{opacity:1}
+.photo-img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,#1a1a2e,#0d0d1a)}
+.photo-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:.2s;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:8px}
+.photo-name{font-size:.7rem;font-weight:700;color:#fff;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.photo-actions{display:flex;gap:5px;margin-bottom:4px}
+.pa-btn{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#fff;padding:3px 7px;font-size:.68rem;cursor:pointer;transition:.15s}
+.pa-btn:hover{background:rgba(255,215,0,.2);border-color:var(--gold);color:var(--gold)}
+.photo-grid.list .photo-card{aspect-ratio:auto;display:flex;flex-direction:row;gap:12px;border-radius:10px;padding:8px 12px;align-items:center}
+.photo-grid.list .photo-img{width:64px;height:48px;object-fit:cover;border-radius:7px;flex-shrink:0}
+.photo-grid.list .photo-placeholder{width:64px;height:48px;border-radius:7px;flex-shrink:0;font-size:1.4rem}
+.photo-grid.list .photo-overlay{display:none}
+.photo-grid.list .photo-list-info{flex:1;min-width:0}
+.photo-grid.list .photo-name-l{font-size:.84rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.photo-grid.list .photo-meta-l{font-size:.7rem;color:var(--sub)}
+/* Lightbox */
+#lb{position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.97);display:none;flex-direction:column;align-items:center;justify-content:center}
+#lb.show{display:flex}
+#lb-img{max-width:92vw;max-height:82vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.8);transition:opacity .2s}
+.lb-bar{position:absolute;bottom:0;left:0;right:0;padding:12px 20px;background:linear-gradient(0deg,rgba(0,0,0,.9),transparent);display:flex;align-items:center;gap:10px}
+.lb-name{flex:1;font-size:.85rem;font-weight:700;color:var(--gold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-meta{font-size:.75rem;color:var(--sub)}
+.lb-close{position:absolute;top:14px;right:16px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:36px;height:36px;color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.lb-close:hover{background:rgba(231,76,60,.5)}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;cursor:pointer;transition:.15s}
+.lb-nav:hover{background:rgba(255,215,0,.2);border-color:var(--gold);color:var(--gold)}
+#lb-prev{left:14px}#lb-next{right:14px}
+.lb-counter{position:absolute;top:14px;left:14px;font-size:.75rem;color:rgba(255,255,255,.5);background:rgba(0,0,0,.6);padding:4px 10px;border-radius:20px}
+.ss-btn{background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.3);border-radius:8px;color:var(--gold);padding:5px 12px;font-size:.75rem;cursor:pointer;transition:.15s}
+.ss-btn:hover{background:rgba(255,215,0,.2)}
+.ss-btn.on{background:rgba(255,215,0,.25);box-shadow:0 0 10px var(--glow)}
+#loader{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9900;display:none;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div class="mc-page">
+  <div class="filter-bar">
+    <div class="search-wrap" style="flex:1;min-width:140px"><span class="si">🔍</span><input class="mc-input" id="srch" placeholder="Foto suchen…" oninput="render()"></div>
+    <div class="view-btns">
+      <button class="view-btn active" id="vb-grid" onclick="setView('grid')">⊞</button>
+      <button class="view-btn" id="vb-list" onclick="setView('list')">☰</button>
+    </div>
+    <button class="btn btn-sm btn-ghost" onclick="startSlideshow()" title="Diashow">▶ Diashow</button>
+  </div>
+  <div class="mc-page-body">
+    <div class="section-head"><span class="section-title" id="lbl">Fotos</span></div>
+    <div class="photo-grid" id="grid"></div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lb">
+  <span class="lb-counter" id="lb-cnt">1 / 1</span>
+  <button class="lb-close" onclick="closeLb()">✕</button>
+  <button class="lb-nav" id="lb-prev" onclick="lbNav(-1)">‹</button>
+  <img id="lb-img" src="" alt="">
+  <button class="lb-nav" id="lb-next" onclick="lbNav(1)">›</button>
+  <div class="lb-bar">
+    <span class="lb-name" id="lb-name"></span>
+    <span class="lb-meta" id="lb-meta"></span>
+    <button class="ss-btn" id="ss-btn" onclick="toggleSS()">▶ Diashow</button>
+    <button class="pa-btn" onclick="trashCurrent()" style="border-color:var(--red);color:var(--red)">🗑️</button>
+  </div>
+</div>
+
+<div id="loader"><div class="mc-spinner"></div></div>
+<script src="/js/app.js"></script>
+<script>
+var photos=[],view='grid',lbIdx=-1,ssTimer=null;
+async function loadLib(f){
+  document.getElementById('loader').style.display='flex';
+  if(f)await fetch('/api/library?r='+Date.now()).catch(()=>{});
+  var lib=await MC.loadLibrary();photos=lib.images||[];
+  document.getElementById('loader').style.display='none';render();
+}
+function getFiltered(){var q=(document.getElementById('srch').value||'').toLowerCase();return q?photos.filter(p=>p.name.toLowerCase().includes(q)):photos.slice();}
+function setView(v){view=v;document.getElementById('vb-grid').classList.toggle('active',v==='grid');document.getElementById('vb-list').classList.toggle('active',v==='list');render();}
+function imgSrc(p){
+  /* Direkt per API streamen – unterstützt alle gängigen Formate */
+  return '/api/media?file='+encodeURIComponent(p.path);
+}
+function imgFallback(el){el.onerror=null;el.style.display='none';var ph=el.nextElementSibling;if(ph&&ph.classList.contains('photo-placeholder'))ph.style.display='flex';}
+function render(){
+  var list=getFiltered();
+  document.getElementById('lbl').textContent=list.length+' Foto'+(list.length!==1?'s':'');
+  var g=document.getElementById('grid');g.className='photo-grid'+(view==='list'?' list':'');
+  if(!list.length){
+    g.innerHTML='<div class="empty-state" style="grid-column:1/-1">'
+      +'<div class="es-icon">🖼️</div>'
+      +'<div class="es-title">Keine Fotos vorhanden</div>'
+      +'<div class="es-sub">Noch keine Bilder hochgeladen. Unterstützt werden JPG, PNG, GIF, WebP, AVIF, BMP und mehr.</div>'
+      +'<button class="es-upload-btn" onclick="window.parent&&window.parent.postMessage({type:\'navigate\',page:\'upload.html\',label:\'☁️ Upload\'},\'*\')">'
+      +'<span class="eu-icon">☁️</span> Jetzt Fotos hochladen</button>'
+      +'</div>';
+    g._l=[];return;
+  }
+  g._l=list;
+  if(view==='list'){
+    g.innerHTML=list.map((p,i)=>'<div class="photo-card" onclick="openLb('+i+')">'
+      +'<img class="photo-img" src="'+imgSrc(p)+'" onerror="imgFallback(this)" loading="lazy">'
+      +'<div class="photo-placeholder" style="display:none">🖼️</div>'
+      +'<div class="photo-list-info"><div class="photo-name-l">'+MC.esc(p.name)+'</div>'
+      +'<div class="photo-meta-l">'+MC.fmtSize(p.size)+'</div></div>'
+      +'<button onclick="event.stopPropagation();trashPhoto('+i+')" class="pa-btn" style="color:var(--red)">🗑️</button>'
+      +'</div>').join('');
+  } else {
+    g.innerHTML=list.map((p,i)=>'<div class="photo-card" onclick="openLb('+i+')">'
+      +'<img class="photo-img" src="'+imgSrc(p)+'" onerror="imgFallback(this)" loading="lazy">'
+      +'<div class="photo-placeholder" style="display:none">🖼️</div>'
+      +'<div class="photo-overlay">'
+      +'<div class="photo-actions"><button onclick="event.stopPropagation();trashPhoto('+i+')" class="pa-btn" style="color:var(--red)">🗑️</button></div>'
+      +'<div class="photo-name">'+MC.esc(p.name)+'</div>'
+      +'</div></div>').join('');
+  }
+}
+function gl(){return document.getElementById('grid')._l||[];}
+function openLb(i){
+  var list=gl();if(!list[i])return;lbIdx=i;
+  var p=list[i];
+  var img=document.getElementById('lb-img');img.style.opacity='0';
+  img.onload=()=>{img.style.opacity='1';};
+  img.src='/api/media?file='+encodeURIComponent(p.path);
+  document.getElementById('lb-name').textContent=p.name;
+  document.getElementById('lb-meta').textContent=MC.fmtSize(p.size);
+  document.getElementById('lb-cnt').textContent=(i+1)+' / '+list.length;
+  document.getElementById('lb').classList.add('show');
+}
+function closeLb(){document.getElementById('lb').classList.remove('show');stopSS();}
+function lbNav(d){
+  var list=gl();var ni=(lbIdx+d+list.length)%list.length;openLb(ni);
+}
+function toggleSS(){if(ssTimer)stopSS();else startSlideshow();}
+function startSlideshow(){
+  var list=gl();if(!list.length)return;
+  if(lbIdx<0)openLb(0);
+  ssTimer=setInterval(()=>{
+    var list2=gl();if(!list2.length){stopSS();return;}
+    lbIdx=(lbIdx+1)%list2.length;openLb(lbIdx);
+  },4000);
+  document.getElementById('ss-btn').textContent='⏹ Stop';document.getElementById('ss-btn').classList.add('on');
+}
+function stopSS(){clearInterval(ssTimer);ssTimer=null;document.getElementById('ss-btn').textContent='▶ Diashow';document.getElementById('ss-btn').classList.remove('on');}
+document.addEventListener('keydown',function(e){
+  if(!document.getElementById('lb').classList.contains('show'))return;
+  if(e.key==='Escape')closeLb();
+  if(e.key==='ArrowRight')lbNav(1);
+  if(e.key==='ArrowLeft') lbNav(-1);
+});
+// Touch swipe
+var tsX=0;
+document.getElementById('lb').addEventListener('touchstart',e=>tsX=e.touches[0].clientX,{passive:true});
+document.getElementById('lb').addEventListener('touchend',function(e){var dx=e.changedTouches[0].clientX-tsX;if(Math.abs(dx)>50)lbNav(dx<0?1:-1);});
+async function trashPhoto(i){
+  var p=gl()[i];if(!p||!confirm('Foto löschen?\n'+p.name))return;
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'move',path:p.path,type:'image'})});
+  if(r.success){MC.toast('🗑️ Verschoben','ok');photos=photos.filter(x=>x.path!==p.path);render();}
+  else MC.toast('Fehler: '+r.error,'err');
+}
+function trashCurrent(){trashPhoto(lbIdx);closeLb();}
+
+/* Remote D-Pad + Volume-Sync vom Parent */
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  // Volume (falls zukünftig Audio in Slideshow)
+  if(e.data.type==='set-volume')return;
+  // Remote-Key Navigation
+  if(e.data.type==='remote-key'){
+    var lb=document.getElementById('lb');
+    var isOpen=lb&&lb.classList.contains('show');
+    var k=e.data.key;
+    if(isOpen){
+      if(k==='ArrowRight'||k==='ArrowDown')lbNav(1);
+      else if(k==='ArrowLeft'||k==='ArrowUp')lbNav(-1);
+      else if(k==='Escape')closeLb();
+      else if(k==='Enter')closeLb();
+    } else {
+      // Grid-Navigation: Erstes Foto öffnen bei Enter
+      if(k==='Enter'){var list=gl();if(list.length)openLb(0);}
+    }
+  }
+  if(e.data.type==='media-pause-all'){if(ssTimer)stopSS();}
+});
+
+/* Volume vom Parent anfordern */
+try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
+loadLib();
+</script>
+</body>
+</html>

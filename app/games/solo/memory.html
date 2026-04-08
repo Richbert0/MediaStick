@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Memory</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;color:#fff;font-family:-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:12px;user-select:none}
+h1{font-size:1.2rem;font-weight:900;color:#FFD700;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px}
+.hud{display:flex;gap:16px;margin-bottom:12px;font-size:.82rem;color:#888}.hud b{color:#FFD700}
+.board{display:grid;gap:8px;max-width:min(400px,96vw)}
+.card{aspect-ratio:1;background:#1a1a2e;border:2px solid rgba(255,215,0,.15);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.8rem;transition:all .25s;transform-style:preserve-3d;position:relative;-webkit-tap-highlight-color:transparent}
+.card:hover{border-color:rgba(255,215,0,.35)}
+.card.flip{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.4);transform:scale(1.04)}
+.card.match{background:rgba(46,204,113,.1);border-color:rgba(46,204,113,.4);cursor:default}
+.card.hide{visibility:hidden}
+.btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.btn{padding:9px 20px;background:linear-gradient(135deg,#FFD700,#FFA500);border:none;border-radius:10px;color:#000;font-size:.85rem;font-weight:800;cursor:pointer;transition:.2s}
+.btn:hover{transform:scale(1.04)}
+.btn-ghost{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);color:#888;border-radius:10px}
+.btn-ghost:hover{border-color:var(--gold,#FFD700);color:#FFD700;background:rgba(255,215,0,.08)}
+.win-banner{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:10;display:none}
+.win-banner.show{display:flex}
+.wb{background:#1a1a2e;border:2px solid #FFD700;border-radius:16px;padding:28px 36px;text-align:center}
+.wb h2{color:#FFD700;font-size:1.4rem;margin-bottom:8px}
+.wb p{color:#888;font-size:.82rem;margin-bottom:16px}
+</style></head>
+<body>
+<h1>🃏 Memory</h1>
+<div class="hud">Züge: <b id="mv">0</b> &nbsp; Paare: <b id="pr">0</b>/<b id="tot">0</b> &nbsp; Zeit: <b id="tm">0s</b></div>
+<div class="board" id="board"></div>
+<div class="btns">
+  <button class="btn" onclick="newGame(4)">4×4</button>
+  <button class="btn" onclick="newGame(6)">6×6</button>
+  <button class="btn btn-ghost" onclick="newGame(lastN)">🔄 Neu</button>
+</div>
+<div class="win-banner" id="wb">
+  <div class="wb"><h2>🎉 Gewonnen!</h2><p id="wp"></p><button class="btn" onclick="document.getElementById('wb').classList.remove('show');newGame(lastN)">▶ Nochmal</button></div>
+</div>
+<script>
+var EMOJIS='🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🦋🐬🦄🐲🎸🎮🚀🌈⭐🍎🍕🎯🎪🎭🔥💎🌙'.split('');
+var cards=[],flipped=[],matches=0,moves=0,lastN=4,lock=false,tStart=null,tInter=null,n=4;
+
+function newGame(size){
+  lastN=n=size;clearInterval(tInter);moves=0;matches=0;flipped=[];lock=false;tStart=null;
+  var pairs=n*n/2;var em=EMOJIS.slice(0,pairs);var pool=[...em,...em];
+  pool.sort(()=>Math.random()-.5);cards=pool.map((e,i)=>({id:i,em:e,flip:false,match:false}));
+  document.getElementById('mv').textContent=0;
+  document.getElementById('pr').textContent=0;
+  document.getElementById('tot').textContent=pairs;
+  document.getElementById('tm').textContent='0s';
+  render();document.getElementById('wb').classList.remove('show');
+}
+function render(){
+  var b=document.getElementById('board');
+  b.style.gridTemplateColumns='repeat('+n+',1fr)';
+  b.innerHTML=cards.map((c,i)=>'<div class="card'+(c.flip?' flip':'')+(c.match?' match':'')
+    +'" onclick="flip('+i+')" id="c'+i+'">'+(c.flip||c.match?c.em:'')+'</div>').join('');
+}
+function flip(i){
+  if(lock||cards[i].flip||cards[i].match)return;
+  if(!tStart){tStart=Date.now();tInter=setInterval(()=>{document.getElementById('tm').textContent=Math.floor((Date.now()-tStart)/1000)+'s';},1000);}
+  cards[i].flip=true;flipped.push(i);render();
+  if(flipped.length===2){
+    moves++;document.getElementById('mv').textContent=moves;lock=true;
+    setTimeout(check,700);
+  }
+}
+function check(){
+  var[a,b]=flipped;
+  if(cards[a].em===cards[b].em){
+    cards[a].match=cards[b].match=true;matches++;
+    document.getElementById('pr').textContent=matches;
+    if(matches===n*n/2){clearInterval(tInter);var t=Math.floor((Date.now()-tStart)/1000);
+      document.getElementById('wp').textContent='Züge: '+moves+' · Zeit: '+t+'s';
+      document.getElementById('wb').classList.add('show');}
+  }else{cards[a].flip=cards[b].flip=false;}
+  flipped=[];lock=false;render();
+}
+newGame(4);
+</script></body></html>

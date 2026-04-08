@@ -1,0 +1,474 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spiele - MediaCenter</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+:root{
+  --bg:#071018;
+  --panel:rgba(14,23,35,.9);
+  --panel-2:rgba(9,16,26,.92);
+  --line:rgba(255,215,0,.14);
+  --line-strong:rgba(255,215,0,.35);
+  --gold:#ffd24a;
+  --gold-2:#ffab37;
+  --text:#f7fbff;
+  --muted:#99a7b7;
+  --green:#39d98a;
+  --red:#ff6f6f;
+  --blue:#67c7ff;
+  --shadow:0 20px 50px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:
+  radial-gradient(circle at top left,rgba(103,199,255,.08),transparent 28%),
+  radial-gradient(circle at top right,rgba(255,171,55,.12),transparent 24%),
+  linear-gradient(180deg,#071018,#060c14 58%,#04080f 100%);
+  color:var(--text);font-family:"Aptos","Segoe UI",sans-serif;min-height:100%}
+body{min-height:100vh}
+.games-page{max-width:1380px;margin:0 auto;padding:20px 20px 28px}
+.hero{
+  display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.9fr);gap:18px;margin-bottom:18px;
+}
+.hero-card,.status-card,.section-card,.info-card,.overlay-shell{
+  background:linear-gradient(180deg,rgba(16,28,42,.96),rgba(8,14,22,.94));
+  border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;
+}
+.hero-card{padding:26px 26px 24px;position:relative}
+.hero-card::before{
+  content:"";position:absolute;inset:auto -50px -70px auto;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,210,74,.16),transparent 70%);pointer-events:none;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;margin-bottom:14px;
+  border-radius:999px;border:1px solid rgba(103,199,255,.16);background:rgba(103,199,255,.08);
+  color:#bfe8ff;font-size:.74rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+}
+.hero h1{margin:0 0 10px;font-size:clamp(1.6rem,3vw,2.6rem);line-height:1.04;font-weight:900}
+.hero p{margin:0;max-width:760px;color:var(--muted);line-height:1.7;font-size:.97rem}
+.hero-stats{
+  margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
+}
+.stat{
+  padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);min-height:94px;
+}
+.stat strong{display:block;font-size:1.4rem;color:var(--gold);margin-bottom:6px}
+.stat span{display:block;font-size:.78rem;color:var(--muted);line-height:1.5}
+.status-card{padding:22px}
+.status-card h2{margin:0 0 8px;font-size:1rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--gold)}
+.status-card p{margin:0 0 14px;color:var(--muted);line-height:1.65;font-size:.9rem}
+.status-stack{display:grid;gap:12px}
+.badge-line{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+}
+.badge-copy{font-size:.72rem;color:var(--muted)}
+.ws-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+  font-size:.78rem;font-weight:800;border:1px solid rgba(255,255,255,.1)
+}
+.ws-badge.on{color:var(--green);background:rgba(57,217,138,.12);border-color:rgba(57,217,138,.26)}
+.ws-badge.off{color:var(--red);background:rgba(255,111,111,.12);border-color:rgba(255,111,111,.25)}
+.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:18px 0 14px}
+.tab-bar{
+  display:inline-flex;gap:8px;padding:6px;border-radius:18px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06)
+}
+.tab{
+  border:none;background:none;color:var(--muted);padding:11px 16px;border-radius:14px;cursor:pointer;
+  font:inherit;font-size:.86rem;font-weight:800;transition:.2s;display:inline-flex;align-items:center;gap:8px
+}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111}
+.tab-count{
+  display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;
+  background:rgba(0,0,0,.15);font-size:.72rem;padding:0 7px
+}
+.toolbar-note{font-size:.8rem;color:var(--muted)}
+.section-card{padding:18px}
+.section-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px
+}
+.section-head h3{margin:0 0 6px;font-size:1.02rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.section-head p{margin:0;color:var(--muted);line-height:1.6;font-size:.88rem;max-width:720px}
+.pill-row{display:flex;flex-wrap:wrap;gap:8px}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:.76rem;color:var(--muted)
+}
+.games-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px
+}
+.game-card{
+  position:relative;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.06);
+  background:linear-gradient(180deg,rgba(13,23,34,.94),rgba(8,13,21,.96));cursor:pointer;
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;min-height:260px
+}
+.game-card:hover{transform:translateY(-4px);border-color:var(--line-strong);box-shadow:0 20px 38px rgba(0,0,0,.34)}
+.game-cover{
+  min-height:132px;padding:18px 18px 14px;display:flex;flex-direction:column;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,.05)
+}
+.game-cover[data-tone="solo-a"]{background:linear-gradient(135deg,#12324e,#1b4c77 55%,#225882)}
+.game-cover[data-tone="solo-b"]{background:linear-gradient(135deg,#1b3240,#1e6955 55%,#1f8371)}
+.game-cover[data-tone="solo-c"]{background:linear-gradient(135deg,#412b18,#7a4619 55%,#ad5f1e)}
+.game-cover[data-tone="solo-d"]{background:linear-gradient(135deg,#32255b,#5f31a2 58%,#915eff)}
+.game-cover[data-tone="multi-a"]{background:linear-gradient(135deg,#3b223b,#7b2b79 58%,#be4ac4)}
+.game-cover[data-tone="multi-b"]{background:linear-gradient(135deg,#263957,#2f5ca1 58%,#5db6ff)}
+.game-cover[data-tone="multi-c"]{background:linear-gradient(135deg,#1f3930,#1f7056 58%,#38c989)}
+.game-cover[data-tone="multi-d"]{background:linear-gradient(135deg,#4a261d,#9d3924 58%,#e25f32)}
+.game-topline{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mode-badge{
+  display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;font-size:.68rem;font-weight:900;
+  letter-spacing:.08em;text-transform:uppercase;background:rgba(7,12,18,.18);backdrop-filter:blur(10px)
+}
+.mode-badge.solo{color:#d6eeff}
+.mode-badge.multi{color:#dfffe6}
+.game-mark{
+  width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.12);display:flex;align-items:center;
+  justify-content:center;font-size:1.35rem;font-weight:900;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)
+}
+.game-body{padding:18px}
+.game-title{font-size:1rem;font-weight:900;margin:0 0 8px}
+.game-desc{margin:0;color:var(--muted);font-size:.84rem;line-height:1.65;min-height:55px}
+.game-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.meta-chip{
+  padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  font-size:.72rem;color:var(--muted)
+}
+.play-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px 18px;color:#d8e7f3
+}
+.play-text{font-size:.78rem;font-weight:800;color:#d7e7f8;text-transform:uppercase;letter-spacing:.08em}
+.play-arrow{
+  width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.08);display:flex;align-items:center;
+  justify-content:center;font-size:1.05rem;border:1px solid rgba(255,255,255,.08)
+}
+.info-card{padding:18px;margin-top:18px}
+.info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.info-box{
+  padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)
+}
+.info-box strong{display:block;margin-bottom:8px;font-size:.86rem;color:var(--gold)}
+.info-box span{display:block;color:var(--muted);font-size:.8rem;line-height:1.6}
+#game-overlay{
+  position:fixed;inset:0;display:none;z-index:5500;padding:14px;background:rgba(2,6,10,.84);backdrop-filter:blur(12px)
+}
+#game-overlay.show{display:block}
+.overlay-shell{width:min(1440px,100%);height:100%;margin:0 auto;display:flex;flex-direction:column}
+.overlay-bar{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)
+}
+.overlay-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.92rem;font-weight:900;color:var(--gold)}
+.overlay-btn{
+  border:none;background:rgba(255,255,255,.05);color:var(--text);padding:10px 13px;border-radius:12px;cursor:pointer;
+  font:inherit;font-size:.82rem;font-weight:800;border:1px solid rgba(255,255,255,.07);transition:.2s
+}
+.overlay-btn:hover{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.18)}
+.overlay-btn.danger:hover{background:rgba(255,111,111,.12);border-color:rgba(255,111,111,.18)}
+#game-frame{flex:1;width:100%;border:none;background:#000}
+.hidden{display:none!important}
+@media (max-width:1100px){
+  .hero{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  .games-page{padding:14px 12px 20px}
+  .hero-card,.status-card,.section-card,.info-card,.overlay-shell{border-radius:20px}
+  .hero-card{padding:20px}
+  .hero-stats{grid-template-columns:1fr}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .tab-bar{width:100%;justify-content:space-between}
+  .tab{flex:1;justify-content:center}
+  .section-head{flex-direction:column}
+  .games-grid{grid-template-columns:1fr}
+  .overlay-bar{flex-wrap:wrap}
+  .overlay-title{width:100%;order:-1}
+}
+</style>
+</head>
+<body>
+<div class="games-page">
+  <section class="hero">
+    <div class="hero-card">
+      <span class="eyebrow">Game Hub</span>
+      <h1>Solo und LAN sind jetzt klar getrennt.</h1>
+      <p>Die Bibliothek zeigt Einzelspieler- und Netzwerkspiele in eigenen Bereichen. LAN-Titel wie Memory und Pong starten mit Raumcode, Lobby und passender Match-Oberflaeche direkt im App-Fenster.</p>
+      <div class="hero-stats">
+        <div class="stat">
+          <strong id="solo-count">0</strong>
+          <span>Einzelspieler-Spiele fuer kurze Sessions ohne Netzwerk.</span>
+        </div>
+        <div class="stat">
+          <strong id="multi-count">0</strong>
+          <span>LAN-Spiele mit Raumcode, Lobby und synchronem Spielstand.</span>
+        </div>
+        <div class="stat">
+          <strong>Responsive</strong>
+          <span>Optimiert fuer kleine Touch-Displays und grosse Desktop-Fenster.</span>
+        </div>
+      </div>
+    </div>
+    <aside class="status-card">
+      <h2>LAN Status</h2>
+      <p>Der Multiplayer-Server laeuft lokal auf Port 8765. Alle Geraete im selben Netzwerk koennen mit denselben Raumcodes beitreten.</p>
+      <div class="status-stack">
+        <div class="badge-line">
+          <div>
+            <strong style="display:block;font-size:.82rem;color:#fff;margin-bottom:4px">WebSocket Multiplayer</strong>
+            <span class="badge-copy">Room-basierte Spiele, Chat und Match-Sync</span>
+          </div>
+          <span class="ws-badge off" id="ws-badge">Pruefe...</span>
+        </div>
+        <div class="badge-line">
+          <div>
+            <strong style="display:block;font-size:.82rem;color:#fff;margin-bottom:4px">Empfohlener Ablauf</strong>
+            <span class="badge-copy">Host erstellt Raum, Gegenspieler tritt per Code bei, dann Start im Spiel.</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <div class="toolbar">
+    <div class="tab-bar">
+      <button class="tab active" id="tab-solo" onclick="setTab('solo')">
+        Solo
+        <span class="tab-count" id="tab-solo-count">0</span>
+      </button>
+      <button class="tab" id="tab-multi" onclick="setTab('multi')">
+        LAN
+        <span class="tab-count" id="tab-multi-count">0</span>
+      </button>
+    </div>
+    <div class="toolbar-note" id="toolbar-note">Direkter Start fuer Einzelspieler-Spiele.</div>
+  </div>
+
+  <section class="section-card" id="solo-view">
+    <div class="section-head">
+      <div>
+        <h3>Solo Spiele</h3>
+        <p>Fuer lokale Sessions ohne Raumcode. Die Auswahl konzentriert sich auf schnelle, direkte Spiele, waehrend kooperative oder wettbewerbsorientierte Titel in den LAN-Bereich gewandert sind.</p>
+      </div>
+      <div class="pill-row">
+        <span class="pill">Sofort startklar</span>
+        <span class="pill">Keine Lobby</span>
+        <span class="pill">Keyboard und Touch</span>
+      </div>
+    </div>
+    <div class="games-grid" id="solo-grid"></div>
+  </section>
+
+  <section class="section-card hidden" id="multi-view">
+    <div class="section-head">
+      <div>
+        <h3>LAN Spiele</h3>
+        <p>Diese Titel sind fuer echte Netzwerkduelle gedacht. Host und Mitspieler verbinden sich ueber denselben Raumcode, die Spiellogik bleibt synchron und die Darstellung ist fuer kompakte und grosse Displays ausgelegt.</p>
+      </div>
+      <div class="pill-row">
+        <span class="pill">Raumcode und Lobby</span>
+        <span class="pill">Host gesteuerter Match-Sync</span>
+        <span class="pill">Mehrgeraete geeignet</span>
+      </div>
+    </div>
+    <div class="games-grid" id="multi-grid"></div>
+  </section>
+
+  <section class="info-card">
+    <div class="info-grid">
+      <div class="info-box">
+        <strong>Memory jetzt als LAN-Spiel</strong>
+        <span>Turn-basierte Runden mit sichtbar synchronisierten Karten, Punktezaehler und Raumcode fuer zwei Spieler.</span>
+      </div>
+      <div class="info-box">
+        <strong>Pong jetzt als Netzwerkduell</strong>
+        <span>Ein Host simuliert Ball und Punkte, beide Seiten steuern ihre Schlaeger ueber Tastatur oder Touch.</span>
+      </div>
+      <div class="info-box">
+        <strong>Saubere Trennung</strong>
+        <span>Solo-Titel bleiben lokal. Alles, was Wettbewerb oder Match-Sync braucht, sitzt im eigenen LAN-Bereich.</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="game-overlay">
+  <div class="overlay-shell">
+    <div class="overlay-bar">
+      <div class="overlay-title" id="game-title">Spiel</div>
+      <button class="overlay-btn" type="button" onclick="toggleFullGame()">Vollbild</button>
+      <button class="overlay-btn danger" type="button" onclick="closeGame()">Schliessen</button>
+    </div>
+    <iframe id="game-frame" src="" allow="fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+  </div>
+</div>
+
+<script>
+const SOLO_GAMES = [
+  { title: 'Snake', icon: 'SN', desc: 'Das klassische Sammelspiel fuer schnelle Reflexe.', file: 'games/solo/snake.html', tone: 'solo-b', tags: ['Solo', 'Arcade'] },
+  { title: 'Tetris', icon: 'TT', desc: 'Steine stapeln, Reihen schliessen und Tempo halten.', file: 'games/solo/tetris.html', tone: 'solo-d', tags: ['Solo', 'Puzzle'] },
+  { title: '2048', icon: '20', desc: 'Zahlen verschmelzen, Platz sichern und Rekorde jagen.', file: 'games/solo/2048.html', tone: 'solo-a', tags: ['Solo', 'Denken'] },
+  { title: 'Breakout', icon: 'BR', desc: 'Bloecke zerlegen und den Ball im Spiel halten.', file: 'games/solo/breakout.html', tone: 'solo-c', tags: ['Solo', 'Arcade'] },
+  { title: 'Mathe', icon: 'MX', desc: 'Kurze Rechenrunden fuer Konzentration und Tempo.', file: 'games/solo/math.html', tone: 'solo-a', tags: ['Solo', 'Lernen'] },
+  { title: 'Typer', icon: 'TY', desc: 'Tipprhythmus testen und deine Geschwindigkeit steigern.', file: 'games/solo/typer.html', tone: 'solo-b', tags: ['Solo', 'Skill'] }
+];
+
+const MULTI_GAMES = [
+  { title: 'Memory LAN', icon: 'MM', desc: 'Zwei Spieler decken abwechselnd Karten auf und sammeln Punkte im selben Raum.', file: 'games/multi/memory-lan.html', tone: 'multi-c', tags: ['LAN', '2 Spieler'] },
+  { title: 'Pong LAN', icon: 'PG', desc: 'Schlaeger links gegen rechts. Host simuliert Ball, Netz und Punkte fuer beide Seiten.', file: 'games/multi/pong-lan.html', tone: 'multi-b', tags: ['LAN', '2 Spieler'] },
+  { title: 'Quiz', icon: 'QZ', desc: 'Fragenrunde fuer mehrere Spieler mit Lobby und Live-Punktestand.', file: 'games/multi/quiz-multi.html', tone: 'multi-a', tags: ['LAN', 'Gruppe'] },
+  { title: 'TicTacToe', icon: 'TT', desc: 'Klassisches Duell fuer zwei Spieler mit Raumcode.', file: 'games/multi/ttt-multi.html', tone: 'multi-d', tags: ['LAN', '2 Spieler'] },
+  { title: 'Lobby', icon: 'LB', desc: 'Direkter Einstiegspunkt fuer Raumcode und Spieleruebersicht.', file: 'games/lobby.html', tone: 'multi-a', tags: ['LAN', 'Hub'] }
+];
+
+let currentTab = 'solo';
+
+function esc(value){
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function gameCard(game, type){
+  return ''
+    + '<article class="game-card" onclick="openGame(\'' + esc(game.file) + '\',\'' + esc(game.title) + '\')">'
+    +   '<div class="game-cover" data-tone="' + esc(game.tone) + '">'
+    +     '<div class="game-topline">'
+    +       '<span class="mode-badge ' + type + '">' + (type === 'solo' ? 'Solo' : 'LAN') + '</span>'
+    +       '<div class="game-mark">' + esc(game.icon) + '</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="game-body">'
+    +     '<div class="game-title">' + esc(game.title) + '</div>'
+    +     '<p class="game-desc">' + esc(game.desc) + '</p>'
+    +     '<div class="game-meta">' + game.tags.map(tag => '<span class="meta-chip">' + esc(tag) + '</span>').join('') + '</div>'
+    +   '</div>'
+    +   '<div class="play-strip">'
+    +     '<span class="play-text">' + (type === 'solo' ? 'Jetzt spielen' : 'Raum oeffnen') + '</span>'
+    +     '<span class="play-arrow">></span>'
+    +   '</div>'
+    + '</article>';
+}
+
+function renderGames(){
+  document.getElementById('solo-grid').innerHTML = SOLO_GAMES.map(game => gameCard(game, 'solo')).join('');
+  document.getElementById('multi-grid').innerHTML = MULTI_GAMES.map(game => gameCard(game, 'multi')).join('');
+  document.getElementById('solo-count').textContent = SOLO_GAMES.length;
+  document.getElementById('multi-count').textContent = MULTI_GAMES.length;
+  document.getElementById('tab-solo-count').textContent = SOLO_GAMES.length;
+  document.getElementById('tab-multi-count').textContent = MULTI_GAMES.length;
+}
+
+function setTab(tab){
+  currentTab = tab;
+  const solo = tab === 'solo';
+  document.getElementById('tab-solo').classList.toggle('active', solo);
+  document.getElementById('tab-multi').classList.toggle('active', !solo);
+  document.getElementById('solo-view').classList.toggle('hidden', !solo);
+  document.getElementById('multi-view').classList.toggle('hidden', solo);
+  document.getElementById('toolbar-note').textContent = solo
+    ? 'Direkter Start fuer Einzelspieler-Spiele.'
+    : 'LAN-Spiele mit Raumcode, Lobby und synchronem Spielstand.';
+}
+
+function openGame(file, title){
+  document.getElementById('game-frame').src = '/' + file;
+  document.getElementById('game-title').textContent = title;
+  document.getElementById('game-overlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGame(){
+  document.getElementById('game-overlay').classList.remove('show');
+  document.getElementById('game-frame').src = '';
+  document.body.style.overflow = '';
+}
+
+function toggleFullGame(){
+  const overlay = document.getElementById('game-overlay');
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else if (overlay.requestFullscreen) {
+    overlay.requestFullscreen();
+  }
+}
+
+function setWSStatus(isOnline){
+  const el = document.getElementById('ws-badge');
+  el.textContent = isOnline ? 'LAN bereit' : 'Nicht verfuegbar';
+  el.className = 'ws-badge ' + (isOnline ? 'on' : 'off');
+}
+
+function checkWS(){
+  let ws;
+  let done = false;
+  const host = (location.hostname || '127.0.0.1').trim() || '127.0.0.1';
+  const timeout = setTimeout(function(){
+    if (done) return;
+    done = true;
+    try { if (ws) ws.close(); } catch (_) {}
+    setWSStatus(false);
+  }, 2500);
+
+  try{
+    ws = new WebSocket('ws://' + host + ':8765');
+    ws.onopen = function(){
+      if (done) return;
+      done = true;
+      clearTimeout(timeout);
+      setWSStatus(true);
+      ws.onerror = null;
+      ws.onclose = null;
+      ws.close();
+    };
+    ws.onerror = function(){
+      if (done) return;
+      done = true;
+      clearTimeout(timeout);
+      setWSStatus(false);
+    };
+    ws.onclose = function(){
+      if (done) return;
+      done = true;
+      clearTimeout(timeout);
+      setWSStatus(false);
+    };
+  }catch(_){
+    clearTimeout(timeout);
+    done = true;
+    setWSStatus(false);
+  }
+}
+
+document.addEventListener('keydown', function(event){
+  if (event.key === 'Escape') closeGame();
+});
+
+/* Volume vom Parent anfordern */
+try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
+renderGames();
+if (location.hash === '#multi' || location.hash === '#lan') {
+  setTab('multi');
+}
+setTimeout(checkWS, 450);
+
+/* Remote-Keys + Media-Mutex vom Parent */
+window.addEventListener('message', function(e){
+  if(!e.data) return;
+  if(e.data.type === 'media-pause-all') return; // Spiele haben kein Audio zum pausieren
+  if(e.data.type === 'set-volume') return;
+  if(e.data.type === 'remote-key'){
+    var k = e.data.key;
+    // Escape schließt offenes Spiel
+    if(k === 'Escape') closeGame();
+  }
+});
+</script>
+</body>
+</html>

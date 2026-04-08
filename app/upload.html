@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Upload – MediaCenter</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+/* ─── Info + QR Section ──────────────────────────────── */
+.info-bar{
+  display:flex;align-items:stretch;gap:14px;
+  background:linear-gradient(135deg,rgba(26,26,46,.95),rgba(13,13,26,.95));
+  border:1.5px solid rgba(255,215,0,.22);border-radius:16px;padding:16px 18px;
+  flex-wrap:wrap;
+}
+.info-bar-left{flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px;justify-content:center;}
+.info-eyebrow{font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:rgba(255,215,0,.5);margin-bottom:2px;}
+.info-url-box{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(0,0,0,.4);border:1px solid rgba(255,215,0,.15);
+  border-radius:9px;padding:9px 12px;
+}
+.info-url-text{font-size:.88rem;font-weight:700;color:var(--gold);font-family:monospace;flex:1;word-break:break-all;}
+.info-copy-btn{
+  background:rgba(255,215,0,.1);border:1px solid rgba(255,215,0,.2);
+  color:var(--gold);font-size:.7rem;cursor:pointer;padding:4px 9px;
+  border-radius:7px;transition:.15s;white-space:nowrap;font-family:inherit;
+}
+.info-copy-btn:hover{background:rgba(255,215,0,.25);}
+.info-hint{font-size:.7rem;color:var(--sub);line-height:1.5;}
+.info-hint strong{color:rgba(255,215,0,.7);}
+/* Format-Infos */
+.fmt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:4px;}
+.fmt-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,215,0,.1);border-radius:10px;padding:10px 12px;}
+.fmt-title{font-size:.65rem;font-weight:800;color:rgba(255,215,0,.6);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.fmt-list{font-size:.68rem;color:var(--sub);line-height:1.6;}
+.fmt-list span{color:rgba(255,255,255,.55);}
+/* Serie-Hinweis */
+.series-hint{background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.15);
+  border-radius:10px;padding:10px 14px;font-size:.75rem;line-height:1.6;color:var(--sub);}
+.series-hint strong{color:var(--gold);}
+.series-hint code{background:rgba(255,215,0,.1);color:var(--gold);padding:1px 5px;border-radius:4px;font-size:.72rem;}
+/* QR */
+.info-bar-qr{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.info-qr-wrap{
+  width:110px;height:110px;background:#fff;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  border:3px solid rgba(255,215,0,.3);
+}
+.info-qr-wrap canvas,.info-qr-wrap img{width:100%;height:100%;display:block;}
+.info-qr-label{font-size:.56rem;color:var(--sub);text-transform:uppercase;letter-spacing:1.5px;}
+/* Drop Zone */
+.drop-zone{border:2px dashed rgba(255,215,0,.3);border-radius:18px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .25s;position:relative;background:rgba(255,215,0,.02)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--gold);background:rgba(255,215,0,.05);box-shadow:0 0 28px rgba(255,215,0,.1)}
+.dz-icon{font-size:3rem;margin-bottom:12px;display:block}
+.dz-title{font-size:.98rem;font-weight:800;color:var(--gold);margin-bottom:5px}
+.dz-sub{font-size:.78rem;color:var(--sub);line-height:1.6}
+.dz-btn{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:9px 22px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border:none;border-radius:12px;font-size:.86rem;font-weight:800;cursor:pointer;transition:.2s;font-family:inherit}
+.dz-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px var(--glow)}
+/* Kategorie Tabs */
+.cat-tabs{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0}
+.cat-tab{padding:8px 18px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,215,0,.12);border-radius:10px;color:var(--sub);cursor:pointer;font-size:.8rem;font-weight:700;transition:.2s;display:flex;align-items:center;gap:7px}
+.cat-tab:hover{border-color:rgba(255,215,0,.3);color:var(--txt)}
+.cat-tab.active{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.4);color:var(--gold)}
+.cat-tab .cat-count{font-size:.65rem;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:8px;min-width:18px;text-align:center}
+.cat-tab.active .cat-count{background:rgba(255,215,0,.15)}
+/* File List */
+.file-section{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.file-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.file-head h3{font-size:.85rem;font-weight:800;color:var(--gold);flex:1}
+.file-search{flex:1;max-width:220px}
+.file-body{max-height:420px;overflow-y:auto}
+.fi-row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:.15s}
+.fi-row:last-child{border-bottom:none}
+.fi-row:hover{background:rgba(255,255,255,.03)}
+.fi-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--hover);display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden}
+.fi-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.fi-info{flex:1;min-width:0}
+.fi-name{font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fi-meta{font-size:.65rem;color:var(--sub);margin-top:2px}
+.fi-btns{display:flex;gap:5px;flex-shrink:0}
+.fi-btn{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--sub);font-size:.72rem;cursor:pointer;transition:.15s;font-family:inherit;display:flex;align-items:center;gap:4px}
+.fi-btn:hover{border-color:rgba(255,215,0,.3);color:var(--gold);background:rgba(255,215,0,.06)}
+.fi-btn.danger:hover{border-color:rgba(231,76,60,.4);color:var(--red);background:rgba(231,76,60,.08)}
+.fi-empty{padding:28px;text-align:center;color:var(--sub);font-size:.82rem}
+/* Upload Queue */
+.queue-section{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.queue-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.queue-head h3{font-size:.85rem;font-weight:800;color:var(--gold)}
+.queue-body{padding:8px 0;max-height:300px;overflow-y:auto}
+.q-row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.04)}
+.q-row:last-child{border-bottom:none}
+.q-icon{font-size:1.3rem;flex-shrink:0}
+.q-info{flex:1;min-width:0}
+.q-name{font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-prog-wrap{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:4px}
+.q-prog{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px;transition:width .2s}
+.q-status{font-size:.7rem;font-weight:700;white-space:nowrap;padding:2px 7px;border-radius:6px}
+.q-status.wait{color:var(--sub)}.q-status.up{color:var(--gold)}
+.q-status.ok{background:rgba(46,204,113,.12);color:var(--green)}
+.q-status.err{background:rgba(231,76,60,.12);color:var(--red)}
+/* Edit Modal */
+#edit-modal{display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px}
+#edit-modal.open{display:flex}
+.edit-box{background:var(--card);border:2px solid var(--gold);border-radius:16px;width:100%;max-width:460px;overflow:hidden;max-height:90vh;overflow-y:auto}
+.edit-head{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+.edit-head h3{font-size:.9rem;font-weight:800;color:var(--gold)}
+.edit-close{background:none;border:none;color:var(--sub);font-size:1.3rem;cursor:pointer;padding:2px 6px;border-radius:6px;transition:.15s;font-family:inherit}
+.edit-close:hover{color:var(--txt)}
+.edit-body{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.edit-lbl{font-size:.7rem;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.edit-save{width:100%;padding:11px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:#000;font-size:.88rem;font-weight:800;cursor:pointer;transition:.2s;font-family:inherit}
+.edit-save:hover{transform:scale(1.02);box-shadow:0 4px 14px var(--glow)}
+</style>
+</head>
+<body>
+<div class="mc-page">
+  <div class="mc-page-body">
+    <div class="up-wrap">
+      <!-- ═══ INFO BAR + QR CODE ═══ -->
+      <div class="info-bar" id="info-bar">
+        <div class="info-bar-left">
+          <div class="info-eyebrow">📡 Netzwerkzugang – Smartphone verbinden</div>
+          <div class="info-url-box">
+            <span class="info-url-text" id="info-url-text">Wird ermittelt…</span>
+            <button class="info-copy-btn" onclick="copyUrl()" title="URL kopieren">📋 Kopieren</button>
+          </div>
+          <div class="info-hint">
+            Scanne den QR-Code oder gib die URL im Browser ein.<br>
+            <strong>Gleiches WLAN erforderlich</strong> · Upload direkt vom Smartphone möglich.
+          </div>
+        </div>
+        <div class="info-bar-qr">
+          <div class="info-qr-wrap" id="qr-wrap">
+            <div style="color:#999;font-size:.58rem;text-align:center;padding:8px">Lade…</div>
+          </div>
+          <div class="info-qr-label">QR scannen → Upload</div>
+        </div>
+      </div>
+
+      <!-- ═══ FORMAT & SERIEN HINWEISE ═══ -->
+      <div class="fmt-grid">
+        <div class="fmt-card">
+          <div class="fmt-title">🎬 Filme</div>
+          <div class="fmt-list"><span>mp4 mkv avi mov webm wmv m4v 3gp mpg mpeg ogv ts mts m2ts</span><br>In Ordner <code>Movies/</code></div>
+        </div>
+        <div class="fmt-card">
+          <div class="fmt-title">📺 Serien</div>
+          <div class="fmt-list"><span>Gleiche Videoformate wie Filme</span><br>Ordnerstruktur: <code>Series/SerieName/Staffel 1/</code></div>
+        </div>
+        <div class="fmt-card">
+          <div class="fmt-title">🎵 Musik</div>
+          <div class="fmt-list"><span>mp3 wav flac m4a aac ogg opus wma aiff amr</span><br>In Ordner <code>Music/</code></div>
+        </div>
+        <div class="fmt-card">
+          <div class="fmt-title">🖼️ Fotos</div>
+          <div class="fmt-list"><span>jpg png gif webp bmp svg avif tif tiff jfif ico</span><br>In Ordner <code>Images/</code></div>
+        </div>
+      </div>
+      <div class="series-hint">
+        📺 <strong>Serien-Upload Logik:</strong>
+        Benenne Staffelordner als <code>Staffel 1</code>, <code>Staffel 2</code> usw.
+        Episodendateien z.B. <code>S01E01_Titel.mkv</code> oder <code>1x01 - Titel.mp4</code>.
+        Der Player erkennt Staffel- und Episodennummern automatisch aus dem Dateinamen.
+        Lade zuerst den Staffelordner hoch, dann die Episodendateien darin.
+      </div>
+      <!-- Drop Zone -->
+      <div class="drop-zone" id="dz" onclick="document.getElementById('file-inp').click()"
+        ondragover="dzDrag(event,true)" ondragleave="dzDrag(event,false)" ondrop="dzDrop(event)">
+        <span class="dz-icon">☁️</span>
+        <div class="dz-title">Dateien hochladen</div>
+        <div class="dz-sub">Hierher ziehen oder klicken · Mehrere Dateien gleichzeitig möglich</div>
+        <button class="dz-btn" onclick="event.stopPropagation();document.getElementById('file-inp').click()">📁 Dateien wählen</button>
+        <input type="file" id="file-inp" multiple
+          accept="video/*,audio/*,image/*,.mkv,.avi,.webm,.flac,.m4a,.ogg,.oga,.opus,.wma,.aiff,.aif,.amr,.svg,.avif,.tif,.tiff,.jfif,.mpeg,.mpg,.ogv,.ts,.mts,.m2ts"
+          style="display:none" onchange="handleFiles(this.files)">
+      </div>
+      <!-- Upload Queue -->
+      <div class="queue-section" id="q-section" style="display:none">
+        <div class="queue-head">
+          <h3>⬆️ Upload-Warteschlange</h3>
+          <span id="q-summary" style="font-size:.73rem;color:var(--sub)"></span>
+        </div>
+        <div class="queue-body" id="q-body"></div>
+      </div>
+      <!-- Kategorie Tabs -->
+      <div class="cat-tabs" id="cat-tabs">
+        <button class="cat-tab active" data-cat="all"     onclick="setCat('all')">    📁 Alle     <span class="cat-count" id="cnt-all">0</span></button>
+        <button class="cat-tab"        data-cat="movies"  onclick="setCat('movies')"> 🎬 Filme    <span class="cat-count" id="cnt-movies">0</span></button>
+        <button class="cat-tab"        data-cat="series"  onclick="setCat('series')"> 📺 Serien   <span class="cat-count" id="cnt-series">0</span></button>
+        <button class="cat-tab"        data-cat="music"   onclick="setCat('music')">  🎵 Musik    <span class="cat-count" id="cnt-music">0</span></button>
+        <button class="cat-tab"        data-cat="images"  onclick="setCat('images')"> 🖼️ Fotos    <span class="cat-count" id="cnt-images">0</span></button>
+        <button class="cat-tab"        data-cat="trash"   onclick="setCat('trash')" id="trash-tab"> 🗑️ Papierkorb <span class="cat-count" id="cnt-trash">0</span></button>
+      </div>
+      <!-- Dateiliste -->
+      <div class="file-section" id="file-section">
+        <div class="file-head">
+          <h3 id="file-sec-title">Alle Dateien</h3>
+          <div class="search-wrap file-search"><span class="si">🔍</span><input class="mc-input" id="file-srch" placeholder="Suchen…" oninput="renderFiles()" style="font-size:.78rem;padding:6px 10px 6px 28px"></div>
+          <button class="btn btn-sm btn-ghost" onclick="loadAll(true)" title="Neu laden" style="flex-shrink:0">↺</button>
+        </div>
+        <div class="file-body" id="file-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal">
+  <div class="edit-box">
+    <div class="edit-head">
+      <h3>✏️ Datei bearbeiten</h3>
+      <button class="edit-close" onclick="closeEdit()">✕</button>
+    </div>
+    <div class="edit-body">
+      <div>
+        <div class="edit-lbl">Titel / Name</div>
+        <input class="mc-input" id="ed-title" placeholder="Anzeigename">
+      </div>
+      <div>
+        <div class="edit-lbl">Thumbnail-URL (oder leer lassen)</div>
+        <input class="mc-input" id="ed-thumb" placeholder="https://… oder /media/…">
+      </div>
+      <div>
+        <div class="edit-lbl">Beschreibung</div>
+        <textarea class="mc-input" id="ed-desc" placeholder="Kurzbeschreibung…" rows="3" style="resize:vertical"></textarea>
+      </div>
+      <div id="ed-lyrics-wrap" style="display:none">
+        <div class="edit-lbl">Lyrics / Songtext</div>
+        <textarea class="mc-input" id="ed-lyrics" placeholder="Songtext…" rows="5" style="resize:vertical"></textarea>
+      </div>
+      <button class="edit-save" onclick="saveEdit()">💾 Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+var queue=[],uploading=false,curCat='all';
+var _allData={movies:[],series:[],music:[],images:[]};
+var _trashData=[];
+var _editItem=null;
+var _meta={};
+
+function dzDrag(e,on){e.preventDefault();document.getElementById('dz').classList.toggle('drag',on);}
+function dzDrop(e){e.preventDefault();document.getElementById('dz').classList.remove('drag');handleFiles(e.dataTransfer.files);}
+
+function handleFiles(files){
+  if(!files||!files.length)return;
+  Array.from(files).forEach(f=>{
+    var ext=f.name.split('.').pop().toLowerCase();
+    var ok=['mp4','mkv','avi','mov','webm','wmv','m4v','3gp','mpg','mpeg','ogv','ts','mts','m2ts','mp3','wav','flac','m4a','aac','ogg','oga','opus','wma','aiff','aif','amr','jpg','jpeg','jfif','png','gif','webp','bmp','svg','ico','avif','tif','tiff'];
+    if(!ok.includes(ext)){MC.toast('❌ '+f.name+' – Format nicht unterstützt','err');return;}
+    queue.push({file:f,status:'wait',progress:0});
+  });
+  renderQueue();
+  if(!uploading)processQueue();
+}
+
+function getIcon(name){
+  var ext=(name.split('.').pop()||'').toLowerCase();
+  if(['mp4','mkv','avi','mov','webm','wmv','m4v','3gp','mpg','mpeg','ogv','ts','mts','m2ts'].includes(ext))return'🎬';
+  if(['mp3','wav','flac','m4a','aac','ogg','oga','opus','wma','aiff','aif','amr'].includes(ext))return'🎵';
+  if(['jpg','jpeg','jfif','png','gif','webp','bmp','svg','ico','avif','tif','tiff'].includes(ext))return'🖼️';
+  return'📄';
+}
+
+function renderQueue(){
+  if(!queue.length){document.getElementById('q-section').style.display='none';return;}
+  document.getElementById('q-section').style.display='';
+  var done=queue.filter(q=>q.status==='ok').length;
+  var err=queue.filter(q=>q.status==='err').length;
+  document.getElementById('q-summary').textContent=done+'/'+queue.length+' fertig'+(err?' · '+err+' Fehler':'');
+  document.getElementById('q-body').innerHTML=queue.map((q,i)=>{
+    var st=q.status==='wait'?'⏳ Wartend':q.status==='up'?'⬆️ Lädt...':q.status==='ok'?'✅ Fertig':'❌ Fehler';
+    return '<div class="q-row"><span class="q-icon">'+getIcon(q.file.name)+'</span>'
+      +'<div class="q-info"><div class="q-name">'+MC.esc(q.file.name)+'</div>'
+      +'<div class="q-prog-wrap"><div class="q-prog" style="width:'+q.progress+'%"></div></div></div>'
+      +'<span class="q-status '+q.status+'">'+st+'</span></div>';
+  }).join('');
+}
+
+async function processQueue(){
+  uploading=true;
+  for(var i=0;i<queue.length;i++){
+    var item=queue[i];if(item.status!=='wait')continue;
+    item.status='up';item.progress=0;renderQueue();
+    try{await uploadFile(item);item.status='ok';item.progress=100;MC.toast('✅ '+item.file.name,'ok',2000);}
+    catch(e){item.status='err';MC.toast('❌ '+item.file.name+': '+e.message,'err',3000);}
+    renderQueue();
+  }
+  uploading=false;
+  loadAll();
+}
+
+function uploadFile(item){
+  return new Promise((res,rej)=>{
+    var fd=new FormData();fd.append('file',item.file,item.file.name);
+    var xhr=new XMLHttpRequest();xhr.open('POST','/api/upload');
+    xhr.upload.addEventListener('progress',e=>{if(e.lengthComputable){item.progress=Math.round(e.loaded/e.total*95);renderQueue();}});
+    xhr.addEventListener('load',()=>{try{var r=JSON.parse(xhr.responseText);if(r.success)res(r);else rej(new Error(r.error||'Upload fehlgeschlagen'));}catch{rej(new Error('Ungültige Antwort'));}});
+    xhr.addEventListener('error',()=>rej(new Error('Netzwerkfehler')));
+    xhr.send(fd);
+  });
+}
+</script>
+<script>
+/* Metadaten laden/speichern */
+function loadMeta(){try{_meta=JSON.parse(localStorage.getItem('mc_file_meta')||'{}');}catch{_meta={};}}
+function saveMeta(){localStorage.setItem('mc_file_meta',JSON.stringify(_meta));}
+
+async function loadAll(refresh){
+  loadMeta();
+  if(refresh)await fetch('/api/library?r='+Date.now()).catch(()=>{});
+  var lib=await MC.loadLibrary();
+  _allData.movies=lib.movies||[];
+  _allData.series=Object.values(lib.series||{}).flat();
+  _allData.music=lib.music||[];
+  _allData.images=lib.images||[];
+  // Counts
+  var total=_allData.movies.length+_allData.series.length+_allData.music.length+_allData.images.length;
+  document.getElementById('cnt-all').textContent=total;
+  document.getElementById('cnt-movies').textContent=_allData.movies.length;
+  document.getElementById('cnt-series').textContent=_allData.series.length;
+  document.getElementById('cnt-music').textContent=_allData.music.length;
+  document.getElementById('cnt-images').textContent=_allData.images.length;
+  // Trash
+  try{var tr=await MC.api('/api/trash');_trashData=tr.files||[];document.getElementById('cnt-trash').textContent=_trashData.length;}catch{_trashData=[];}
+  renderFiles();
+}
+
+function setCat(c){
+  curCat=c;
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.toggle('active',t.dataset.cat===c));
+  renderFiles();
+}
+
+function getList(){
+  var q=(document.getElementById('file-srch').value||'').toLowerCase();
+  var list;
+  if(curCat==='all') list=[..._allData.movies,..._allData.series,..._allData.music,..._allData.images];
+  else if(curCat==='trash') list=_trashData.map(f=>({name:f.name||f,path:f.path||'',_trash:true,_raw:f}));
+  else list=_allData[curCat]||[];
+  if(q)list=list.filter(f=>(f.name||'').toLowerCase().includes(q));
+  return list;
+}
+
+function getCatTitle(){
+  var m={all:'Alle Dateien',movies:'Filme',series:'Serien',music:'Musik',images:'Fotos',trash:'Papierkorb'};
+  return m[curCat]||'Dateien';
+}
+
+function renderFiles(){
+  document.getElementById('file-sec-title').textContent=getCatTitle();
+  var list=getList();
+  var body=document.getElementById('file-body');
+  if(!list.length){body.innerHTML='<div class="fi-empty">Keine Dateien in dieser Kategorie gefunden.</div>';return;}
+  body.innerHTML=list.map((f,i)=>{
+    var m=_meta[f.path]||{};
+    var nm=m.title||f.name.replace(/\.[^.]+$/,'');
+    var ico=getIcon(f.name);
+    var isImg=curCat==='images'||['jpg','jpeg','jfif','png','gif','webp','bmp','svg','avif','tif','tiff'].includes((f.name.split('.').pop()||'').toLowerCase());
+    var thumbHtml=isImg
+      ?'<div class="fi-thumb"><img src="/api/media?file='+encodeURIComponent(f.path)+'" onerror="this.parentElement.innerHTML=\''+ico+'\'" loading="lazy" alt=""></div>'
+      :'<div class="fi-thumb">'+ico+'</div>';
+    var meta=(f.size?MC.fmtSize(f.size):'')+((m.desc)?' · '+m.desc.substring(0,30):'');
+    var btns=f._trash
+      ?'<button class="fi-btn" onclick="restoreFile(\''+MC.esc(f.path||f._raw)+'\')">♻️ Wiederherstellen</button>'
+       +'<button class="fi-btn danger" onclick="deleteFile(\''+MC.esc(f.path||f._raw)+'\',true)">🗑️ Löschen</button>'
+      :'<button class="fi-btn" onclick="openEdit(\''+MC.esc(f.path)+'\',\''+MC.esc(f.name)+'\',\''+curCat+'\')">✏️ Bearbeiten</button>'
+       +'<button class="fi-btn danger" onclick="deleteFile(\''+MC.esc(f.path)+'\',false)">🗑️ Löschen</button>';
+    return '<div class="fi-row">'+thumbHtml
+      +'<div class="fi-info"><div class="fi-name" title="'+MC.esc(f.name)+'">'+MC.esc(nm)+'</div>'
+      +'<div class="fi-meta">'+MC.esc(meta)+'</div></div>'
+      +'<div class="fi-btns">'+btns+'</div></div>';
+  }).join('');
+}
+
+async function deleteFile(path,permanent){
+  var msg=permanent?'Dauerhaft löschen? Nicht wiederherstellbar!':'In den Papierkorb verschieben?';
+  if(!confirm(msg))return;
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:path,permanent:permanent||false})});
+  if(r.success){MC.toast(permanent?'🗑️ Gelöscht':'🗑️ In Papierkorb','ok');loadAll();}
+  else MC.toast('❌ '+r.error,'err');
+}
+
+async function restoreFile(path){
+  var r=await MC.api('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:path})});
+  if(r.success){MC.toast('✅ Wiederhergestellt','ok');loadAll();}
+  else MC.toast('❌ '+r.error,'err');
+}
+
+function openEdit(path,name,cat){
+  loadMeta();
+  _editItem={path,name,cat};
+  var m=_meta[path]||{};
+  document.getElementById('ed-title').value=m.title||name.replace(/\.[^.]+$/,'');
+  document.getElementById('ed-thumb').value=m.thumb||'';
+  document.getElementById('ed-desc').value=m.desc||'';
+  document.getElementById('ed-lyrics').value=m.lyrics||'';
+  document.getElementById('ed-lyrics-wrap').style.display=cat==='music'?'':'none';
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeEdit(){document.getElementById('edit-modal').classList.remove('open');_editItem=null;}
+function saveEdit(){
+  if(!_editItem)return;
+  if(!_meta[_editItem.path])_meta[_editItem.path]={};
+  _meta[_editItem.path].title=document.getElementById('ed-title').value.trim();
+  _meta[_editItem.path].thumb=document.getElementById('ed-thumb').value.trim();
+  _meta[_editItem.path].desc=document.getElementById('ed-desc').value.trim();
+  if(_editItem.cat==='music')_meta[_editItem.path].lyrics=document.getElementById('ed-lyrics').value.trim();
+  saveMeta();MC.toast('✅ Gespeichert','ok');closeEdit();renderFiles();
+}
+document.getElementById('edit-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEdit();});
+/* Volume + remote-key vom Parent */
+window.addEventListener('message',function(e){
+  if(!e.data)return;
+  if(e.data.type==='get-volume')return; // upload hat kein Audio
+  if(e.data.type==='remote-key'){
+    var k=e.data.key;
+    var modal=document.getElementById('edit-modal');
+    if(modal&&modal.classList.contains('open')){
+      if(k==='Escape')closeEdit();
+      if(k==='Enter')saveEdit();
+    }
+  }
+});
+try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
+loadAll();
+
+/* ─── Info Bar: echte LAN-IP + QR-Code ────────────────── */
+(async function(){
+  var urlEl=document.getElementById('info-url-text');
+  var qrWrap=document.getElementById('qr-wrap');
+  var uploadUrl='';
+  // 1) Echte LAN-IP vom Server-Endpunkt holen
+  try{
+    var r=await fetch('/api/qrcode-url',{cache:'no-store'});
+    var d=await r.json();
+    if(d.success&&d.url) uploadUrl=d.url.replace(/\/?$/,'')+'/upload.html';
+  }catch(e){}
+  // 2) Fallback: Browser-URL
+  if(!uploadUrl){
+    uploadUrl='http://'+location.hostname+':'+(location.port||'8080')+'/upload.html';
+  }
+  if(urlEl)urlEl.textContent=uploadUrl;
+  window._uploadUrl=uploadUrl;
+  // 3) QR rendern
+  function doQR(){
+    if(!qrWrap)return;
+    qrWrap.innerHTML='';
+    if(typeof QRCode!=='undefined'){
+      try{new QRCode(qrWrap,{text:uploadUrl,width:104,height:104,
+        colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});return;}catch(e){}
+    }
+    var img=document.createElement('img');
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=104x104&margin=4&data='+encodeURIComponent(uploadUrl);
+    img.style.cssText='width:104px;height:104px;display:block;border-radius:4px';
+    img.onerror=function(){qrWrap.innerHTML='<div style="font-size:.55rem;color:#888;text-align:center;padding:10px">QR offline<br>URL kopieren ↑</div>';};
+    qrWrap.appendChild(img);
+  }
+  var sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  sc.onload=doQR;sc.onerror=doQR;
+  document.head.appendChild(sc);
+})();
+function copyUrl(){
+  var url=window._uploadUrl||location.href;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(function(){MC.toast('✅ URL kopiert!','ok',1800);}).catch(fb);
+  }else fb();
+  function fb(){var t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);MC.toast('✅ URL kopiert!','ok',1800);}
+}
+</script>
+</body>
+</html>

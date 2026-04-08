@@ -1,0 +1,198 @@
+﻿/* desktop-shell.css – Spectra Theme */
+body.desktop-app{
+  background:
+    radial-gradient(circle at top left,rgba(34,211,238,.08),transparent 32%),
+    radial-gradient(circle at bottom right,rgba(245,158,11,.06),transparent 28%),
+    linear-gradient(180deg,#04060E 0%,#06080F 100%);
+  color-scheme:dark;
+  font-family:var(--font-body,"Outfit","Segoe UI Variable Text","Segoe UI",sans-serif);
+}
+body.desktop-app .app{height:calc(100vh - 66px)}
+
+body.desktop-app .desktop-chrome{
+  height:66px;display:flex;align-items:stretch;justify-content:space-between;
+  padding:10px 12px 10px 16px;
+  background:linear-gradient(180deg,rgba(8,11,22,.98),rgba(4,6,14,.96));
+  border-bottom:1px solid rgba(34,211,238,.1);
+  box-shadow:0 1px 0 rgba(34,211,238,.06),0 12px 40px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;
+}
+body.desktop-app .desktop-chrome::after{
+  content:"";position:absolute;inset:auto 0 0 0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(34,211,238,.25) 40%,rgba(245,158,11,.18) 60%,transparent);
+}
+
+body.desktop-app .desktop-drag{
+  flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;-webkit-app-region:drag;
+}
+body.desktop-app .desktop-brand{display:flex;align-items:center;gap:12px;min-width:0}
+body.desktop-app .desktop-brand-mark{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(145deg,#22D3EE,#0891B2);
+  box-shadow:0 6px 20px rgba(34,211,238,.22),inset 0 1px 0 rgba(255,255,255,.3);
+  position:relative;flex:0 0 auto;
+}
+body.desktop-app .desktop-brand-mark::after{
+  content:"";position:absolute;inset:8px;border-radius:7px;
+  border:1px solid rgba(4,6,14,.3);
+}
+body.desktop-app .desktop-brand-copy{min-width:0}
+body.desktop-app .desktop-eyebrow{
+  font-size:.62rem;text-transform:uppercase;letter-spacing:2.5px;
+  color:rgba(34,211,238,.55);margin-bottom:3px;
+}
+body.desktop-app .desktop-name{
+  font-family:var(--font-display,"Syne","Bahnschrift",sans-serif);
+  font-size:1.15rem;font-weight:800;letter-spacing:.12em;
+  text-transform:uppercase;color:#E2E8F8;white-space:nowrap;
+}
+
+body.desktop-app .desktop-pills{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap}
+body.desktop-app .desktop-pill{
+  display:inline-flex;align-items:center;gap:7px;padding:6px 11px;
+  border-radius:999px;border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.04);color:rgba(226,232,248,.75);
+  font-size:.72rem;line-height:1;white-space:nowrap;backdrop-filter:blur(10px);
+}
+body.desktop-app .desktop-pill.live::before{
+  content:"";width:7px;height:7px;border-radius:50%;
+  background:#10B981;box-shadow:0 0 10px rgba(16,185,129,.7);
+}
+body.desktop-app .desktop-pill.warn::before{
+  content:"";width:7px;height:7px;border-radius:50%;
+  background:#F59E0B;box-shadow:0 0 10px rgba(245,158,11,.6);
+}
+
+body.desktop-app .desktop-actions{
+  display:flex;align-items:center;gap:5px;margin-left:12px;-webkit-app-region:no-drag;
+}
+body.desktop-app .desktop-window-btn{
+  width:40px;height:40px;border:1px solid rgba(255,255,255,.06);border-radius:11px;
+  background:rgba(255,255,255,.04);color:rgba(226,232,248,.75);
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .18s;
+}
+body.desktop-app .desktop-window-btn:hover{
+  transform:translateY(-1px);background:rgba(255,255,255,.09);
+  border-color:rgba(34,211,238,.15);color:#fff;
+}
+body.desktop-app .desktop-window-btn.close:hover{background:rgba(244,63,94,.82);border-color:transparent}
+body.desktop-app .desktop-window-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none}
+
+body.desktop-app .sidebar{
+  background:linear-gradient(180deg,rgba(8,11,22,.99),rgba(4,6,14,.99));
+  border-right:1px solid rgba(34,211,238,.08);
+}
+body.desktop-app .sidebar.open{width:220px}
+body.desktop-app .sidebar-toggle{
+  margin-top:4px;margin-bottom:18px;
+  border:1px solid rgba(255,255,255,.05);
+  background:rgba(255,255,255,.03);
+}
+
+body.desktop-app .hdr{
+  padding:14px 24px;border-bottom:1px solid rgba(34,211,238,.08);
+  background:linear-gradient(180deg,rgba(14,17,32,.88),rgba(6,8,16,.72));
+  backdrop-filter:blur(18px);
+}
+body.desktop-app .hdr-title{
+  font-family:var(--font-display,"Syne","Bahnschrift",sans-serif);
+  letter-spacing:.12em;
+}
+
+body.desktop-app .content-area{
+  background:radial-gradient(circle at top left,rgba(34,211,238,.05),transparent 26%),
+    linear-gradient(180deg,rgba(4,6,14,.3),transparent);
+}
+
+body.desktop-app #home-screen{
+  display:grid;grid-template-columns:minmax(340px,450px) minmax(320px,1fr);
+  gap:22px;align-items:stretch;padding:26px;
+}
+body.desktop-app .mp-card{
+  align-items:flex-start;justify-content:center;padding:32px;
+  border:1px solid rgba(34,211,238,.16);
+  background:radial-gradient(circle at top right,rgba(34,211,238,.06),transparent 32%),
+    linear-gradient(145deg,rgba(14,17,32,.96),rgba(6,8,16,.96));
+  box-shadow:0 20px 50px rgba(0,0,0,.4),inset 0 1px 0 rgba(34,211,238,.06);
+}
+body.desktop-app .mp-title{
+  font-family:var(--font-display,"Syne","Bahnschrift",sans-serif);
+  font-size:1.35rem;letter-spacing:.14em;
+}
+body.desktop-app .mp-sub{color:rgba(226,232,248,.5);font-size:.8rem}
+
+body.desktop-app .desktop-home-panel{
+  display:flex;flex-direction:column;gap:16px;padding:26px;
+  border-radius:20px;border:1px solid rgba(56,189,248,.1);
+  background:radial-gradient(circle at top right,rgba(56,189,248,.08),transparent 32%),
+    linear-gradient(145deg,rgba(10,14,26,.96),rgba(6,8,16,.96));
+  box-shadow:0 20px 50px rgba(0,0,0,.38);min-height:100%;
+}
+body.desktop-app .desktop-panel-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+}
+body.desktop-app .desktop-panel-eyebrow{
+  font-size:.68rem;text-transform:uppercase;letter-spacing:.26em;
+  color:rgba(34,211,238,.6);margin-bottom:7px;
+}
+body.desktop-app .desktop-panel-title{
+  font-family:var(--font-display,"Syne","Bahnschrift",sans-serif);
+  font-size:1.35rem;line-height:1.1;color:#E2E8F8;
+}
+body.desktop-app .desktop-panel-copy{font-size:.88rem;line-height:1.7;color:rgba(226,232,248,.52)}
+
+body.desktop-app .desktop-stat-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+}
+body.desktop-app .desktop-stat-card{
+  padding:14px 15px 13px;border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.018));
+  border:1px solid rgba(255,255,255,.05);
+}
+body.desktop-app .desktop-stat-label{
+  font-size:.7rem;text-transform:uppercase;letter-spacing:.2em;
+  color:rgba(34,211,238,.5);margin-bottom:9px;
+}
+body.desktop-app .desktop-stat-value{
+  font-family:var(--font-display,"Syne",sans-serif);
+  font-size:1.7rem;line-height:1;color:#fff;margin-bottom:7px;
+}
+body.desktop-app .desktop-stat-meta{font-size:.76rem;color:rgba(226,232,248,.44)}
+
+body.desktop-app .desktop-quick-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:auto}
+body.desktop-app .desktop-quick-btn{
+  padding:10px 15px;border-radius:12px;
+  border:1px solid rgba(34,211,238,.12);
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  color:#E2E8F8;font-family:inherit;font-size:.82rem;font-weight:700;
+  cursor:pointer;transition:all .18s;
+}
+body.desktop-app .desktop-quick-btn:hover{
+  transform:translateY(-1px);border-color:rgba(34,211,238,.28);
+  background:linear-gradient(135deg,rgba(34,211,238,.12),rgba(56,189,248,.08));
+  box-shadow:0 4px 16px rgba(34,211,238,.1);
+}
+body.desktop-app .desktop-footnote{font-size:.76rem;color:rgba(226,232,248,.42)}
+
+body.desktop-app .desktop-header-tools{display:flex;align-items:center;gap:9px}
+body.desktop-app .desktop-header-badge{
+  padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.04);color:rgba(226,232,248,.65);font-size:.7rem;white-space:nowrap;
+}
+
+@media(max-width:1180px){
+  body.desktop-app .desktop-pills{display:none}
+  body.desktop-app #home-screen{grid-template-columns:1fr}
+  body.desktop-app .desktop-home-panel{min-height:0}
+}
+@media(max-width:780px){
+  body.desktop-app .desktop-chrome{height:56px;padding:7px 8px 7px 12px}
+  body.desktop-app .app{height:calc(100vh - 56px)}
+  body.desktop-app .desktop-brand-mark{width:34px;height:34px;border-radius:10px}
+  body.desktop-app .desktop-eyebrow{font-size:.56rem;margin-bottom:2px}
+  body.desktop-app .desktop-name{font-size:.95rem}
+  body.desktop-app .desktop-window-btn{width:34px;height:34px;border-radius:9px}
+  body.desktop-app #home-screen{padding:16px}
+}

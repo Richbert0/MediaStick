@@ -1,0 +1,11 @@
+'use strict';
+window.MC=window.MC||{};
+MC.toast=function(msg,type,ms){type=type||'ok';ms=ms||2800;var cont=document.getElementById('mc-toast-cont');if(!cont){cont=document.createElement('div');cont.id='mc-toast-cont';cont.className='mc-toast-cont';document.body.appendChild(cont);}var t=document.createElement('div');t.className='mc-toast '+type;t.textContent=msg;cont.appendChild(t);setTimeout(function(){t.style.opacity='0';setTimeout(function(){t.remove();},300);},ms);};
+MC.fmtTime=function(s){if(!s||isNaN(s))return'0:00';var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);if(h>0)return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');return m+':'+String(sec).padStart(2,'0');};
+MC.fmtSize=function(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';if(b<1073741824)return(b/1048576).toFixed(1)+' MB';return(b/1073741824).toFixed(2)+' GB';};
+MC.esc=function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+MC.api=async function(url,opts){try{var r=await fetch(url,opts||{});return await r.json();}catch(e){return{success:false,error:e.message};}};
+MC.loadLibrary=async function(){var d=await MC.api('/api/library');return d.success?d.data:{movies:[],series:{},music:[],images:[]};};
+MC.thumbUrl=function(item,map){map=map||{};if(item.thumbnail)return'/'+item.thumbnail;if(map[item.path])return'/'+map[item.path];return null;};
+MC.filter=function(list,q){if(!q)return list;q=q.toLowerCase();return list.filter(function(i){return(i.name||'').toLowerCase().includes(q)||(i.display||'').toLowerCase().includes(q);});};
+MC.openPage=function(url,label){if(window.parent!==window){window.parent.postMessage({type:'openPage',url:url,label:label},'*');}else{location.href=url;}};

@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+app
+BUILD.bat
+build_exclude.txt
+electron-main.js
+preload.js
+package.json
+package-lock.json
+build-resources

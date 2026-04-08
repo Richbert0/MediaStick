@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Memory LAN</title>
+<style>
+:root{
+  --bg:#071018;
+  --panel:rgba(13,21,33,.94);
+  --panel-2:rgba(10,16,25,.88);
+  --line:rgba(255,215,0,.14);
+  --line-2:rgba(255,215,0,.28);
+  --gold:#ffd24a;
+  --gold-2:#ffab37;
+  --text:#f8fbff;
+  --muted:#9aabbb;
+  --green:#3ddd8f;
+  --red:#ff7575;
+  --blue:#76ceff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%;background:
+  radial-gradient(circle at top left,rgba(118,206,255,.09),transparent 26%),
+  radial-gradient(circle at top right,rgba(255,171,55,.14),transparent 25%),
+  linear-gradient(180deg,#071018,#050b12 100%);
+  color:var(--text);font-family:"Aptos","Segoe UI",sans-serif}
+body{min-height:100vh;padding:16px}
+.shell{width:min(1180px,100%);margin:0 auto;display:grid;gap:16px}
+.hero,.panel{
+  background:linear-gradient(180deg,rgba(15,25,38,.96),rgba(8,14,22,.94));
+  border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.34)
+}
+.hero{padding:22px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
+  background:rgba(118,206,255,.08);border:1px solid rgba(118,206,255,.16);
+  color:#c9efff;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase
+}
+h1{margin:14px 0 8px;font-size:clamp(1.45rem,3vw,2.3rem);line-height:1.05}
+.hero p{margin:0;color:var(--muted);line-height:1.7;max-width:760px}
+.hero-grid{margin-top:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hero-box{
+  padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.hero-box strong{display:block;color:var(--gold);font-size:.86rem;margin-bottom:6px}
+.hero-box span{display:block;color:var(--muted);font-size:.8rem;line-height:1.55}
+.topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.conn{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-size:.76rem;font-weight:800;
+  border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);color:var(--muted)
+}
+.conn.on{color:var(--green);background:rgba(61,221,143,.12);border-color:rgba(61,221,143,.26)}
+.conn.off{color:var(--red);background:rgba(255,117,117,.12);border-color:rgba(255,117,117,.22)}
+.room-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);font-size:.8rem;color:#dceaf4
+}
+.copy-btn,.btn,.mode-btn{
+  border:none;cursor:pointer;font:inherit;transition:.18s ease
+}
+.copy-btn{
+  padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.08)
+}
+.copy-btn:hover{background:rgba(255,215,0,.11);border-color:rgba(255,215,0,.18)}
+.panel{padding:18px}
+.hidden{display:none!important}
+.stack{display:grid;gap:14px}
+.grid{
+  display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.2fr);gap:16px;align-items:start
+}
+.section-title{margin:0 0 10px;font-size:.9rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.label{display:block;margin-bottom:7px;font-size:.78rem;font-weight:800;color:#dce8f3}
+.input{
+  width:100%;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  color:var(--text);font:inherit;outline:none
+}
+.input:focus{border-color:var(--line-2);box-shadow:0 0 0 3px rgba(255,210,74,.08)}
+.btn{
+  width:100%;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-2));
+  color:#111;font-size:.9rem;font-weight:900
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(255,171,55,.18)}
+.btn.secondary{
+  background:rgba(255,255,255,.05);color:var(--text);border:1px solid rgba(255,255,255,.08)
+}
+.btn.secondary:hover{background:rgba(255,255,255,.08)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn-row .btn{width:auto;min-width:160px}
+.small{font-size:.78rem;color:var(--muted);line-height:1.6}
+.player-list{display:grid;gap:10px}
+.player-card{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.player-name{font-weight:800}
+.player-role{font-size:.74rem;color:var(--muted)}
+.player-card.me{border-color:rgba(255,210,74,.28);box-shadow:inset 0 0 0 1px rgba(255,210,74,.12)}
+.modes{display:flex;gap:10px;flex-wrap:wrap}
+.mode-btn{
+  flex:1;min-width:140px;padding:12px 14px;border-radius:16px;text-align:left;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);color:var(--text)
+}
+.mode-btn strong{display:block;margin-bottom:4px;font-size:.86rem}
+.mode-btn span{display:block;color:var(--muted);font-size:.74rem;line-height:1.5}
+.mode-btn.active{border-color:rgba(255,210,74,.28);background:rgba(255,210,74,.08)}
+.status{
+  padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  color:#dbe8f3;font-size:.88rem;line-height:1.6
+}
+.game-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px
+}
+.score-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px
+}
+.score-card{
+  padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.score-card.active{border-color:rgba(255,210,74,.28);box-shadow:inset 0 0 0 1px rgba(255,210,74,.12)}
+.score-card strong{display:block;font-size:1.4rem;color:var(--gold);margin-top:5px}
+.score-card span{display:block;font-size:.78rem;color:var(--muted)}
+.memory-board{
+  display:grid;gap:10px
+}
+.memory-card{
+  aspect-ratio:1/1;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:
+    linear-gradient(160deg,rgba(16,32,49,.95),rgba(8,15,23,.95));
+  color:var(--text);display:flex;align-items:center;justify-content:center;padding:10px;text-align:center;
+  font-weight:900;letter-spacing:.04em;cursor:pointer;transition:.18s ease;min-height:72px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)
+}
+.memory-card:hover:not(:disabled){transform:translateY(-2px);border-color:rgba(255,210,74,.26)}
+.memory-card.revealed{
+  background:linear-gradient(180deg,rgba(255,210,74,.18),rgba(255,171,55,.12));border-color:rgba(255,210,74,.35);color:#111
+}
+.memory-card.matched{
+  background:linear-gradient(180deg,rgba(61,221,143,.18),rgba(61,221,143,.1));border-color:rgba(61,221,143,.28);color:#e9fff2;cursor:default
+}
+.memory-card:disabled{cursor:default}
+.memory-face{font-size:clamp(.7rem,1vw,.92rem);line-height:1.25}
+.memory-back{
+  width:100%;height:100%;border-radius:14px;border:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.05));font-size:1.05rem;color:rgba(255,255,255,.5)
+}
+.foot-note{font-size:.76rem;color:var(--muted);line-height:1.6}
+@media (max-width:980px){
+  .hero-grid,.score-grid,.grid{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  body{padding:12px}
+  .hero,.panel{border-radius:20px}
+  .hero{padding:18px}
+  .panel{padding:16px}
+  .btn-row .btn{width:100%}
+  .modes{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <section class="hero">
+    <div class="topbar">
+      <span class="eyebrow">LAN Match</span>
+      <span class="conn off" id="conn-badge">Nicht verbunden</span>
+    </div>
+    <h1>Memory fuer zwei Spieler im selben Netzwerk.</h1>
+    <p>Ein Host erstellt den Raum, der zweite Spieler tritt per Code bei. Karten, Punkte, Spielzug und Siegstatus werden synchron gehalten und bleiben auf kleinen wie grossen Bildschirmen gut lesbar.</p>
+    <div class="hero-grid">
+      <div class="hero-box">
+        <strong>Abwechselnde Zuege</strong>
+        <span>Nur der aktive Spieler darf Karten aufdecken. Treffer bringen Punkte und einen weiteren Versuch.</span>
+      </div>
+      <div class="hero-box">
+        <strong>Synchrones Board</strong>
+        <span>Der Host verwaltet das Match und uebertraegt jeden Karten- und Punktestand an alle Teilnehmer.</span>
+      </div>
+      <div class="hero-box">
+        <strong>Responsive Layout</strong>
+        <span>4x4 und 4x6 Modi mit skalierenden Karten, grosser Statusanzeige und Touch-freundlichen Abstaenden.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel stack" id="screen-join">
+    <div>
+      <h2 class="section-title">Raum betreten</h2>
+      <div class="small">Der Host laesst die Raum-ID leer und erstellt einen neuen Raum. Der zweite Spieler traegt den Code ein und tritt bei.</div>
+    </div>
+    <div class="grid">
+      <div class="stack">
+        <div>
+          <label class="label" for="name-input">Dein Name</label>
+          <input class="input" id="name-input" maxlength="20" placeholder="Zum Beispiel Alex">
+        </div>
+        <div>
+          <label class="label" for="room-input">Raum-ID</label>
+          <input class="input" id="room-input" maxlength="24" placeholder="Leer lassen, um einen Raum zu erstellen">
+        </div>
+        <button class="btn" type="button" onclick="joinGame()">Spiel starten</button>
+      </div>
+      <div class="status" id="join-status">Verbinde dich mit dem LAN-Server und erstelle oder betrete dann einen Match-Raum.</div>
+    </div>
+  </section>
+
+  <section class="panel stack hidden" id="screen-lobby">
+    <div class="topbar">
+      <div class="room-pill">
+        Raum:
+        <strong id="room-code">-</strong>
+        <button class="copy-btn" type="button" onclick="copyRoom()">Code kopieren</button>
+      </div>
+      <div class="small" id="lobby-tip">Warte auf einen zweiten Spieler.</div>
+    </div>
+    <div class="grid">
+      <div class="stack">
+        <div>
+          <h2 class="section-title">Spieler</h2>
+          <div class="player-list" id="player-list"></div>
+        </div>
+        <div class="status" id="lobby-status">Der Host startet das Match, sobald zwei Spieler im Raum sind.</div>
+      </div>
+      <div class="stack">
+        <div>
+          <h2 class="section-title">Spielfeld</h2>
+          <div class="modes">
+            <button class="mode-btn active" type="button" id="mode-4x4" onclick="setMode('4x4')">
+              <strong>Duel 4x4</strong>
+              <span>8 Paare, kompakt und ideal fuer jedes Display.</span>
+            </button>
+            <button class="mode-btn" type="button" id="mode-4x6" onclick="setMode('4x6')">
+              <strong>Marathon 4x6</strong>
+              <span>12 Paare fuer laengere Matches mit mehr Taktik.</span>
+            </button>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" type="button" id="start-btn" onclick="startMatch()" disabled>Match starten</button>
+        </div>
+        <div class="foot-note">Nur der Host startet das Match. Nach Spielende kann der Host dieselbe Konfiguration neu starten.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel stack hidden" id="screen-game">
+    <div class="game-head">
+      <div class="stack" style="gap:10px;min-width:min(100%,460px)">
+        <div class="room-pill">
+          Raum:
+          <strong id="game-room-code">-</strong>
+          <button class="copy-btn" type="button" onclick="copyRoom()">Code kopieren</button>
+        </div>
+        <div class="status" id="game-status">Warte auf den Match-Start.</div>
+      </div>
+      <div class="small" id="turn-note">Aktiver Spieler deckt zwei Karten auf.</div>
+    </div>
+
+    <div class="score-grid" id="score-grid"></div>
+
+    <div class="status" id="game-meta">Zuege: 0 · Offene Karten: 0</div>
+
+    <div class="memory-board" id="memory-board"></div>
+
+    <div class="btn-row">
+      <button class="btn" type="button" id="restart-btn" onclick="restartMatch()">Neustart</button>
+      <button class="btn secondary" type="button" onclick="backToLobby()">Zur Lobby</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const WS_PORT = 8765;
+const CARD_SETS = {
+  '4x4': { rows: 4, cols: 4, pairs: 8, label: 'Duel 4x4' },
+  '4x6': { rows: 6, cols: 4, pairs: 12, label: 'Marathon 4x6' }
+};
+const SYMBOLS = ['NOVA','WAVE','BOLT','LEAF','FIRE','STAR','GLOW','ECHO','PULSE','PIXEL','COMET','AURA'];
+
+let ws = null;
+let wsReady = false;
+let myId = '';
+let myName = '';
+let roomId = '';
+let players = [];
+let selectedMode = '4x4';
+let state = null;
+
+function esc(value){
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function hostId(){
+  return players[0] ? players[0].id : '';
+}
+
+function isHost(){
+  return myId && hostId() === myId;
+}
+
+function showScreen(id){
+  ['join','lobby','game'].forEach(function(name){
+    document.getElementById('screen-' + name).classList.toggle('hidden', name !== id);
+  });
+}
+
+function setConnection(status, online){
+  const badge = document.getElementById('conn-badge');
+  badge.textContent = status;
+  badge.className = 'conn ' + (online ? 'on' : 'off');
+}
+
+function connect(callback){
+  const host = (location.hostname || '127.0.0.1').trim() || '127.0.0.1';
+  ws = new WebSocket('ws://' + host + ':' + WS_PORT);
+
+  ws.onopen = function(){
+    wsReady = true;
+    setConnection('Verbunden', true);
+    document.getElementById('join-status').textContent = 'Verbunden. Du kannst jetzt einen Raum erstellen oder einem vorhandenen Raum beitreten.';
+    if (callback) callback();
+  };
+
+  ws.onclose = function(){
+    wsReady = false;
+    setConnection('Getrennt', false);
+  };
+
+  ws.onerror = function(){
+    setConnection('Fehler', false);
+  };
+
+  ws.onmessage = function(event){
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (_) {
+      return;
+    }
+    handleMessage(data);
+  };
+}
+
+function send(payload){
+  if (ws && wsReady) {
+    ws.send(JSON.stringify(payload));
+  }
+}
+
+function normalizePlayers(list){
+  players = (list || []).map(function(player){
+    return {
+      id: player.id || player,
+      name: player.name || player.id || 'Spieler'
+    };
+  });
+  renderLobbyPlayers();
+  renderScoreboard();
+  syncRoomLabels();
+  syncLobbyControls();
+}
+
+function syncRoomLabels(){
+  document.getElementById('room-code').textContent = roomId || '-';
+  document.getElementById('game-room-code').textContent = roomId || '-';
+}
+
+function syncLobbyControls(){
+  const enoughPlayers = players.length >= 2;
+  const startBtn = document.getElementById('start-btn');
+  startBtn.disabled = !(isHost() && enoughPlayers);
+  startBtn.textContent = isHost()
+    ? (enoughPlayers ? 'Match starten' : 'Warte auf Spieler')
+    : 'Host startet das Match';
+  document.getElementById('lobby-tip').textContent = isHost()
+    ? (enoughPlayers ? 'Zwei Spieler sind bereit. Du kannst starten.' : 'Teile den Raumcode mit dem zweiten Spieler.')
+    : 'Der Host startet das Match, sobald ihr komplett seid.';
+}
+
+function renderLobbyPlayers(){
+  const list = document.getElementById('player-list');
+  if (!players.length) {
+    list.innerHTML = '<div class="status">Noch keine Spieler im Raum.</div>';
+    return;
+  }
+
+  list.innerHTML = players.map(function(player, index){
+    const me = player.id === myId ? ' me' : '';
+    const role = index === 0 ? 'Host' : 'Mitspieler';
+    return ''
+      + '<div class="player-card' + me + '">'
+      +   '<div>'
+      +     '<div class="player-name">' + esc(player.name) + (player.id === myId ? ' (du)' : '') + '</div>'
+      +     '<div class="player-role">' + role + '</div>'
+      +   '</div>'
+      +   '<span class="small">' + (index === 0 ? 'Startet das Match' : 'Tritt dem Raum bei') + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function setMode(mode){
+  selectedMode = mode in CARD_SETS ? mode : '4x4';
+  document.getElementById('mode-4x4').classList.toggle('active', selectedMode === '4x4');
+  document.getElementById('mode-4x6').classList.toggle('active', selectedMode === '4x6');
+}
+
+function joinGame(){
+  myName = (document.getElementById('name-input').value || '').trim();
+  const targetRoom = (document.getElementById('room-input').value || '').trim();
+
+  if (!myName) {
+    document.getElementById('join-status').textContent = 'Bitte zuerst einen Spielernamen eingeben.';
+    return;
+  }
+
+  const afterConnect = function(){
+    send({ action: 'global_chat_join', name: myName });
+    if (targetRoom) {
+      send({ action: 'join_room', roomId: targetRoom, maxPlayers: 2 });
+    } else {
+      send({ action: 'create_room', game: 'memory-lan' });
+    }
+  };
+
+  if (wsReady) {
+    afterConnect();
+  } else {
+    connect(afterConnect);
+  }
+}
+
+function makeSnapshot(mode){
+  const config = CARD_SETS[mode] || CARD_SETS['4x4'];
+  const deck = shuffle(SYMBOLS.slice(0, config.pairs).reduce(function(list, value){
+    list.push(value, value);
+    return list;
+  }, []));
+  const scores = {};
+  players.forEach(function(player){ scores[player.id] = 0; });
+  return {
+    phase: 'game',
+    mode: mode,
+    rows: config.rows,
+    cols: config.cols,
+    cards: deck.map(function(value){ return { value: value, matched: false }; }),
+    revealed: [],
+    scores: scores,
+    turn: hostId(),
+    busy: false,
+    moves: 0,
+    winner: '',
+    message: 'Host beginnt. Finde das erste Paar.'
+  };
+}
+
+function startMatch(){
+  if (!isHost() || players.length < 2) return;
+  state = makeSnapshot(selectedMode);
+  showScreen('game');
+  renderGame();
+  send({
+    action: 'game_event',
+    event: 'memory_start',
+    payload: { snapshot: state, players: players },
+    stateUpdate: { snapshot: state }
+  });
+}
+
+function restartMatch(){
+  if (!isHost()) return;
+  state = makeSnapshot(selectedMode);
+  renderGame();
+  send({
+    action: 'game_event',
+    event: 'memory_start',
+    payload: { snapshot: state, players: players },
+    stateUpdate: { snapshot: state }
+  });
+}
+
+function backToLobby(){
+  showScreen('lobby');
+  renderLobbyPlayers();
+  syncLobbyControls();
+}
+
+function handleMessage(data){
+  if (data.action === 'welcome') {
+    myId = data.id;
+    return;
+  }
+
+  if (data.action === 'room_created') {
+    roomId = data.roomId;
+    normalizePlayers([{ id: myId, name: myName }]);
+    showScreen('lobby');
+    document.getElementById('lobby-status').textContent = 'Raum erstellt. Teile den Code mit dem zweiten Spieler.';
+    return;
+  }
+
+  if (data.action === 'room_joined') {
+    roomId = data.roomId;
+    normalizePlayers(data.players || players);
+    showScreen(state && state.phase === 'game' ? 'game' : 'lobby');
+    document.getElementById('lobby-status').textContent = players.length >= 2
+      ? 'Beide Spieler sind im Raum.'
+      : 'Warte auf den zweiten Spieler.';
+    return;
+  }
+
+  if (data.action === 'room_state') {
+    roomId = data.roomId || roomId;
+    normalizePlayers(data.players || players);
+    if (data.state && data.state.snapshot) {
+      state = data.state.snapshot;
+      selectedMode = state.mode || selectedMode;
+      setMode(selectedMode);
+      showScreen('game');
+      renderGame();
+    } else {
+      showScreen('lobby');
+    }
+    return;
+  }
+
+  if (data.action === 'room_error') {
+    document.getElementById('join-status').textContent = data.message || 'Raum konnte nicht geoeffnet werden.';
+    return;
+  }
+
+  if (data.action === 'player_left') {
+    players = players.filter(function(player){ return player.id !== data.playerId; });
+    renderLobbyPlayers();
+    renderScoreboard();
+    syncLobbyControls();
+    if (state && state.phase === 'game') {
+      state.message = 'Ein Spieler hat den Raum verlassen.';
+      renderGame();
+    }
+    return;
+  }
+
+  if (data.action === 'game_event') {
+    handleGameEvent(data.event, data.payload || {});
+  }
+}
+
+function handleGameEvent(eventName, payload){
+  if (eventName === 'memory_start') {
+    normalizePlayers(payload.players || players);
+    state = payload.snapshot || null;
+    selectedMode = state && state.mode ? state.mode : selectedMode;
+    setMode(selectedMode);
+    showScreen('game');
+    renderGame();
+    return;
+  }
+
+  if (eventName === 'memory_state') {
+    state = payload.snapshot || state;
+    renderGame();
+    return;
+  }
+
+  if (eventName === 'memory_flip' && isHost()) {
+    hostFlip(payload.playerId, payload.index);
+  }
+}
+
+function copyRoom(){
+  if (!roomId) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(roomId).then(function(){
+      document.getElementById('lobby-status').textContent = 'Raumcode kopiert: ' + roomId;
+    }).catch(function(){
+      document.getElementById('lobby-status').textContent = 'Raumcode: ' + roomId;
+    });
+  } else {
+    document.getElementById('lobby-status').textContent = 'Raumcode: ' + roomId;
+  }
+}
+
+function shuffle(array){
+  const list = array.slice();
+  for (let i = list.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = list[i];
+    list[i] = list[j];
+    list[j] = tmp;
+  }
+  return list;
+}
+
+function cardIsRevealed(index){
+  return !!(state && state.revealed && state.revealed.indexOf(index) >= 0);
+}
+
+function currentPlayer(){
+  return players.find(function(player){ return player.id === (state ? state.turn : ''); }) || null;
+}
+
+function otherPlayerId(playerId){
+  const other = players.find(function(player){ return player.id !== playerId; });
+  return other ? other.id : playerId;
+}
+
+function flipCard(index){
+  if (!state || state.phase !== 'game' || state.winner) return;
+  if (state.busy || state.turn !== myId) return;
+
+  if (isHost()) {
+    hostFlip(myId, index);
+  } else {
+    send({ action: 'game_event', event: 'memory_flip', payload: { playerId: myId, index: index } });
+  }
+}
+
+function hostFlip(playerId, index){
+  if (!state || state.phase !== 'game' || state.winner) return;
+  if (state.busy || state.turn !== playerId) return;
+  if (!state.cards[index] || state.cards[index].matched || cardIsRevealed(index)) return;
+
+  state.revealed = state.revealed.concat(index);
+  if (state.revealed.length === 1) {
+    state.message = nameFor(playerId) + ' hat die erste Karte aufgedeckt.';
+    pushState();
+    return;
+  }
+
+  state.moves += 1;
+  state.busy = true;
+  state.message = 'Pruefe Paar fuer ' + nameFor(playerId) + '...';
+  pushState();
+
+  const revealed = state.revealed.slice();
+  setTimeout(function(){
+    const first = revealed[0];
+    const second = revealed[1];
+    if (!state || !state.cards[first] || !state.cards[second]) return;
+
+    if (state.cards[first].value === state.cards[second].value) {
+      state.cards[first].matched = true;
+      state.cards[second].matched = true;
+      state.scores[playerId] = (state.scores[playerId] || 0) + 1;
+      state.revealed = [];
+      state.busy = false;
+      if (allMatched()) {
+        state.winner = winnerId();
+        state.message = winnerText();
+      } else {
+        state.message = nameFor(playerId) + ' hat ein Paar gefunden und bleibt am Zug.';
+      }
+      pushState();
+      return;
+    }
+
+    state.revealed = [];
+    state.busy = false;
+    state.turn = otherPlayerId(playerId);
+    state.message = 'Kein Paar. ' + nameFor(state.turn) + ' ist am Zug.';
+    pushState();
+  }, 850);
+}
+
+function allMatched(){
+  return state.cards.every(function(card){ return card.matched; });
+}
+
+function winnerId(){
+  const ids = Object.keys(state.scores);
+  if (ids.length < 2) return ids[0] || '';
+  if (state.scores[ids[0]] === state.scores[ids[1]]) return '';
+  return state.scores[ids[0]] > state.scores[ids[1]] ? ids[0] : ids[1];
+}
+
+function winnerText(){
+  const ids = Object.keys(state.scores);
+  if (ids.length < 2 || state.scores[ids[0]] === state.scores[ids[1]]) {
+    return 'Unentschieden. Beide Spieler beenden das Match gleichauf.';
+  }
+  return nameFor(state.winner) + ' gewinnt das Match.';
+}
+
+function nameFor(playerId){
+  const player = players.find(function(entry){ return entry.id === playerId; });
+  return player ? player.name : 'Spieler';
+}
+
+function pushState(){
+  renderGame();
+  send({
+    action: 'game_event',
+    event: 'memory_state',
+    payload: { snapshot: state },
+    stateUpdate: { snapshot: state }
+  });
+}
+
+function renderScoreboard(){
+  const target = document.getElementById('score-grid');
+  if (!players.length || !state) {
+    target.innerHTML = '';
+    return;
+  }
+
+  target.innerHTML = players.map(function(player){
+    const active = state.turn === player.id && !state.winner ? ' active' : '';
+    const score = state.scores && typeof state.scores[player.id] === 'number' ? state.scores[player.id] : 0;
+    return ''
+      + '<div class="score-card' + active + '">'
+      +   '<span>' + esc(player.name) + (player.id === myId ? ' (du)' : '') + '</span>'
+      +   '<strong>' + score + '</strong>'
+      +   '<span>' + (player.id === hostId() ? 'Host' : 'Mitspieler') + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function renderGame(){
+  if (!state) return;
+  renderScoreboard();
+
+  const meta = [];
+  meta.push('Zuege: ' + state.moves);
+  meta.push('Offene Karten: ' + state.revealed.length);
+  meta.push('Modus: ' + (CARD_SETS[state.mode] ? CARD_SETS[state.mode].label : state.mode));
+  document.getElementById('game-meta').textContent = meta.join(' · ');
+
+  const current = currentPlayer();
+  const turnText = state.winner
+    ? state.message
+    : (state.turn === myId ? 'Du bist am Zug.' : (current ? current.name + ' ist am Zug.' : 'Warte auf den aktiven Spieler.'));
+  document.getElementById('game-status').textContent = turnText;
+  document.getElementById('turn-note').textContent = state.message || 'Decke zwei Karten auf.';
+  document.getElementById('restart-btn').disabled = !isHost();
+  document.getElementById('restart-btn').textContent = isHost() ? 'Neustart' : 'Nur Host kann neu starten';
+
+  const board = document.getElementById('memory-board');
+  board.style.gridTemplateColumns = 'repeat(' + state.cols + ', minmax(0, 1fr))';
+  board.innerHTML = state.cards.map(function(card, index){
+    const revealed = card.matched || cardIsRevealed(index);
+    const classes = ['memory-card'];
+    if (revealed) classes.push('revealed');
+    if (card.matched) classes.push('matched');
+
+    return ''
+      + '<button class="' + classes.join(' ') + '" type="button" data-index="' + index + '"'
+      +   (state.busy || state.winner || state.turn !== myId || card.matched || cardIsRevealed(index) ? ' disabled' : '')
+      + '>'
+      +   (revealed
+            ? '<span class="memory-face">' + esc(card.value) + '</span>'
+            : '<span class="memory-back">?</span>')
+      + '</button>';
+  }).join('');
+
+  Array.prototype.forEach.call(board.querySelectorAll('.memory-card'), function(button){
+    button.addEventListener('click', function(){
+      flipCard(parseInt(button.getAttribute('data-index'), 10));
+    });
+  });
+}
+
+setMode('4x4');
+showScreen('join');
+setConnection('Nicht verbunden', false);
+</script>
+</body>
+</html>

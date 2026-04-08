@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quiz Multiplayer</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}:root{--g:#FFD700;--g2:#FFA500;--bg:#0a0a0a;--card:#1a1a2e;--red:#e74c3c;--green:#2ecc71}
+body{background:var(--bg);color:#fff;font-family:-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px}
+h1{font-size:1.2rem;font-weight:900;color:var(--g);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+.box{background:var(--card);border:1px solid rgba(255,215,0,.2);border-radius:16px;padding:18px;width:100%;max-width:480px;margin-bottom:12px}
+.box-t{font-size:.78rem;font-weight:800;color:var(--g);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.inp{width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,215,0,.2);border-radius:9px;color:#fff;font-size:.88rem;outline:none;font-family:inherit}
+.inp:focus{border-color:var(--g)}
+.btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--g),var(--g2));border:none;border-radius:10px;color:#000;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:8px;transition:.2s}
+.btn:hover{transform:scale(1.02)}
+.btn-ghost{background:rgba(255,255,255,.07);color:#888;border:1.5px solid rgba(255,255,255,.1);border-radius:10px}
+.btn-ghost:hover{border-color:var(--g);color:var(--g);background:rgba(255,215,0,.07)}
+.players{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.pchip{padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:700;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.pchip.me{border-color:rgba(255,215,0,.4);color:var(--g)}
+.q-text{font-size:1rem;font-weight:700;margin-bottom:16px;line-height:1.5;color:#fff}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ans-btn{padding:12px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;transition:.2s;text-align:left;font-family:inherit}
+.ans-btn:hover:not(:disabled){border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.08);color:var(--g)}
+.ans-btn.correct{background:rgba(46,204,113,.15);border-color:var(--green);color:var(--green)}
+.ans-btn.wrong{background:rgba(231,76,60,.12);border-color:var(--red);color:var(--red)}
+.ans-btn:disabled{cursor:default;opacity:.7}
+.score-list{display:flex;flex-direction:column;gap:6px}
+.s-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:9px}
+.s-name{flex:1;font-weight:700;font-size:.85rem}
+.s-sc{font-weight:900;color:var(--g)}
+.prog-bar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-bottom:12px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--g),var(--g2));border-radius:2px;transition:width .5s}
+.status{font-size:.75rem;color:#888;text-align:center;margin-bottom:8px}
+#screen-join,#screen-lobby,#screen-game,#screen-end{display:none}
+#screen-join{display:flex;flex-direction:column;align-items:center;width:100%;max-width:480px}
+.ws-st{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700;background:rgba(231,76,60,.12);color:var(--red);border:1px solid rgba(231,76,60,.3);margin-bottom:10px}
+.ws-st.on{background:rgba(46,204,113,.12);color:var(--green);border-color:rgba(46,204,113,.3)}
+</style></head>
+<body>
+<h1>❓ Multiplayer Quiz</h1>
+
+<div id="screen-join" style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:480px">
+  <span class="ws-st" id="ws-st">● Verbinde…</span>
+  <div class="box">
+    <div class="box-t">Mitspielen</div>
+    <input class="inp" id="ni" placeholder="Dein Name" maxlength="20" style="margin-bottom:8px">
+    <input class="inp" id="ri" placeholder="Raum-ID (leer = neu erstellen)" maxlength="20">
+    <button class="btn" onclick="doJoin()">▶ Beitreten / Erstellen</button>
+  </div>
+</div>
+
+<div id="screen-lobby" style="display:none;flex-direction:column;align-items:center;width:100%;max-width:480px">
+  <div class="box">
+    <div class="box-t">Lobby · Raum: <span id="room-id-lbl" style="color:#fff"></span></div>
+    <div class="players" id="lobby-players"></div>
+    <div class="status" id="lobby-st">Warte auf weitere Spieler…</div>
+    <button class="btn" id="start-btn" onclick="doStart()" style="display:none">🚀 Quiz starten</button>
+  </div>
+</div>
+
+<div id="screen-game" style="display:none;flex-direction:column;align-items:center;width:100%;max-width:480px">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:.75rem;color:#888" id="q-num">Frage 1/10</span>
+      <span style="font-size:.75rem;color:var(--g);font-weight:800" id="q-timer">10s</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="q-prog" style="width:100%"></div></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="answers" id="q-answers"></div>
+  </div>
+  <div class="box">
+    <div class="box-t">Punkte</div>
+    <div class="score-list" id="live-scores"></div>
+  </div>
+</div>
+
+<div id="screen-end" style="display:none;flex-direction:column;align-items:center;width:100%;max-width:480px">
+  <div class="box" style="text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:10px">🏆</div>
+    <div style="font-size:1.3rem;font-weight:900;color:var(--g);margin-bottom:4px" id="winner-name"></div>
+    <div style="font-size:.82rem;color:#888;margin-bottom:16px">gewinnt das Quiz!</div>
+    <div class="score-list" id="final-scores"></div>
+    <button class="btn" style="margin-top:14px" onclick="location.reload()">🔄 Nochmal</button>
+  </div>
+</div>
+
+<script>
+var WS_PORT=8765,ws=null,wsReady=false,myName='',myId=null,roomId=null,isHost=false;
+var scores={},players=[],qIdx=0,qTimer=null,answered=false,totalQ=10;
+var QUESTIONS=[
+  {q:'Was ist die Hauptstadt von Deutschland?',a:['Berlin','Hamburg','München','Frankfurt'],c:0},
+  {q:'Wie viele Planeten hat unser Sonnensystem?',a:['7','8','9','10'],c:1},
+  {q:'In welchem Jahr fiel die Berliner Mauer?',a:['1985','1987','1989','1991'],c:2},
+  {q:'Welches Tier ist das größte der Welt?',a:['Elefant','Blauwal','Girafe','Nashorn'],c:1},
+  {q:'Was ist H2O?',a:['Sauerstoff','Wasserstoff','Wasser','Salz'],c:2},
+  {q:'Wie viele Seiten hat ein Hexagon?',a:['5','6','7','8'],c:1},
+  {q:'Wer schrieb Faust?',a:['Schiller','Goethe','Kafka','Rilke'],c:1},
+  {q:'Was ist die schnellste Landrette der Welt?',a:['Löwe','Gepard','Greyhound','Pferd'],c:1},
+  {q:'Wie viele Farben hat ein Regenbogen?',a:['5','6','7','8'],c:2},
+  {q:'Was ist Pi (gerundet auf 2 Stellen)?',a:['3.12','3.14','3.16','3.18'],c:1},
+  {q:'In welchem Kontinent liegt Ägypten?',a:['Asien','Amerika','Afrika','Europa'],c:2},
+  {q:'Welches Element hat das Symbol "Au"?',a:['Silber','Kupfer','Gold','Platin'],c:2},
+];
+
+function showScreen(id){['join','lobby','game','end'].forEach(s=>document.getElementById('screen-'+s).style.display='none');document.getElementById('screen-'+id).style.display='flex';document.getElementById('screen-'+id).style.flexDirection='column';}
+function connect(cb){
+  ws=new WebSocket('ws://'+((location.hostname||'127.0.0.1').trim()||'127.0.0.1')+':'+WS_PORT);
+  ws.onopen=function(){wsReady=true;document.getElementById('ws-st').className='ws-st on';document.getElementById('ws-st').textContent='● Verbunden';if(cb)cb();};
+  ws.onclose=function(){wsReady=false;document.getElementById('ws-st').textContent='● Getrennt';};
+  ws.onerror=function(){document.getElementById('ws-st').textContent='● Fehler';};
+  ws.onmessage=function(e){try{handleMsg(JSON.parse(e.data));}catch{}};
+}
+function send(obj){if(ws&&wsReady)ws.send(JSON.stringify(obj));}
+function handleMsg(d){
+  if(d.action==='welcome'){myId=d.id;}
+  if(d.action==='room_created'){roomId=d.roomId;isHost=true;document.getElementById('room-id-lbl').textContent=roomId;document.getElementById('start-btn').style.display='block';showScreen('lobby');updateLobby([{id:myId,name:myName}]);}
+  if(d.action==='room_joined'){roomId=d.roomId;document.getElementById('room-id-lbl').textContent=roomId;showScreen('lobby');updateLobby(d.players||[]);}
+  if(d.action==='room_error'){alert(d.message);}
+  if(d.action==='game_event'){
+    var ev=d.event,pl=d.payload;
+    if(ev==='quiz_start'){qIdx=0;scores={};(pl.players||[]).forEach(p=>scores[p.id]={name:p.name,sc:0});totalQ=pl.total||QUESTIONS.length;showScreen('game');showQuestion(pl.questions||QUESTIONS);}
+    if(ev==='quiz_answer'){if(pl.playerId in scores)scores[pl.playerId].sc+=pl.correct?pl.points:0;renderLiveScores();}
+    if(ev==='quiz_next'){answered=false;clearTimeout(qTimer);showQuestionIdx(pl.idx,pl.questions||QUESTIONS);}
+    if(ev==='quiz_end'){showEnd(pl.scores||scores);}
+  }
+}
+function updateLobby(plist){
+  players=plist;
+  document.getElementById('lobby-players').innerHTML=plist.map(p=>'<span class="pchip'+(p.id===myId?' me':'')+'">'+esc(p.name||p.id)+'</span>').join('');
+  document.getElementById('lobby-st').textContent=plist.length+' Spieler · '+(isHost?'Du bist Host':'Warte auf Host…');
+}
+function doJoin(){
+  myName=(document.getElementById('ni').value||'').trim();
+  var rid=(document.getElementById('ri').value||'').trim();
+  if(!myName){alert('Name eingeben!');return;}
+  connect(function(){
+    send({action:'global_chat_join',name:myName});
+    if(rid){send({action:'join_room',roomId:rid});}else{send({action:'create_room',game:'quiz'});}
+  });
+}
+function doStart(){
+  if(!isHost)return;
+  var shuffled=QUESTIONS.sort(()=>Math.random()-.5).slice(0,Math.min(10,QUESTIONS.length));
+  send({action:'game_event',event:'quiz_start',payload:{players:players,total:shuffled.length,questions:shuffled}});
+}
+var currentQs=[];
+function showQuestion(qs){currentQs=qs;showQuestionIdx(0,qs);}
+function showQuestionIdx(idx,qs){
+  qIdx=idx;if(idx>=qs.length){showEnd(scores);return;}
+  var q=qs[idx];answered=false;
+  document.getElementById('q-num').textContent='Frage '+(idx+1)+'/'+qs.length;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-answers').innerHTML=q.a.map((a,i)=>'<button class="ans-btn" onclick="answerQ('+i+','+q.c+')">'+esc(a)+'</button>').join('');
+  var t=15,prog=document.getElementById('q-prog');
+  document.getElementById('q-timer').textContent=t+'s';prog.style.width='100%';
+  clearTimeout(qTimer);
+  qTimer=setInterval(function(){
+    t--;document.getElementById('q-timer').textContent=t+'s';prog.style.width=(t/15*100)+'%';
+    if(t<=0){clearInterval(qTimer);if(!answered){answered=true;revealAnswer(q.c);}}
+  },1000);
+}
+function answerQ(idx,correct){
+  if(answered)return;answered=true;clearInterval(qTimer);
+  var btns=document.querySelectorAll('.ans-btn');
+  btns.forEach((b,i)=>{b.disabled=true;if(i===correct)b.classList.add('correct');else if(i===idx)b.classList.add('wrong');});
+  var pts=idx===correct?Math.max(10,(+document.getElementById('q-timer').textContent)*10):0;
+  if(myId in scores)scores[myId].sc+=pts;
+  send({action:'game_event',event:'quiz_answer',payload:{playerId:myId,correct:idx===correct,points:pts}});
+  renderLiveScores();
+  setTimeout(function(){
+    if(isHost){
+      var ni=qIdx+1;
+      if(ni>=currentQs.length)send({action:'game_event',event:'quiz_end',payload:{scores}});
+      else send({action:'game_event',event:'quiz_next',payload:{idx:ni,questions:currentQs}});
+    }
+  },2000);
+}
+function revealAnswer(correct){document.querySelectorAll('.ans-btn').forEach((b,i)=>{b.disabled=true;if(i===correct)b.classList.add('correct');});}
+function renderLiveScores(){
+  document.getElementById('live-scores').innerHTML=Object.values(scores).sort((a,b)=>b.sc-a.sc).map(s=>'<div class="s-row"><span class="s-name">'+esc(s.name)+'</span><span class="s-sc">'+s.sc+'P</span></div>').join('');
+}
+function showEnd(sc2){
+  showScreen('end');clearInterval(qTimer);
+  var sorted=Object.values(sc2).sort((a,b)=>b.sc-a.sc);
+  document.getElementById('winner-name').textContent=sorted[0]?sorted[0].name:'?';
+  document.getElementById('final-scores').innerHTML=sorted.map((s,i)=>'<div class="s-row"><span style="color:var(--g);font-weight:900;min-width:24px">'+(i+1)+'.</span><span class="s-name">'+esc(s.name)+'</span><span class="s-sc">'+s.sc+'P</span></div>').join('');
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+</script></body></html>

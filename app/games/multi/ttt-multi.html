@@ -1,0 +1,124 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TicTacToe – LAN</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}:root{--g:#FFD700;--bg:#0a0a0a;--card:#1a1a2e;--red:#e74c3c;--green:#2ecc71}
+body{background:var(--bg);color:#fff;font-family:-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:16px;user-select:none}
+h1{font-size:1.2rem;font-weight:900;color:var(--g);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+.box{background:var(--card);border:1px solid rgba(255,215,0,.2);border-radius:16px;padding:18px;width:100%;max-width:400px;margin-bottom:12px}
+.btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--g),#FFA500);border:none;border-radius:10px;color:#000;font-size:.9rem;font-weight:800;cursor:pointer;margin-top:8px;transition:.2s}
+.btn:hover{transform:scale(1.02)}
+.inp{width:100%;padding:10px 14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,215,0,.2);border-radius:9px;color:#fff;font-size:.88rem;outline:none;font-family:inherit;margin-bottom:6px}
+.inp:focus{border-color:var(--g)}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:300px;margin:0 auto}
+.cell{aspect-ratio:1;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.08);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;transition:.2s;-webkit-tap-highlight-color:transparent}
+.cell:hover:not(.taken){border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.06)}
+.cell.X{color:var(--g)}
+.cell.O{color:#60a5fa}
+.cell.win{background:rgba(46,204,113,.12);border-color:var(--green)}
+.status{text-align:center;margin:10px 0;font-size:.88rem;min-height:24px}
+.status.your{color:var(--g);font-weight:700}
+.status.wait{color:#888}
+.ws-st{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700;background:rgba(231,76,60,.12);color:var(--red);border:1px solid rgba(231,76,60,.3)}
+.ws-st.on{background:rgba(46,204,113,.12);color:var(--green);border-color:rgba(46,204,113,.3)}
+#screen-join,#screen-lobby,#screen-game{display:none}
+#screen-join{display:flex;flex-direction:column;align-items:center;width:100%;max-width:400px}
+</style></head>
+<body>
+<h1>✖️ TicTacToe</h1>
+
+<div id="screen-join">
+  <span class="ws-st" id="ws-st">● Verbinde…</span>
+  <div class="box" style="margin-top:10px">
+    <div style="font-size:.78rem;font-weight:800;color:var(--g);margin-bottom:10px">MITSPIELEN</div>
+    <input class="inp" id="ni" placeholder="Dein Name" maxlength="20">
+    <input class="inp" id="ri" placeholder="Raum-ID (leer = neu)">
+    <button class="btn" onclick="doJoin()">▶ Starten</button>
+  </div>
+</div>
+
+<div id="screen-lobby">
+  <div class="box">
+    <div style="font-size:.78rem;font-weight:800;color:var(--g);margin-bottom:8px">LOBBY · Raum: <span id="rid"></span></div>
+    <div id="lplayers" style="margin-bottom:8px;font-size:.82rem;color:#888"></div>
+    <div id="lst" style="font-size:.78rem;color:#666">Warte auf Gegner…</div>
+  </div>
+</div>
+
+<div id="screen-game">
+  <div class="box">
+    <div class="status" id="gst"></div>
+    <div class="board" id="board"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:.8rem;padding:0 10px">
+      <span>Du: <b id="my-sym" style="color:var(--g)"></b> <b id="my-sc">0</b></span>
+      <span>Gegner: <b id="op-sym" style="color:#60a5fa"></b> <b id="op-sc">0</b></span>
+    </div>
+  </div>
+  <button class="btn" style="max-width:300px" onclick="requestRematch()">🔄 Nochmal</button>
+</div>
+
+<script>
+var ws=null,wsReady=false,myId=null,myName='',roomId=null,mySym='',opSym='',myTurn=false;
+var board=Array(9).fill(''),myScore=0,opScore=0,gameOver=false;
+var WINS=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+function show(id){['join','lobby','game'].forEach(s=>document.getElementById('screen-'+s).style.display='none');var el=document.getElementById('screen-'+id);el.style.display='flex';el.style.flexDirection='column';el.style.alignItems='center';}
+function connect(cb){
+  ws=new WebSocket('ws://'+((location.hostname||'127.0.0.1').trim()||'127.0.0.1')+':8765');
+  ws.onopen=function(){wsReady=true;document.getElementById('ws-st').className='ws-st on';document.getElementById('ws-st').textContent='● Verbunden';if(cb)cb();};
+  ws.onclose=function(){wsReady=false;};ws.onerror=function(){};
+  ws.onmessage=function(e){try{handleMsg(JSON.parse(e.data));}catch{}};
+}
+function send(obj){if(ws&&wsReady)ws.send(JSON.stringify(obj));}
+function handleMsg(d){
+  if(d.action==='welcome'){myId=d.id;}
+  if(d.action==='room_created'){roomId=d.roomId;document.getElementById('rid').textContent=roomId;show('lobby');document.getElementById('lplayers').textContent='Spieler 1: '+myName+' (du)';document.getElementById('lst').textContent='Raum-ID weitergeben: '+roomId;}
+  if(d.action==='room_joined'){roomId=d.roomId;var ps=d.players||[];document.getElementById('rid').textContent=roomId;document.getElementById('lplayers').textContent=ps.map(p=>p.name||p.id).join(' vs ');if(ps.length>=2)startGame(ps);}
+  if(d.action==='game_event'){var ev=d.event,pl=d.payload;
+    if(ev==='ttt_start'){mySym=pl.symbols[myId];opSym=mySym==='X'?'O':'X';myTurn=mySym==='X';board=Array(9).fill('');myScore=0;opScore=0;gameOver=false;show('game');document.getElementById('my-sym').textContent=mySym;document.getElementById('op-sym').textContent=opSym;render();updateStatus();}
+    if(ev==='ttt_move'){board[pl.idx]=pl.sym;render();var w=checkWin(pl.sym);if(w){markWin(w);endRound(pl.sym);return;}if(board.every(c=>c)){endRound(null);return;}myTurn=pl.sym!==mySym;updateStatus();}
+    if(ev==='ttt_rematch'){board=Array(9).fill('');gameOver=false;myTurn=mySym==='O';render();updateStatus();}
+  }
+}
+function startGame(ps){
+  // Assign symbols
+  var syms={};ps.forEach((p,i)=>syms[p.id||p]=i===0?'X':'O');
+  send({action:'game_event',event:'ttt_start',payload:{symbols:syms}});
+}
+function doJoin(){
+  myName=(document.getElementById('ni').value||'').trim();
+  var rid=(document.getElementById('ri').value||'').trim();
+  if(!myName){alert('Name eingeben!');return;}
+  connect(function(){
+    send({action:'global_chat_join',name:myName});
+    if(rid)send({action:'join_room',roomId:rid,maxPlayers:2});
+    else send({action:'create_room',game:'ttt'});
+  });
+}
+function render(){
+  var b=document.getElementById('board');
+  b.innerHTML=board.map((v,i)=>'<div class="cell'+(v?' '+v+' taken':'')
+    +'" onclick="click'+i+'()">'+(v||'')+'</div>').join('');
+  board.forEach((_,i)=>b.children[i].addEventListener('click',()=>makeMove(i)));
+}
+board.forEach((_,i)=>window['click'+i]=()=>makeMove(i));
+function makeMove(idx){
+  if(!myTurn||board[idx]||gameOver)return;
+  board[idx]=mySym;myTurn=false;
+  send({action:'game_event',event:'ttt_move',payload:{idx,sym:mySym}});
+  render();
+  var w=checkWin(mySym);if(w){markWin(w);endRound(mySym);return;}
+  if(board.every(c=>c)){endRound(null);return;}
+  updateStatus();
+}
+function checkWin(sym){return WINS.find(l=>l.every(i=>board[i]===sym))||null;}
+function markWin(line){var b=document.getElementById('board');line.forEach(i=>b.children[i].classList.add('win'));}
+function endRound(winner){
+  gameOver=true;
+  if(winner===mySym){myScore++;document.getElementById('my-sc').textContent=myScore;document.getElementById('gst').textContent='🏆 Du gewinnst!';document.getElementById('gst').className='status your';}
+  else if(winner){opScore++;document.getElementById('op-sc').textContent=opScore;document.getElementById('gst').textContent='😔 Gegner gewinnt';document.getElementById('gst').className='status wait';}
+  else{document.getElementById('gst').textContent='🤝 Unentschieden';document.getElementById('gst').className='status wait';}
+}
+function updateStatus(){
+  document.getElementById('gst').textContent=myTurn?'🟡 Dein Zug ('+mySym+')':'⏳ Gegner am Zug…';
+  document.getElementById('gst').className=myTurn?'status your':'status wait';
+}
+function requestRematch(){send({action:'game_event',event:'ttt_rematch',payload:{}});board=Array(9).fill('');gameOver=false;myTurn=mySym==='X';render();updateStatus();}
+</script></body></html>

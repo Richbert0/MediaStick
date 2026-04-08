@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pong</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;color:#fff;font-family:-apple-system,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;touch-action:none;user-select:none}
+h1{font-size:1.2rem;font-weight:900;color:#FFD700;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px}
+canvas{border:2px solid rgba(255,215,0,.3);border-radius:6px;display:block;background:#111;max-width:min(480px,98vw);max-height:75vh}
+.info{font-size:.75rem;color:#666;margin-top:8px;text-align:center}
+.btn{padding:10px 24px;background:linear-gradient(135deg,#FFD700,#FFA500);border:none;border-radius:10px;color:#000;font-size:.88rem;font-weight:800;cursor:pointer;margin-top:10px}
+</style></head>
+<body>
+<h1>🏓 Pong</h1>
+<canvas id="c" width="480" height="320"></canvas>
+<p class="info">W/S – Spieler | ↑/↓ – KI deaktivieren (2P) | Touch: linke/rechte Seite</p>
+<script>
+var cv=document.getElementById('c'),ctx=cv.getContext('2d');
+var W=cv.width,H=cv.height,PW=10,PH=60,BALL=8,SPEED=5,running=false;
+var p1={y:H/2-PH/2,sc:0,up:false,dn:false};
+var p2={y:H/2-PH/2,sc:0,up:false,dn:false,ai:true};
+var ball={x:W/2,y:H/2,vx:SPEED*(Math.random()>.5?1:-1),vy:SPEED*(Math.random()>.5?1:-1)};
+
+function reset(dir){ball={x:W/2,y:H/2,vx:SPEED*(dir||1),vy:SPEED*(Math.random()>.5?1:-1)};}
+
+function tick(){
+  // Move paddles
+  var spd=5;
+  if(p1.up&&p1.y>0)p1.y-=spd;if(p1.dn&&p1.y<H-PH)p1.y+=spd;
+  if(p2.ai){var cy=p2.y+PH/2;if(cy<ball.y-10)p2.y+=4;else if(cy>ball.y+10)p2.y-=4;}
+  else{if(p2.up&&p2.y>0)p2.y-=spd;if(p2.dn&&p2.y<H-PH)p2.y+=spd;}
+  p1.y=Math.max(0,Math.min(H-PH,p1.y));p2.y=Math.max(0,Math.min(H-PH,p2.y));
+  // Move ball
+  ball.x+=ball.vx;ball.y+=ball.vy;
+  if(ball.y-BALL<=0){ball.y=BALL;ball.vy*=-1;}
+  if(ball.y+BALL>=H){ball.y=H-BALL;ball.vy*=-1;}
+  // P1 paddle
+  if(ball.x-BALL<=PW+10&&ball.y>=p1.y&&ball.y<=p1.y+PH){ball.vx=Math.abs(ball.vx)*1.03;ball.vy+=(ball.y-(p1.y+PH/2))*.1;ball.x=PW+10+BALL;}
+  // P2 paddle
+  if(ball.x+BALL>=W-PW-10&&ball.y>=p2.y&&ball.y<=p2.y+PH){ball.vx=-Math.abs(ball.vx)*1.03;ball.vy+=(ball.y-(p2.y+PH/2))*.1;ball.x=W-PW-10-BALL;}
+  // Score
+  if(ball.x<0){p2.sc++;if(p2.sc>=10)endGame();else reset(1);}
+  if(ball.x>W){p1.sc++;if(p1.sc>=10)endGame();else reset(-1);}
+  // Clamp speed
+  var spd2=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy);if(spd2>14){ball.vx=ball.vx/spd2*14;ball.vy=ball.vy/spd2*14;}
+  draw();
+}
+function draw(){
+  ctx.fillStyle='#111';ctx.fillRect(0,0,W,H);
+  // Center line
+  ctx.setLineDash([8,8]);ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
+  // Score
+  ctx.fillStyle='rgba(255,215,0,.2)';ctx.font='bold 40px sans-serif';ctx.textAlign='center';
+  ctx.fillText(p1.sc,W/4,50);ctx.fillText(p2.sc,3*W/4,50);
+  // Paddles
+  ctx.fillStyle='#FFD700';ctx.beginPath();ctx.roundRect(8,p1.y,PW,PH,5);ctx.fill();
+  ctx.fillStyle='#60a5fa';ctx.beginPath();ctx.roundRect(W-PW-8,p2.y,PW,PH,5);ctx.fill();
+  // Ball
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ball.x,ball.y,BALL,0,Math.PI*2);ctx.fill();
+  if(!running){
+    ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#FFD700';ctx.font='bold 1.3rem sans-serif';ctx.textAlign='center';
+    ctx.fillText('🏓 Pong',W/2,H/2-20);
+    ctx.fillStyle='#888';ctx.font='.75rem sans-serif';
+    ctx.fillText('Enter oder Tap zum Starten',W/2,H/2+10);
+    ctx.fillText('W/S = Spieler  ·  KI oder ↑↓ = Rechts',W/2,H/2+30);
+  }
+}
+function startGame(){running=true;p1.sc=0;p2.sc=0;reset(1);if(!gameLoop)gameLoop=setInterval(tick,16);}
+function endGame(){clearInterval(gameLoop);gameLoop=null;running=false;draw();
+  ctx.fillStyle='#FFD700';ctx.font='bold 1.4rem sans-serif';ctx.textAlign='center';
+  ctx.fillText(p1.sc>=10?'🏆 Spieler gewinnt!':'🤖 KI gewinnt!',W/2,H/2-20);
+  ctx.fillStyle='#888';ctx.font='.8rem sans-serif';ctx.fillText('Enter/Tap zum Neustart',W/2,H/2+15);
+}
+var gameLoop=null;
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){if(!running)startGame();return;}
+  if(e.key==='w')p1.up=true;if(e.key==='s')p1.dn=true;
+  if(e.key==='ArrowUp'){p2.ai=false;p2.up=true;}if(e.key==='ArrowDown'){p2.ai=false;p2.dn=true;}
+});
+document.addEventListener('keyup',function(e){
+  if(e.key==='w')p1.up=false;if(e.key==='s')p1.dn=false;
+  if(e.key==='ArrowUp')p2.up=false;if(e.key==='ArrowDown')p2.dn=false;
+});
+cv.addEventListener('touchstart',function(e){e.preventDefault();Array.from(e.touches).forEach(t=>{if(!running){startGame();return;}if(t.clientX<cv.getBoundingClientRect().left+cv.clientWidth/2)p1.y=t.clientY-cv.getBoundingClientRect().top-PH/2*(cv.height/cv.clientHeight);});},{passive:false});
+cv.addEventListener('touchmove',function(e){e.preventDefault();var r=cv.getBoundingClientRect();var scaleY=cv.height/cv.clientHeight;Array.from(e.touches).forEach(t=>{var py=(t.clientY-r.top)*scaleY-PH/2;if(t.clientX-r.left<cv.clientWidth/2)p1.y=Math.max(0,Math.min(H-PH,py));else{p2.ai=false;p2.y=Math.max(0,Math.min(H-PH,py));}});},{passive:false});
+if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){this.beginPath();this.moveTo(x+r,y);this.lineTo(x+w-r,y);this.arcTo(x+w,y,x+w,y+r,r);this.lineTo(x+w,y+h-r);this.arcTo(x+w,y+h,x+w-r,y+h,r);this.lineTo(x+r,y+h);this.arcTo(x,y+h,x,y+h-r,r);this.lineTo(x,y+r);this.arcTo(x,y,x+r,y,r);this.closePath();};
+draw();
+</script></body></html>

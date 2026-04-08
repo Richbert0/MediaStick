@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pong LAN</title>
+<style>
+:root{
+  --bg:#061018;
+  --panel:rgba(13,21,33,.94);
+  --line:rgba(255,215,0,.14);
+  --line-2:rgba(255,215,0,.28);
+  --gold:#ffd24a;
+  --gold-2:#ffab37;
+  --text:#f8fbff;
+  --muted:#99adbe;
+  --green:#3ddd8f;
+  --red:#ff7575;
+  --blue:#6ec8ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%;background:
+  radial-gradient(circle at top left,rgba(110,200,255,.08),transparent 28%),
+  radial-gradient(circle at top right,rgba(255,171,55,.14),transparent 24%),
+  linear-gradient(180deg,#061018,#04090f 100%);
+  color:var(--text);font-family:"Aptos","Segoe UI",sans-serif}
+body{min-height:100vh;padding:16px}
+.shell{width:min(1280px,100%);margin:0 auto;display:grid;gap:16px}
+.panel{
+  background:linear-gradient(180deg,rgba(15,25,38,.96),rgba(8,14,22,.94));
+  border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.34)
+}
+.hero,.content{padding:22px}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
+  background:rgba(110,200,255,.08);border:1px solid rgba(110,200,255,.16);
+  color:#c8eeff;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase
+}
+h1{margin:14px 0 8px;font-size:clamp(1.5rem,3vw,2.35rem);line-height:1.05}
+.hero p{margin:0;color:var(--muted);line-height:1.7;max-width:760px}
+.hero-grid{margin-top:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.hero-box{
+  padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.hero-box strong{display:block;color:var(--gold);font-size:.86rem;margin-bottom:6px}
+.hero-box span{display:block;color:var(--muted);font-size:.8rem;line-height:1.55}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.conn{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-size:.76rem;font-weight:800;
+  border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.04);color:var(--muted)
+}
+.conn.on{color:var(--green);background:rgba(61,221,143,.12);border-color:rgba(61,221,143,.26)}
+.conn.off{color:var(--red);background:rgba(255,117,117,.12);border-color:rgba(255,117,117,.22)}
+.grid{display:grid;grid-template-columns:minmax(300px,.88fr) minmax(0,1.15fr);gap:16px}
+.section-title{margin:0 0 10px;font-size:.9rem;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.small{font-size:.78rem;color:var(--muted);line-height:1.6}
+.stack{display:grid;gap:14px}
+.input{
+  width:100%;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  color:var(--text);font:inherit;outline:none
+}
+.input:focus{border-color:var(--line-2);box-shadow:0 0 0 3px rgba(255,210,74,.08)}
+.btn,.copy-btn{
+  border:none;cursor:pointer;font:inherit;transition:.18s ease
+}
+.btn{
+  width:100%;padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,var(--gold),var(--gold-2));
+  color:#111;font-size:.9rem;font-weight:900
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(255,171,55,.18)}
+.btn.secondary{
+  background:rgba(255,255,255,.05);color:var(--text);border:1px solid rgba(255,255,255,.08)
+}
+.btn.secondary:hover{background:rgba(255,255,255,.08)}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn-row .btn{width:auto;min-width:160px}
+.status{
+  padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  color:#dce8f2;font-size:.88rem;line-height:1.6
+}
+.room-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.07);font-size:.8rem;color:#dceaf4
+}
+.copy-btn{
+  padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.08)
+}
+.copy-btn:hover{background:rgba(255,215,0,.11);border-color:rgba(255,215,0,.18)}
+.player-list{display:grid;gap:10px}
+.player-card{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.player-card.me{border-color:rgba(255,210,74,.28);box-shadow:inset 0 0 0 1px rgba(255,210,74,.12)}
+.player-name{font-weight:800}
+.player-role{font-size:.74rem;color:var(--muted)}
+.score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.score-card{
+  padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)
+}
+.score-card.me{border-color:rgba(255,210,74,.28)}
+.score-card strong{display:block;font-size:1.55rem;margin-top:6px;color:var(--gold)}
+.score-card span{display:block;font-size:.78rem;color:var(--muted)}
+.arena-shell{
+  position:relative;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.06);
+  background:linear-gradient(180deg,rgba(8,13,20,.98),rgba(4,8,12,.98))
+}
+#arena{
+  display:block;width:100%;aspect-ratio:16/9;background:
+    linear-gradient(90deg,transparent 49.6%,rgba(255,255,255,.08) 49.6%,rgba(255,255,255,.08) 50.4%,transparent 50.4%),
+    radial-gradient(circle at center,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 10%,transparent 10%),
+    linear-gradient(180deg,rgba(16,25,39,.96),rgba(7,12,18,.99))
+}
+.arena-overlay{
+  position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:14px;pointer-events:none
+}
+.arena-hint{
+  padding:10px 14px;border-radius:999px;background:rgba(6,10,14,.72);border:1px solid rgba(255,255,255,.07);
+  color:#dde9f3;font-size:.76rem;line-height:1.5;backdrop-filter:blur(8px);text-align:center;max-width:min(90%,720px)
+}
+.hidden{display:none!important}
+@media (max-width:980px){
+  .hero-grid,.grid,.score-grid{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  body{padding:12px}
+  .panel{border-radius:20px}
+  .hero,.content{padding:18px}
+  .btn-row .btn{width:100%}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <section class="panel hero">
+    <div class="topbar">
+      <span class="eyebrow">LAN Duel</span>
+      <span class="conn off" id="conn-badge">Nicht verbunden</span>
+    </div>
+    <h1>Pong als echtes Netzwerkduell.</h1>
+    <p>Der Host berechnet Ball, Kollisionen und Punkte. Beide Spieler steuern ihren Schlaeger ueber Tastatur oder Touch, waehrend der Spielstand an alle verbundenen Geraete synchron verteilt wird.</p>
+    <div class="hero-grid">
+      <div class="hero-box">
+        <strong>Host-basierte Physik</strong>
+        <span>Der Host simuliert das Match und sorgt fuer einen einheitlichen Ballverlauf bei allen Teilnehmern.</span>
+      </div>
+      <div class="hero-box">
+        <strong>Keyboard und Touch</strong>
+        <span>W/S oder Pfeile funktionieren ebenso wie direktes Ziehen auf dem Canvas per Finger oder Maus.</span>
+      </div>
+      <div class="hero-box">
+        <strong>Gross und klein gut spielbar</strong>
+        <span>Die Arena skaliert sauber von kleinen Touch-Displays bis zum grossen Desktop-Fenster.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel content" id="screen-join">
+    <div class="grid">
+      <div class="stack">
+        <div>
+          <h2 class="section-title">Raum beitreten</h2>
+          <div class="small">Der Host erstellt einen Raum. Der zweite Spieler traegt den Raumcode ein und tritt dem Match bei.</div>
+        </div>
+        <div>
+          <label class="small" for="name-input">Dein Name</label>
+          <input class="input" id="name-input" maxlength="20" placeholder="Zum Beispiel Sam">
+        </div>
+        <div>
+          <label class="small" for="room-input">Raum-ID</label>
+          <input class="input" id="room-input" maxlength="24" placeholder="Leer lassen, um einen Raum zu erstellen">
+        </div>
+        <button class="btn" type="button" onclick="joinGame()">Raum oeffnen</button>
+      </div>
+      <div class="status" id="join-status">Verbinde dich mit dem LAN-Server und starte anschliessend als Host oder Mitspieler in denselben Raum.</div>
+    </div>
+  </section>
+
+  <section class="panel content hidden" id="screen-lobby">
+    <div class="topbar">
+      <div class="room-pill">
+        Raum:
+        <strong id="room-code">-</strong>
+        <button class="copy-btn" type="button" onclick="copyRoom()">Code kopieren</button>
+      </div>
+      <div class="small" id="lobby-tip">Warte auf den zweiten Spieler.</div>
+    </div>
+    <div class="grid">
+      <div class="stack">
+        <div>
+          <h2 class="section-title">Spieler</h2>
+          <div class="player-list" id="player-list"></div>
+        </div>
+        <div class="status" id="lobby-status">Der Host startet das Match, sobald zwei Spieler im Raum sind.</div>
+      </div>
+      <div class="stack">
+        <div class="status">
+          Erstes Ziel: 7 Punkte. Der linke Spieler steuert standardmaessig mit W/S, der rechte mit den Pfeiltasten. Auf Touch-Geraeten kann der eigene Schlaeger direkt vertikal gezogen werden.
+        </div>
+        <div class="btn-row">
+          <button class="btn" type="button" id="start-btn" onclick="startMatch()" disabled>Match starten</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel content hidden" id="screen-game">
+    <div class="topbar">
+      <div class="room-pill">
+        Raum:
+        <strong id="game-room-code">-</strong>
+        <button class="copy-btn" type="button" onclick="copyRoom()">Code kopieren</button>
+      </div>
+      <div class="small" id="side-note">Steuere deinen Schlaeger und halte den Ball im Spiel.</div>
+    </div>
+
+    <div class="score-grid" id="score-grid"></div>
+
+    <div class="status" id="game-status">Warte auf den Match-Start.</div>
+
+    <div class="arena-shell">
+      <canvas id="arena" width="960" height="540"></canvas>
+      <div class="arena-overlay">
+        <div class="arena-hint" id="arena-hint">W/S oder Pfeile bewegen den Schlaeger. Auf Touch-Geraeten nach oben oder unten ziehen.</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" type="button" id="restart-btn" onclick="restartMatch()">Neustart</button>
+      <button class="btn secondary" type="button" onclick="backToLobby()">Zur Lobby</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const WS_PORT = 8765;
+const FIELD = { width: 960, height: 540, paddleWidth: 18, paddleHeight: 116, ballSize: 13, paddleSpeed: 620, ballSpeed: 460, maxBallSpeed: 980, targetScore: 7 };
+
+let ws = null;
+let wsReady = false;
+let myId = '';
+let myName = '';
+let roomId = '';
+let players = [];
+let state = null;
+let inputState = { move: 0, target: null };
+let hostInputs = {};
+let simTimer = null;
+let renderHandle = 0;
+let lastTick = 0;
+let lastBroadcast = 0;
+
+const canvas = document.getElementById('arena');
+const ctx = canvas.getContext('2d');
+
+function esc(value){
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function hostId(){
+  return players[0] ? players[0].id : '';
+}
+
+function isHost(){
+  return myId && hostId() === myId;
+}
+
+function mySide(){
+  if (players[0] && players[0].id === myId) return 'left';
+  if (players[1] && players[1].id === myId) return 'right';
+  return '';
+}
+
+function nameFor(id){
+  const player = players.find(function(entry){ return entry.id === id; });
+  return player ? player.name : 'Spieler';
+}
+
+function showScreen(id){
+  ['join','lobby','game'].forEach(function(name){
+    document.getElementById('screen-' + name).classList.toggle('hidden', name !== id);
+  });
+}
+
+function setConnection(status, online){
+  const badge = document.getElementById('conn-badge');
+  badge.textContent = status;
+  badge.className = 'conn ' + (online ? 'on' : 'off');
+}
+
+function connect(callback){
+  const host = (location.hostname || '127.0.0.1').trim() || '127.0.0.1';
+  ws = new WebSocket('ws://' + host + ':' + WS_PORT);
+
+  ws.onopen = function(){
+    wsReady = true;
+    setConnection('Verbunden', true);
+    document.getElementById('join-status').textContent = 'Verbunden. Du kannst jetzt einen Raum erstellen oder einem vorhandenen Raum beitreten.';
+    if (callback) callback();
+  };
+
+  ws.onclose = function(){
+    wsReady = false;
+    setConnection('Getrennt', false);
+  };
+
+  ws.onerror = function(){
+    setConnection('Fehler', false);
+  };
+
+  ws.onmessage = function(event){
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (_) {
+      return;
+    }
+    handleMessage(data);
+  };
+}
+
+function send(payload){
+  if (ws && wsReady) {
+    ws.send(JSON.stringify(payload));
+  }
+}
+
+function joinGame(){
+  myName = (document.getElementById('name-input').value || '').trim();
+  const targetRoom = (document.getElementById('room-input').value || '').trim();
+
+  if (!myName) {
+    document.getElementById('join-status').textContent = 'Bitte zuerst einen Spielernamen eingeben.';
+    return;
+  }
+
+  const afterConnect = function(){
+    send({ action: 'global_chat_join', name: myName });
+    if (targetRoom) {
+      send({ action: 'join_room', roomId: targetRoom, maxPlayers: 2 });
+    } else {
+      send({ action: 'create_room', game: 'pong-lan' });
+    }
+  };
+
+  if (wsReady) {
+    afterConnect();
+  } else {
+    connect(afterConnect);
+  }
+}
+
+function normalizePlayers(list){
+  players = (list || []).map(function(player){
+    return {
+      id: player.id || player,
+      name: player.name || player.id || 'Spieler'
+    };
+  });
+  renderLobbyPlayers();
+  renderScoreboard();
+  syncRoomLabels();
+  syncLobbyControls();
+}
+
+function syncRoomLabels(){
+  document.getElementById('room-code').textContent = roomId || '-';
+  document.getElementById('game-room-code').textContent = roomId || '-';
+}
+
+function syncLobbyControls(){
+  const enoughPlayers = players.length >= 2;
+  const startBtn = document.getElementById('start-btn');
+  startBtn.disabled = !(isHost() && enoughPlayers);
+  startBtn.textContent = isHost()
+    ? (enoughPlayers ? 'Match starten' : 'Warte auf Spieler')
+    : 'Host startet das Match';
+  document.getElementById('lobby-tip').textContent = isHost()
+    ? (enoughPlayers ? 'Zwei Spieler sind bereit.' : 'Teile den Raumcode mit dem zweiten Spieler.')
+    : 'Der Host startet das Match, sobald ihr komplett seid.';
+}
+
+function renderLobbyPlayers(){
+  const list = document.getElementById('player-list');
+  if (!players.length) {
+    list.innerHTML = '<div class="status">Noch keine Spieler im Raum.</div>';
+    return;
+  }
+
+  list.innerHTML = players.map(function(player, index){
+    const me = player.id === myId ? ' me' : '';
+    return ''
+      + '<div class="player-card' + me + '">'
+      +   '<div>'
+      +     '<div class="player-name">' + esc(player.name) + (player.id === myId ? ' (du)' : '') + '</div>'
+      +     '<div class="player-role">' + (index === 0 ? 'Linke Seite / Host' : 'Rechte Seite / Gast') + '</div>'
+      +   '</div>'
+      +   '<span class="small">' + (index === 0 ? 'W/S oder Touch' : 'Pfeile oder Touch') + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function makeInitialState(){
+  return {
+    phase: 'game',
+    running: true,
+    message: 'Das Match laeuft.',
+    paddles: {
+      left: FIELD.height / 2 - FIELD.paddleHeight / 2,
+      right: FIELD.height / 2 - FIELD.paddleHeight / 2
+    },
+    ball: serveBall(Math.random() > 0.5 ? 1 : -1),
+    score: { left: 0, right: 0 },
+    winner: '',
+    target: FIELD.targetScore
+  };
+}
+
+function serveBall(direction){
+  const angle = (Math.random() * 0.7) - 0.35;
+  const speed = FIELD.ballSpeed;
+  return {
+    x: FIELD.width / 2,
+    y: FIELD.height / 2,
+    vx: Math.cos(angle) * speed * direction,
+    vy: Math.sin(angle) * speed
+  };
+}
+
+function startMatch(){
+  if (!isHost() || players.length < 2) return;
+  hostInputs = {};
+  state = makeInitialState();
+  showScreen('game');
+  renderScoreboard();
+  syncArenaHint();
+  document.getElementById('game-status').textContent = 'Anpfiff. Das Match beginnt.';
+  send({
+    action: 'game_event',
+    event: 'pong_start',
+    payload: { snapshot: state, players: players },
+    stateUpdate: { snapshot: state }
+  });
+  startSimulation();
+}
+
+function restartMatch(){
+  if (!isHost()) return;
+  hostInputs = {};
+  state = makeInitialState();
+  renderScoreboard();
+  document.getElementById('game-status').textContent = 'Neustart. Das Match beginnt erneut.';
+  send({
+    action: 'game_event',
+    event: 'pong_start',
+    payload: { snapshot: state, players: players },
+    stateUpdate: { snapshot: state }
+  });
+  startSimulation();
+}
+
+function backToLobby(){
+  stopSimulation();
+  showScreen('lobby');
+}
+
+function handleMessage(data){
+  if (data.action === 'welcome') {
+    myId = data.id;
+    return;
+  }
+
+  if (data.action === 'room_created') {
+    roomId = data.roomId;
+    normalizePlayers([{ id: myId, name: myName }]);
+    showScreen('lobby');
+    document.getElementById('lobby-status').textContent = 'Raum erstellt. Teile den Code mit dem zweiten Spieler.';
+    return;
+  }
+
+  if (data.action === 'room_joined') {
+    roomId = data.roomId;
+    normalizePlayers(data.players || players);
+    showScreen(state && state.phase === 'game' ? 'game' : 'lobby');
+    document.getElementById('lobby-status').textContent = players.length >= 2
+      ? 'Beide Spieler sind im Raum.'
+      : 'Warte auf den zweiten Spieler.';
+    return;
+  }
+
+  if (data.action === 'room_state') {
+    roomId = data.roomId || roomId;
+    normalizePlayers(data.players || players);
+    if (data.state && data.state.snapshot) {
+      state = data.state.snapshot;
+      showScreen('game');
+      renderScoreboard();
+      syncArenaHint();
+      renderFrame();
+      if (isHost() && state.running && !state.winner) startSimulation();
+    } else {
+      showScreen('lobby');
+    }
+    return;
+  }
+
+  if (data.action === 'room_error') {
+    document.getElementById('join-status').textContent = data.message || 'Raum konnte nicht geoeffnet werden.';
+    return;
+  }
+
+  if (data.action === 'player_left') {
+    players = players.filter(function(player){ return player.id !== data.playerId; });
+    renderLobbyPlayers();
+    renderScoreboard();
+    syncLobbyControls();
+    if (state) {
+      state.running = false;
+      state.message = 'Ein Spieler hat den Raum verlassen.';
+      document.getElementById('game-status').textContent = state.message;
+      renderFrame();
+    }
+    return;
+  }
+
+  if (data.action === 'game_event') {
+    handleGameEvent(data.event, data.payload || {});
+  }
+}
+
+function handleGameEvent(eventName, payload){
+  if (eventName === 'pong_start') {
+    normalizePlayers(payload.players || players);
+    state = payload.snapshot || null;
+    showScreen('game');
+    renderScoreboard();
+    syncArenaHint();
+    renderFrame();
+    if (isHost() && state && state.running && !state.winner) startSimulation();
+    return;
+  }
+
+  if (eventName === 'pong_state') {
+    state = payload.snapshot || state;
+    renderScoreboard();
+    renderFrame();
+    return;
+  }
+
+  if (eventName === 'pong_input' && isHost()) {
+    hostInputs[payload.playerId] = {
+      move: typeof payload.move === 'number' ? payload.move : 0,
+      target: typeof payload.target === 'number' ? payload.target : null
+    };
+  }
+}
+
+function copyRoom(){
+  if (!roomId) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(roomId).then(function(){
+      document.getElementById('lobby-status').textContent = 'Raumcode kopiert: ' + roomId;
+    }).catch(function(){
+      document.getElementById('lobby-status').textContent = 'Raumcode: ' + roomId;
+    });
+  } else {
+    document.getElementById('lobby-status').textContent = 'Raumcode: ' + roomId;
+  }
+}
+
+function syncArenaHint(){
+  const side = mySide();
+  const text = side === 'left'
+    ? 'Du spielst links. Nutze W/S oder ziehe im Spielfeld nach oben und unten.'
+    : side === 'right'
+      ? 'Du spielst rechts. Nutze die Pfeiltasten oder ziehe im Spielfeld nach oben und unten.'
+      : 'Warte auf die Seitenzuweisung.';
+  document.getElementById('arena-hint').textContent = text;
+  document.getElementById('side-note').textContent = text;
+}
+
+function renderScoreboard(){
+  const target = document.getElementById('score-grid');
+  if (!players.length || !state) {
+    target.innerHTML = '';
+    return;
+  }
+
+  const leftPlayer = players[0];
+  const rightPlayer = players[1];
+  const scoreLeft = state.score ? state.score.left : 0;
+  const scoreRight = state.score ? state.score.right : 0;
+
+  target.innerHTML = ''
+    + renderScoreCard(leftPlayer, 'left', scoreLeft)
+    + renderScoreCard(rightPlayer, 'right', scoreRight);
+
+  const status = state.winner
+    ? (nameFor(state.winner) + ' gewinnt das Match.')
+    : (state.message || 'Das Match laeuft.');
+  document.getElementById('game-status').textContent = status;
+  document.getElementById('restart-btn').disabled = !isHost();
+  document.getElementById('restart-btn').textContent = isHost() ? 'Neustart' : 'Nur Host kann neu starten';
+}
+
+function renderScoreCard(player, side, score){
+  if (!player) {
+    return '<div class="score-card"><span>Warte auf Spieler</span><strong>0</strong><span>' + side + '</span></div>';
+  }
+
+  const me = player.id === myId ? ' me' : '';
+  const role = side === 'left' ? 'Linke Seite' : 'Rechte Seite';
+  return ''
+    + '<div class="score-card' + me + '">'
+    +   '<span>' + esc(player.name) + (player.id === myId ? ' (du)' : '') + '</span>'
+    +   '<strong>' + score + '</strong>'
+    +   '<span>' + role + '</span>'
+    + '</div>';
+}
+
+function startSimulation(){
+  stopSimulation();
+  lastTick = performance.now();
+  lastBroadcast = 0;
+  simTimer = setInterval(simulateHostFrame, 16);
+}
+
+function stopSimulation(){
+  if (simTimer) {
+    clearInterval(simTimer);
+    simTimer = null;
+  }
+}
+
+function simulateHostFrame(){
+  if (!isHost() || !state || !state.running || state.winner) return;
+
+  const now = performance.now();
+  const dt = Math.min(0.03, Math.max(0.008, (now - lastTick) / 1000));
+  lastTick = now;
+
+  updatePaddle('left', players[0] ? players[0].id : '', dt);
+  updatePaddle('right', players[1] ? players[1].id : '', dt);
+  updateBall(dt);
+
+  if (now - lastBroadcast > 45) {
+    pushState();
+    lastBroadcast = now;
+  } else {
+    renderScoreboard();
+    renderFrame();
+  }
+}
+
+function updatePaddle(side, playerId, dt){
+  if (!playerId) return;
+  const input = hostInputs[playerId] || { move: 0, target: null };
+  const maxY = FIELD.height - FIELD.paddleHeight;
+  let nextY = state.paddles[side];
+
+  if (typeof input.target === 'number') {
+    const desired = clamp(input.target * FIELD.height - FIELD.paddleHeight / 2, 0, maxY);
+    const maxStep = FIELD.paddleSpeed * dt * 1.25;
+    const delta = desired - nextY;
+    nextY += Math.abs(delta) <= maxStep ? delta : Math.sign(delta) * maxStep;
+  } else {
+    nextY += input.move * FIELD.paddleSpeed * dt;
+  }
+
+  state.paddles[side] = clamp(nextY, 0, maxY);
+}
+
+function updateBall(dt){
+  const ball = state.ball;
+  ball.x += ball.vx * dt;
+  ball.y += ball.vy * dt;
+
+  const radius = FIELD.ballSize;
+  if (ball.y <= radius) {
+    ball.y = radius;
+    ball.vy *= -1;
+  }
+  if (ball.y >= FIELD.height - radius) {
+    ball.y = FIELD.height - radius;
+    ball.vy *= -1;
+  }
+
+  collidePaddle('left');
+  collidePaddle('right');
+
+  if (ball.x < -radius) {
+    scorePoint('right');
+  } else if (ball.x > FIELD.width + radius) {
+    scorePoint('left');
+  }
+}
+
+function collidePaddle(side){
+  const ball = state.ball;
+  const leftSide = side === 'left';
+  const paddleX = leftSide ? 34 : FIELD.width - 34 - FIELD.paddleWidth;
+  const paddleY = state.paddles[side];
+  const withinY = ball.y >= paddleY - FIELD.ballSize && ball.y <= paddleY + FIELD.paddleHeight + FIELD.ballSize;
+  const hitX = leftSide
+    ? (ball.vx < 0 && ball.x - FIELD.ballSize <= paddleX + FIELD.paddleWidth && ball.x > paddleX)
+    : (ball.vx > 0 && ball.x + FIELD.ballSize >= paddleX && ball.x < paddleX + FIELD.paddleWidth);
+
+  if (!withinY || !hitX) return;
+
+  const relative = (ball.y - (paddleY + FIELD.paddleHeight / 2)) / (FIELD.paddleHeight / 2);
+  const angle = relative * 0.9;
+  const speed = Math.min(FIELD.maxBallSpeed, Math.hypot(ball.vx, ball.vy) * 1.04 + 18);
+
+  ball.vx = Math.cos(angle) * speed * (leftSide ? 1 : -1);
+  ball.vy = Math.sin(angle) * speed;
+  ball.x = leftSide
+    ? paddleX + FIELD.paddleWidth + FIELD.ballSize
+    : paddleX - FIELD.ballSize;
+}
+
+function scorePoint(side){
+  state.score[side] += 1;
+  if (state.score[side] >= state.target) {
+    state.winner = side === 'left' ? (players[0] ? players[0].id : '') : (players[1] ? players[1].id : '');
+    state.running = false;
+    state.message = nameFor(state.winner) + ' gewinnt das Match.';
+    pushState();
+    stopSimulation();
+    return;
+  }
+
+  state.ball = serveBall(side === 'left' ? 1 : -1);
+  state.message = nameFor(side === 'left' ? players[0].id : players[1].id) + ' punktet.';
+  pushState();
+}
+
+function pushState(){
+  renderScoreboard();
+  renderFrame();
+  send({
+    action: 'game_event',
+    event: 'pong_state',
+    payload: { snapshot: state },
+    stateUpdate: { snapshot: state }
+  });
+}
+
+function clamp(value, min, max){
+  return Math.max(min, Math.min(max, value));
+}
+
+function sendLocalInput(){
+  if (!myId || !mySide()) return;
+  if (isHost()) {
+    hostInputs[myId] = { move: inputState.move, target: inputState.target };
+    return;
+  }
+  send({
+    action: 'game_event',
+    event: 'pong_input',
+    payload: { playerId: myId, move: inputState.move, target: inputState.target }
+  });
+}
+
+function setMove(move){
+  if (inputState.move === move && inputState.target === null) return;
+  inputState.move = move;
+  inputState.target = null;
+  sendLocalInput();
+}
+
+function setTargetFromClientY(clientY){
+  const rect = canvas.getBoundingClientRect();
+  const target = clamp((clientY - rect.top) / rect.height, 0, 1);
+  if (inputState.target !== null && Math.abs(inputState.target - target) < 0.01) return;
+  inputState.target = target;
+  inputState.move = 0;
+  sendLocalInput();
+}
+
+function renderFrame(){
+  if (renderHandle) cancelAnimationFrame(renderHandle);
+  renderHandle = requestAnimationFrame(drawArena);
+}
+
+function drawArena(){
+  ctx.clearRect(0, 0, FIELD.width, FIELD.height);
+
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  for (let y = 18; y < FIELD.height; y += 30) {
+    ctx.fillRect(FIELD.width / 2 - 2, y, 4, 18);
+  }
+
+  ctx.beginPath();
+  ctx.arc(FIELD.width / 2, FIELD.height / 2, 56, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.08)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  if (!state) {
+    ctx.fillStyle = '#ffd24a';
+    ctx.font = '700 40px Aptos, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('PONG LAN', FIELD.width / 2, FIELD.height / 2 - 12);
+    ctx.font = '600 18px Aptos, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.6)';
+    ctx.fillText('Erstelle oder betrete einen Raum.', FIELD.width / 2, FIELD.height / 2 + 24);
+    return;
+  }
+
+  ctx.fillStyle = '#ffd24a';
+  ctx.fillRect(34, state.paddles.left, FIELD.paddleWidth, FIELD.paddleHeight);
+  ctx.fillStyle = '#6ec8ff';
+  ctx.fillRect(FIELD.width - 34 - FIELD.paddleWidth, state.paddles.right, FIELD.paddleWidth, FIELD.paddleHeight);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(state.ball.x, state.ball.y, FIELD.ballSize, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,.14)';
+  ctx.font = '700 64px Aptos, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(String(state.score.left), FIELD.width * 0.25, 88);
+  ctx.fillText(String(state.score.right), FIELD.width * 0.75, 88);
+
+  if (state.winner || !state.running) {
+    ctx.fillStyle = 'rgba(3,6,10,.72)';
+    ctx.fillRect(0, 0, FIELD.width, FIELD.height);
+    ctx.fillStyle = '#ffd24a';
+    ctx.font = '800 42px Aptos, sans-serif';
+    ctx.fillText(state.winner ? 'SIEG' : 'PAUSE', FIELD.width / 2, FIELD.height / 2 - 20);
+    ctx.font = '600 20px Aptos, sans-serif';
+    ctx.fillStyle = '#e7eef6';
+    ctx.fillText(state.message || 'Warte auf den Host.', FIELD.width / 2, FIELD.height / 2 + 22);
+  }
+}
+
+document.addEventListener('keydown', function(event){
+  if (mySide() === 'left') {
+    if (event.key === 'w' || event.key === 'W') setMove(-1);
+    if (event.key === 's' || event.key === 'S') setMove(1);
+  } else if (mySide() === 'right') {
+    if (event.key === 'ArrowUp') setMove(-1);
+    if (event.key === 'ArrowDown') setMove(1);
+  }
+});
+
+document.addEventListener('keyup', function(event){
+  if (mySide() === 'left' && (event.key === 'w' || event.key === 'W' || event.key === 's' || event.key === 'S')) {
+    setMove(0);
+  }
+  if (mySide() === 'right' && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+    setMove(0);
+  }
+});
+
+canvas.addEventListener('pointerdown', function(event){
+  setTargetFromClientY(event.clientY);
+});
+
+canvas.addEventListener('pointermove', function(event){
+  if ((event.buttons & 1) === 1 || event.pointerType === 'touch') {
+    setTargetFromClientY(event.clientY);
+  }
+});
+
+canvas.addEventListener('pointerup', function(){
+  inputState.move = 0;
+  sendLocalInput();
+});
+
+showScreen('join');
+setConnection('Nicht verbunden', false);
+renderFrame();
+</script>
+</body>
+</html>

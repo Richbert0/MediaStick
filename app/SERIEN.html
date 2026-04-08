@@ -1,0 +1,268 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Serien – MediaCenter</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+.filter-bar{display:flex;gap:8px;padding:12px 20px;align-items:center}
+body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);}
+.filter-bar .search-wrap{flex:1}
+.series-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.series-card:hover{border-color:rgba(255,215,0,.5);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.series-card:hover .card-overlay{opacity:1}
+.series-banner{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,#1a1a2e,#0d0d1a);display:flex;align-items:center;justify-content:center;font-size:3rem;position:relative;overflow:hidden}
+.series-banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.series-info{padding:11px 13px}
+.series-name{font-size:.88rem;font-weight:800;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.series-meta{font-size:.7rem;color:var(--sub);display:flex;gap:10px}
+#detail{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.96);display:none;flex-direction:column}
+#detail.show{display:flex}
+.d-hdr{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:2px solid var(--gold);background:linear-gradient(180deg,#1a1a2e,var(--bg));flex-shrink:0}
+.d-title{font-size:1.1rem;font-weight:900;color:var(--gold);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.d-meta{font-size:.73rem;color:var(--sub)}
+.s-tabs{display:flex;gap:6px;padding:10px 20px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06)}
+.s-tabs::-webkit-scrollbar{display:none}
+.s-tab{padding:6px 16px;border-radius:20px;font-size:.78rem;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,215,0,.25);color:var(--sub);white-space:nowrap;transition:.2s;background:none;font-family:inherit}
+.s-tab:hover{border-color:rgba(255,215,0,.5);color:var(--gold)}
+.s-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border-color:transparent}
+.ep-list{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:7px}
+.ep-row{display:flex;align-items:center;gap:12px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;cursor:pointer;transition:.2s}
+.ep-row:hover{border-color:rgba(255,215,0,.3);background:rgba(255,215,0,.05)}
+.ep-row.now{border-color:var(--gold);background:rgba(255,215,0,.08)}
+.ep-num{font-size:.75rem;font-weight:900;color:var(--gold);min-width:36px}
+.ep-name{flex:1;font-size:.84rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep-sz{font-size:.7rem;color:var(--sub);white-space:nowrap}
+.ep-prog-wrap{width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:4px}
+.ep-prog-bar{height:100%;background:var(--gold);border-radius:2px}
+#player{position:fixed;inset:0;z-index:6000;background:#000;display:none;flex-direction:column}
+#player.show{display:flex}
+#vid{flex:1;width:100%;object-fit:contain;cursor:pointer;background:#000;min-height:0}
+.ctl{background:linear-gradient(0deg,rgba(0,0,0,.98),rgba(0,0,0,.4) 80%,transparent);padding:12px 16px 10px;flex-direction:column;gap:8px;flex-shrink:0;display:flex}
+.srow{display:flex;align-items:center;gap:8px}
+.sbar{flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;cursor:pointer;position:relative;transition:height .1s}
+.sbar:hover,.sbar.drag{height:8px}
+.sfill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:3px;pointer-events:none;position:relative}
+.sfill::after{content:'';position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:13px;height:13px;border-radius:50%;background:var(--gold);opacity:0;transition:opacity .15s}
+.sbar:hover .sfill::after,.sbar.drag .sfill::after{opacity:1}
+.cbrow{display:flex;align-items:center;gap:6px}
+.vcb{background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:4px 6px;opacity:.8;transition:.15s;line-height:1;border-radius:6px;font-family:inherit}
+.vcb:hover{opacity:1;background:rgba(255,255,255,.1)}
+.vtm{font-size:.75rem;color:rgba(255,255,255,.55);white-space:nowrap;font-variant-numeric:tabular-nums}
+.vtit{font-size:.78rem;font-weight:700;color:var(--gold);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.vsl{-webkit-appearance:none;appearance:none;width:68px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;outline:none;cursor:pointer}
+.vsl::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--gold);cursor:pointer}
+#loader{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9900;display:none;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div class="mc-page">
+  <div class="filter-bar">
+    <div class="search-wrap"><span class="si">🔍</span><input class="mc-input" id="srch" placeholder="Serie suchen…" oninput="render()"></div>
+  </div>
+  <div class="mc-page-body">
+    <div class="section-head"><span class="section-title" id="lbl">Serien</span></div>
+    <div class="media-grid" id="grid"></div>
+  </div>
+</div>
+
+<div id="detail">
+  <div class="d-hdr">
+    <button class="btn btn-ghost btn-icon" onclick="closeDetail()">←</button>
+    <div style="flex:1;min-width:0">
+      <div class="d-title" id="dt"></div>
+      <div class="d-meta" id="dm"></div>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="trashAll()">🗑️ Alle</button>
+  </div>
+  <div class="s-tabs" id="stabs"></div>
+  <div class="ep-list" id="eplist"></div>
+</div>
+
+<div id="player">
+  <video id="vid" preload="metadata"></video>
+  <div class="ctl" id="ctl">
+    <div class="srow">
+      <span class="vtm" id="tc">0:00</span>
+      <div class="sbar" id="sbar" onmousedown="seekMD(event)" ontouchstart="seekTD(event)"><div class="sfill" id="sfill"></div></div>
+      <span class="vtm" id="td">0:00</span>
+    </div>
+    <div class="cbrow">
+      <button class="vcb" onclick="skip(-10)">⏪</button>
+      <button class="vcb" id="pbtn" onclick="tplay()">▶</button>
+      <button class="vcb" onclick="skip(10)">⏩</button>
+      <button class="vcb" onclick="prevEp()" title="Vorherige">⏮</button>
+      <button class="vcb" onclick="nextEp()" title="Nächste">⏭</button>
+      <span class="vtit" id="vtit"></span>
+      <span class="vtm">🔊</span>
+      <input class="vsl" type="range" min="0" max="1" step="0.05" value="1" oninput="document.getElementById('vid').volume=+this.value">
+      <button class="vcb" onclick="doFs()">⛶</button>
+      <button class="vcb" onclick="closeP()" style="color:var(--red)">✕</button>
+    </div>
+  </div>
+</div>
+
+<div id="loader"><div class="mc-spinner"></div></div>
+<script src="/js/app.js"></script>
+<script>
+var allS={},cur=null,curSeason=null,curEps=[],curIdx=-1,sdrag=false,htimer=null;
+async function loadLib(f){
+  document.getElementById('loader').style.display='flex';
+  if(f)await fetch('/api/library?r='+Date.now()).catch(()=>{});
+  var lib=await MC.loadLibrary();allS=lib.series||{};
+  document.getElementById('loader').style.display='none';render();
+}
+function render(){
+  var q=(document.getElementById('srch').value||'').toLowerCase();
+  var ns=Object.keys(allS).filter(n=>!q||n.toLowerCase().includes(q)).sort();
+  document.getElementById('lbl').textContent=ns.length+' Serie'+(ns.length!==1?'n':'');
+  var g=document.getElementById('grid');
+  if(!ns.length){
+    g.innerHTML='<div class="empty-state" style="grid-column:1/-1">'
+      +'<div class="es-icon">📺</div>'
+      +'<div class="es-title">Keine Serien vorhanden</div>'
+      +'<div class="es-sub">Noch keine Serienfolgen gefunden. Benenne Dateien mit S01E01-Format und lade sie hoch.</div>'
+      +'<button class="es-upload-btn" onclick="window.parent&&window.parent.postMessage({type:\'navigate\',page:\'upload.html\',label:\'☁️ Upload\'},\'*\')">'
+      +'<span class="eu-icon">☁️</span> Jetzt Serien hochladen</button>'
+      +'</div>';
+    return;
+  }
+  g.innerHTML=ns.map(n=>{
+    var sk=Object.keys(allS[n]);var tot=sk.reduce((s,k)=>s+allS[n][k].length,0);
+    return '<div class="series-card" onclick="openS(\''+MC.esc(n)+'\')">'
+      +'<div class="series-banner"><span>📺</span>'
+      +'<div class="card-overlay"><div class="card-play">▶ Ansehen</div></div>'
+      +'</div>'
+      +'<div class="series-info"><div class="series-name">'+MC.esc(n)+'</div>'
+      +'<div class="series-meta"><span>'+sk.length+' Staffel'+(sk.length!==1?'n':'')+'</span>'
+      +'<span>'+tot+' Ep.</span></div></div></div>';
+  }).join('');
+}
+function openS(n){
+  cur=n;var sk=Object.keys(allS[n]).sort();
+  document.getElementById('dt').textContent=n;
+  var tot=sk.reduce((s,k)=>s+allS[n][k].length,0);
+  document.getElementById('dm').textContent=sk.length+' Staffeln · '+tot+' Episoden';
+  document.getElementById('stabs').innerHTML=sk.map((k,i)=>'<button class="s-tab'+(i===0?' active':'')
+    +'" onclick="selS(\''+k+'\',this)">'+k+'</button>').join('');
+  selS(sk[0]);document.getElementById('detail').classList.add('show');
+}
+function closeDetail(){document.getElementById('detail').classList.remove('show');cur=null;}
+function selS(k,el){
+  curSeason=k;curEps=((allS[cur]||{})[k])||[];
+  if(el){document.querySelectorAll('.s-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
+  renderEps();
+}
+function renderEps(){
+  document.getElementById('eplist').innerHTML=curEps.map((ep,i)=>{
+    var p=getP(ep);var pct=ep.size&&p>5?(Math.min((p/(ep.size/50000)),100)):0;
+    var tag=ep.display?ep.display.split('–')[0].trim():'E'+String(ep.episode).padStart(2,'0');
+    var name=ep.display?ep.display.replace(/^S\d+E\d+\s*[–-]\s*/,''):ep.name.replace(/\.[^.]+$/,'');
+    return '<div class="ep-row'+(curIdx===i?' now':'')
+      +'" onclick="playEp('+i+')">'
+      +'<div><div class="ep-num">'+MC.esc(tag)+'</div></div>'
+      +'<div style="flex:1;min-width:0"><div class="ep-name">'+MC.esc(name)+'</div>'
+      +'<div class="ep-prog-wrap"><div class="ep-prog-bar" style="width:'+pct+'%"></div></div>'
+      +'</div>'
+      +'<div class="ep-sz">'+MC.fmtSize(ep.size)+'</div></div>';
+  }).join('');
+}
+function playEp(i){
+  var ep=curEps[i];if(!ep)return;curIdx=i;
+  var vid=document.getElementById('vid');
+  vid.src='/api/media?file='+encodeURIComponent(ep.path);
+  document.getElementById('vtit').textContent=(cur||'')+' · '+(ep.display||ep.name);
+  document.getElementById('player').classList.add('show');
+  document.body.style.overflow='hidden';
+  vid.play().catch(()=>{});renderEps();
+  window.parent&&window.parent.postMessage({type:'videoPlaying'},'*');
+}
+function prevEp(){if(curIdx>0)playEp(curIdx-1);}
+function nextEp(){if(curIdx<curEps.length-1)playEp(curIdx+1);else closeP();}
+function closeP(){
+  var vid=document.getElementById('vid');
+  if(curIdx>=0)saveP(curEps[curIdx],vid.currentTime);
+  vid.pause();vid.src='';document.getElementById('player').classList.remove('show');
+  document.body.style.overflow='';renderEps();
+  window.parent&&window.parent.postMessage({type:'videoStopped'},'*');
+}
+function tplay(){var v=document.getElementById('vid');v.paused?v.play():v.pause();}
+function skip(s){var v=document.getElementById('vid');v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));}
+function doFs(){var p=document.getElementById('player');if(document.fullscreenElement)document.exitFullscreen();else p.requestFullscreen&&p.requestFullscreen();}
+var vid=document.getElementById('vid'),pbtn=document.getElementById('pbtn');
+vid.addEventListener('play',()=>pbtn.textContent='⏸');
+vid.addEventListener('pause',()=>pbtn.textContent='▶');
+vid.addEventListener('timeupdate',function(){
+  if(sdrag)return;
+  var p=vid.duration>0?vid.currentTime/vid.duration:0;
+  document.getElementById('sfill').style.width=(p*100)+'%';
+  document.getElementById('tc').textContent=MC.fmtTime(vid.currentTime);
+  document.getElementById('td').textContent=MC.fmtTime(vid.duration);
+});
+vid.addEventListener('loadedmetadata',function(){
+  if(curIdx<0)return;var p=getP(curEps[curIdx]);
+  if(p>5){vid.currentTime=p;MC.toast('⏩ '+MC.fmtTime(p),'ok',1800);}
+});
+vid.addEventListener('ended',()=>{if(curIdx>=0)saveP(curEps[curIdx],0);setTimeout(()=>nextEp(),1500);});
+vid.addEventListener('click',tplay);vid.addEventListener('dblclick',doFs);
+document.getElementById('player').addEventListener('mousemove',function(){
+  document.getElementById('ctl').style.opacity='1';clearTimeout(htimer);
+  htimer=setTimeout(()=>{if(!vid.paused)document.getElementById('ctl').style.opacity='0';},3200);
+});
+function seekMD(e){
+  if(!vid.duration)return;var bar=document.getElementById('sbar');bar.classList.add('drag');sdrag=true;
+  function mv(ev){var r=bar.getBoundingClientRect();var p=Math.max(0,Math.min((ev.clientX-r.left)/r.width,1));document.getElementById('sfill').style.width=(p*100)+'%';document.getElementById('tc').textContent=MC.fmtTime(p*vid.duration);}
+  function up(ev){bar.classList.remove('drag');sdrag=false;var r=bar.getBoundingClientRect();vid.currentTime=Math.max(0,Math.min((ev.clientX-r.left)/r.width,1))*vid.duration;document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);mv(e);
+}
+function seekTD(e){
+  if(!vid.duration)return;e.preventDefault();var bar=document.getElementById('sbar');bar.classList.add('drag');
+  function pt(ev){return ev.touches[0]||ev.changedTouches[0];}
+  function mv(ev){var r=bar.getBoundingClientRect();var p=Math.max(0,Math.min((pt(ev).clientX-r.left)/r.width,1));document.getElementById('sfill').style.width=(p*100)+'%';}
+  function up(ev){bar.classList.remove('drag');var r=bar.getBoundingClientRect();vid.currentTime=Math.max(0,Math.min((pt(ev).clientX-r.left)/r.width,1))*vid.duration;bar.removeEventListener('touchmove',mv);bar.removeEventListener('touchend',up);}
+  bar.addEventListener('touchmove',mv,{passive:false});bar.addEventListener('touchend',up);mv(e);
+}
+document.addEventListener('keydown',function(e){
+  if(!document.getElementById('player').classList.contains('show'))return;
+  if(e.key==='Escape'){closeP();return;}
+  if(e.key===' '||e.key==='k'){e.preventDefault();tplay();}
+  if(e.key==='ArrowRight')skip(10);if(e.key==='ArrowLeft')skip(-10);
+  if(e.key==='n')nextEp();if(e.key==='p')prevEp();if(e.key==='f')doFs();
+});
+function saveP(ep,t){if(!ep)return;try{t>5?localStorage.setItem('sp_'+encodeURIComponent(ep.path),t):localStorage.removeItem('sp_'+encodeURIComponent(ep.path));}catch{}}
+function getP(ep){if(!ep)return 0;try{return parseFloat(localStorage.getItem('sp_'+encodeURIComponent(ep.path)))||0;}catch{return 0;}}
+async function trashAll(){
+  if(!cur||!confirm('Gesamte Serie "'+cur+'" löschen?'))return;
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'move_series',series:cur})});
+  if(r.success){MC.toast('🗑️ '+r.moved+' Episoden verschoben','ok');delete allS[cur];closeDetail();render();}
+  else MC.toast('Fehler: '+r.error,'err');
+}
+/* Volume vom Parent anfordern */
+try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
+loadLib();
+/* Volume + Mutex + Remote-Keys vom Parent */
+window.addEventListener('message',e=>{
+  if(!e.data)return;
+  if(e.data.type==='set-volume'){
+    var v=Math.max(0,Math.min(1,e.data.vol||0));
+    document.querySelectorAll('video').forEach(function(vid){vid.volume=v;});
+  }
+  if(e.data.type==='media-pause-all'){
+    document.querySelectorAll('video').forEach(function(vid){if(!vid.paused)vid.pause();});
+  }
+  if(e.data.type==='remote-key'){
+    var k=e.data.key;
+    var vid=document.querySelector('video:not([paused])') || document.querySelector('video');
+    var playerOpen=document.querySelector('#player.show, .player-modal.show, [id*="player"].show');
+    if(vid&&playerOpen){
+      if(k===' '||k==='Enter'){vid.paused?vid.play():vid.pause();}
+      else if(k==='ArrowRight'){vid.currentTime=Math.min((vid.duration||0),vid.currentTime+10);}
+      else if(k==='ArrowLeft'){vid.currentTime=Math.max(0,vid.currentTime-10);}
+      else if(k==='Escape'){vid.pause();if(playerOpen)playerOpen.classList.remove('show');}
+    }
+  }
+});
+</script>
+</body>
+</html>
