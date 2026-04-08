@@ -1,4 +1,4 @@
-# MediaCenter v2.0 – Portable Edition
+# MediaCenter v3.0 – Portable Edition
 
 Lokales MediaCenter für Filme, Serien, Musik, Fotos und Spiele.
 Läuft als Electron-App, im Browser oder direkt über start.bat.
