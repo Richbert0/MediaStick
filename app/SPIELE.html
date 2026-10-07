@@ -1,473 +1,556 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Spiele - MediaCenter</title>
-<link rel="stylesheet" href="/css/main.css">
+<title>Spiele – MediaCenter</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
 <style>
-:root{
-  --bg:#071018;
-  --panel:rgba(14,23,35,.9);
-  --panel-2:rgba(9,16,26,.92);
-  --line:rgba(255,215,0,.14);
-  --line-strong:rgba(255,215,0,.35);
-  --gold:#ffd24a;
-  --gold-2:#ffab37;
-  --text:#f7fbff;
-  --muted:#99a7b7;
-  --green:#39d98a;
-  --red:#ff6f6f;
-  --blue:#67c7ff;
-  --shadow:0 20px 50px rgba(0,0,0,.35);
-}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:
-  radial-gradient(circle at top left,rgba(103,199,255,.08),transparent 28%),
-  radial-gradient(circle at top right,rgba(255,171,55,.12),transparent 24%),
-  linear-gradient(180deg,#071018,#060c14 58%,#04080f 100%);
-  color:var(--text);font-family:"Aptos","Segoe UI",sans-serif;min-height:100%}
-body{min-height:100vh}
-.games-page{max-width:1380px;margin:0 auto;padding:20px 20px 28px}
-.hero{
-  display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.9fr);gap:18px;margin-bottom:18px;
-}
-.hero-card,.status-card,.section-card,.info-card,.overlay-shell{
-  background:linear-gradient(180deg,rgba(16,28,42,.96),rgba(8,14,22,.94));
-  border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;
-}
-.hero-card{padding:26px 26px 24px;position:relative}
-.hero-card::before{
-  content:"";position:absolute;inset:auto -50px -70px auto;width:220px;height:220px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,210,74,.16),transparent 70%);pointer-events:none;
-}
-.eyebrow{
-  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;margin-bottom:14px;
-  border-radius:999px;border:1px solid rgba(103,199,255,.16);background:rgba(103,199,255,.08);
-  color:#bfe8ff;font-size:.74rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
-}
-.hero h1{margin:0 0 10px;font-size:clamp(1.6rem,3vw,2.6rem);line-height:1.04;font-weight:900}
-.hero p{margin:0;max-width:760px;color:var(--muted);line-height:1.7;font-size:.97rem}
-.hero-stats{
-  margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;
-}
-.stat{
-  padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.03);
-  border:1px solid rgba(255,255,255,.06);min-height:94px;
-}
-.stat strong{display:block;font-size:1.4rem;color:var(--gold);margin-bottom:6px}
-.stat span{display:block;font-size:.78rem;color:var(--muted);line-height:1.5}
-.status-card{padding:22px}
-.status-card h2{margin:0 0 8px;font-size:1rem;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--gold)}
-.status-card p{margin:0 0 14px;color:var(--muted);line-height:1.65;font-size:.9rem}
-.status-stack{display:grid;gap:12px}
-.badge-line{
-  display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 14px;border-radius:16px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-}
-.badge-copy{font-size:.72rem;color:var(--muted)}
-.ws-badge{
-  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
-  font-size:.78rem;font-weight:800;border:1px solid rgba(255,255,255,.1)
-}
-.ws-badge.on{color:var(--green);background:rgba(57,217,138,.12);border-color:rgba(57,217,138,.26)}
-.ws-badge.off{color:var(--red);background:rgba(255,111,111,.12);border-color:rgba(255,111,111,.25)}
-.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:18px 0 14px}
-.tab-bar{
-  display:inline-flex;gap:8px;padding:6px;border-radius:18px;background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.06)
-}
-.tab{
-  border:none;background:none;color:var(--muted);padding:11px 16px;border-radius:14px;cursor:pointer;
-  font:inherit;font-size:.86rem;font-weight:800;transition:.2s;display:inline-flex;align-items:center;gap:8px
-}
-.tab:hover{color:var(--text);background:rgba(255,255,255,.05)}
-.tab.active{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#111}
-.tab-count{
-  display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;
-  background:rgba(0,0,0,.15);font-size:.72rem;padding:0 7px
-}
-.toolbar-note{font-size:.8rem;color:var(--muted)}
-.section-card{padding:18px}
-.section-head{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px
-}
-.section-head h3{margin:0 0 6px;font-size:1.02rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
-.section-head p{margin:0;color:var(--muted);line-height:1.6;font-size:.88rem;max-width:720px}
-.pill-row{display:flex;flex-wrap:wrap;gap:8px}
-.pill{
-  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:.76rem;color:var(--muted)
-}
-.games-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px
-}
-.game-card{
-  position:relative;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.06);
-  background:linear-gradient(180deg,rgba(13,23,34,.94),rgba(8,13,21,.96));cursor:pointer;
-  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;min-height:260px
-}
-.game-card:hover{transform:translateY(-4px);border-color:var(--line-strong);box-shadow:0 20px 38px rgba(0,0,0,.34)}
-.game-cover{
-  min-height:132px;padding:18px 18px 14px;display:flex;flex-direction:column;justify-content:space-between;
-  border-bottom:1px solid rgba(255,255,255,.05)
-}
-.game-cover[data-tone="solo-a"]{background:linear-gradient(135deg,#12324e,#1b4c77 55%,#225882)}
-.game-cover[data-tone="solo-b"]{background:linear-gradient(135deg,#1b3240,#1e6955 55%,#1f8371)}
-.game-cover[data-tone="solo-c"]{background:linear-gradient(135deg,#412b18,#7a4619 55%,#ad5f1e)}
-.game-cover[data-tone="solo-d"]{background:linear-gradient(135deg,#32255b,#5f31a2 58%,#915eff)}
-.game-cover[data-tone="multi-a"]{background:linear-gradient(135deg,#3b223b,#7b2b79 58%,#be4ac4)}
-.game-cover[data-tone="multi-b"]{background:linear-gradient(135deg,#263957,#2f5ca1 58%,#5db6ff)}
-.game-cover[data-tone="multi-c"]{background:linear-gradient(135deg,#1f3930,#1f7056 58%,#38c989)}
-.game-cover[data-tone="multi-d"]{background:linear-gradient(135deg,#4a261d,#9d3924 58%,#e25f32)}
-.game-topline{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.mode-badge{
-  display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;font-size:.68rem;font-weight:900;
-  letter-spacing:.08em;text-transform:uppercase;background:rgba(7,12,18,.18);backdrop-filter:blur(10px)
-}
-.mode-badge.solo{color:#d6eeff}
-.mode-badge.multi{color:#dfffe6}
-.game-mark{
-  width:52px;height:52px;border-radius:16px;background:rgba(255,255,255,.12);display:flex;align-items:center;
-  justify-content:center;font-size:1.35rem;font-weight:900;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)
-}
-.game-body{padding:18px}
-.game-title{font-size:1rem;font-weight:900;margin:0 0 8px}
-.game-desc{margin:0;color:var(--muted);font-size:.84rem;line-height:1.65;min-height:55px}
-.game-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.meta-chip{
-  padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-  font-size:.72rem;color:var(--muted)
-}
-.play-strip{
-  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px 18px;color:#d8e7f3
-}
-.play-text{font-size:.78rem;font-weight:800;color:#d7e7f8;text-transform:uppercase;letter-spacing:.08em}
-.play-arrow{
-  width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.08);display:flex;align-items:center;
-  justify-content:center;font-size:1.05rem;border:1px solid rgba(255,255,255,.08)
-}
-.info-card{padding:18px;margin-top:18px}
-.info-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.info-box{
-  padding:14px 15px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)
-}
-.info-box strong{display:block;margin-bottom:8px;font-size:.86rem;color:var(--gold)}
-.info-box span{display:block;color:var(--muted);font-size:.8rem;line-height:1.6}
-#game-overlay{
-  position:fixed;inset:0;display:none;z-index:5500;padding:14px;background:rgba(2,6,10,.84);backdrop-filter:blur(12px)
-}
-#game-overlay.show{display:block}
-.overlay-shell{width:min(1440px,100%);height:100%;margin:0 auto;display:flex;flex-direction:column}
-.overlay-bar{
-  display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)
-}
-.overlay-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.92rem;font-weight:900;color:var(--gold)}
-.overlay-btn{
-  border:none;background:rgba(255,255,255,.05);color:var(--text);padding:10px 13px;border-radius:12px;cursor:pointer;
-  font:inherit;font-size:.82rem;font-weight:800;border:1px solid rgba(255,255,255,.07);transition:.2s
-}
-.overlay-btn:hover{background:rgba(255,215,0,.12);border-color:rgba(255,215,0,.18)}
-.overlay-btn.danger:hover{background:rgba(255,111,111,.12);border-color:rgba(255,111,111,.18)}
-#game-frame{flex:1;width:100%;border:none;background:#000}
+html,body{overflow:auto;height:auto;min-height:100%}
+body{user-select:auto;-webkit-user-select:auto}
+.hub{max-width:1320px;margin:0 auto;padding:18px 18px 40px}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.top h1{font-family:var(--gk-display);font-size:clamp(1.4rem,2.6vw,2rem);font-weight:800;letter-spacing:.02em}
+.top h1 span{background:linear-gradient(135deg,var(--gk-amber),#fbbf24);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.top .sub{color:var(--gk-sub);font-size:.86rem;flex-basis:100%;margin-top:-8px}
+.spacer{flex:1}
+.me-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 8px 6px 6px;border-radius:999px;border:1px solid var(--gk-line);background:rgba(255,255,255,.03);cursor:pointer;font-weight:700;font-size:.85rem}
+.me-chip:hover{border-color:rgba(34,211,238,.45)}
+.avatar{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;font-weight:800;color:#06080f;flex-shrink:0}
+.avatar.lg{width:44px;height:44px;font-size:1.3rem}
+
+.tabs{display:inline-flex;gap:6px;padding:5px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--gk-line2);margin-bottom:16px}
+.tab{border:none;background:none;color:var(--gk-sub);padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:800;font-size:.86rem;display:inline-flex;gap:8px;align-items:center}
+.tab:hover{color:var(--gk-txt)}
+.tab.active{background:linear-gradient(135deg,var(--gk-accent),var(--gk-accent2));color:#031018}
+.tab .cnt{font-size:.7rem;padding:1px 7px;border-radius:999px;background:rgba(0,0,0,.18)}
 .hidden{display:none!important}
-@media (max-width:1100px){
-  .hero{grid-template-columns:1fr}
-  .info-grid{grid-template-columns:1fr}
-}
-@media (max-width:760px){
-  .games-page{padding:14px 12px 20px}
-  .hero-card,.status-card,.section-card,.info-card,.overlay-shell{border-radius:20px}
-  .hero-card{padding:20px}
-  .hero-stats{grid-template-columns:1fr}
-  .toolbar{flex-direction:column;align-items:stretch}
-  .tab-bar{width:100%;justify-content:space-between}
-  .tab{flex:1;justify-content:center}
-  .section-head{flex-direction:column}
-  .games-grid{grid-template-columns:1fr}
-  .overlay-bar{flex-wrap:wrap}
-  .overlay-title{width:100%;order:-1}
-}
+
+/* Spielkarten */
+.filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{position:relative;display:flex;flex-direction:column;border-radius:18px;overflow:hidden;border:1px solid var(--gk-line2);
+  background:linear-gradient(180deg,rgba(16,22,40,.95),rgba(8,11,22,.96));transition:transform .18s,border-color .18s,box-shadow .18s}
+.card:hover{transform:translateY(-3px);border-color:rgba(34,211,238,.35);box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.cover{height:108px;position:relative;display:flex;align-items:flex-end;justify-content:space-between;padding:12px 14px;cursor:pointer}
+.cover .ico{font-size:2.4rem;filter:drop-shadow(0 6px 14px rgba(0,0,0,.35))}
+.cover .ppl{font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.28);color:#fff}
+.body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.body h3{font-size:1.02rem;font-weight:800}
+.body p{font-size:.8rem;color:var(--gk-sub);line-height:1.55;flex:1}
+.best{font-size:.72rem;color:var(--gk-amber);font-weight:700;min-height:1em}
+.modes{display:flex;flex-wrap:wrap;gap:6px}
+.mbtn{flex:1 1 auto;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--gk-line);background:rgba(34,211,238,.06);color:var(--gk-txt);
+  cursor:pointer;font-weight:700;font-size:.76rem;white-space:nowrap;transition:.15s}
+.mbtn:hover{background:rgba(34,211,238,.16);border-color:rgba(34,211,238,.5)}
+.mbtn.first{background:linear-gradient(135deg,var(--gk-accent),var(--gk-accent2));color:#031018;border-color:transparent}
+.mbtn.lan{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08)}
+.mbtn.lan:hover{background:rgba(245,158,11,.2)}
+
+/* LAN */
+.lan-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+.panel{border-radius:18px;border:1px solid var(--gk-line2);background:linear-gradient(180deg,rgba(16,22,40,.95),rgba(8,11,22,.96));padding:16px}
+.panel h2{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gk-sub);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.panel h2 .n{margin-left:auto;color:var(--gk-txt)}
+.plist{display:grid;gap:6px}
+.prow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--gk-line2)}
+.prow .nm{flex:1;min-width:0;font-weight:700;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .st{font-size:.7rem;color:var(--gk-sub)}
+.prow .me{font-size:.66rem;color:var(--gk-accent);font-weight:800}
+.sbtn{padding:6px 10px;border-radius:9px;border:1px solid var(--gk-line);background:rgba(34,211,238,.07);color:var(--gk-accent);font-weight:800;font-size:.72rem;cursor:pointer}
+.sbtn:hover{background:rgba(34,211,238,.18)}
+.empty{color:var(--gk-sub);font-size:.84rem;padding:10px 4px}
+.login{max-width:460px;margin:30px auto}
+.login .panel{padding:22px}
+.login h2{font-size:1.1rem;letter-spacing:0;text-transform:none;color:var(--gk-txt)}
+.inp{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--gk-line);background:rgba(255,255,255,.04);color:var(--gk-txt);font:inherit;font-size:1rem;outline:none}
+.inp:focus{border-color:var(--gk-accent);box-shadow:0 0 0 3px rgba(34,211,238,.15)}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.sw{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.sw.sel{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.emojis{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.em{width:38px;height:38px;border-radius:10px;border:1px solid var(--gk-line2);background:rgba(255,255,255,.03);cursor:pointer;font-size:1.2rem}
+.em.sel{border-color:var(--gk-accent);background:rgba(34,211,238,.12)}
+.err{color:var(--gk-red);font-size:.84rem;margin-top:10px;min-height:1.2em}
+.create-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.cbtn{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;border:1px solid var(--gk-line2);background:rgba(255,255,255,.03);cursor:pointer;text-align:left;font-weight:700;font-size:.84rem;transition:.15s}
+.cbtn:hover,.cbtn.pre{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.08)}
+.cbtn .i{font-size:1.4rem}
+.cbtn small{display:block;color:var(--gk-sub);font-weight:600;font-size:.68rem}
+.joinrow{display:flex;gap:8px;margin-top:14px}
+.joinrow .inp{text-transform:uppercase;letter-spacing:.3em;font-family:var(--gk-mono);font-weight:800;max-width:180px}
+.rooms{display:grid;gap:8px;margin-top:6px}
+.rrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--gk-line2)}
+.rrow .i{font-size:1.4rem}
+.rrow .t{flex:1;min-width:0}
+.rrow .t b{display:block;font-size:.88rem}
+.rrow .t span{font-size:.72rem;color:var(--gk-sub)}
+.code{font-family:var(--gk-mono);font-weight:800;letter-spacing:.15em;color:var(--gk-amber)}
+.roombox{display:grid;gap:14px}
+.roomhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.roomhead .i{font-size:2.4rem}
+.roomhead .code{font-size:1.8rem}
+.roomhead .meta{flex:1;min-width:180px}
+.roomhead .meta b{display:block;font-size:1.1rem}
+.roomhead .meta span{color:var(--gk-sub);font-size:.82rem}
+.rplayers{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.ready{font-size:.7rem;font-weight:800;padding:3px 8px;border-radius:999px}
+.ready.y{background:rgba(52,211,153,.14);color:var(--gk-green)}
+.ready.n{background:rgba(255,255,255,.05);color:var(--gk-sub)}
+.ready.h{background:rgba(245,158,11,.14);color:var(--gk-amber)}
+.raction{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:.8rem;color:var(--gk-sub);line-height:1.6}
+.addr{display:flex;gap:14px;align-items:center;margin-top:12px}
+.addr img{width:96px;height:96px;border-radius:10px;background:#fff;padding:4px}
+.addr .u{font-family:var(--gk-mono);font-weight:700;color:var(--gk-accent);word-break:break-all;font-size:.86rem}
+.invite{position:fixed;right:16px;bottom:16px;z-index:40;width:min(340px,calc(100vw - 32px));border-radius:16px;border:1px solid rgba(245,158,11,.45);
+  background:linear-gradient(160deg,rgba(30,24,10,.98),rgba(12,12,20,.98));padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.5);display:grid;gap:10px}
+.invite .raction .gk-btn{flex:1;padding:9px}
+
+/* Spiel-Overlay */
+#game-layer{position:fixed;inset:0;z-index:30;background:#05070d;display:none}
+#game-layer.show{display:block}
+#game-frame{width:100%;height:100%;border:0;display:block;background:#05070d}
+body.playing{overflow:hidden}
+
+@media (max-width:880px){.lan-grid{grid-template-columns:1fr}}
+@media (max-width:560px){.hub{padding:12px 10px 30px}.grid{grid-template-columns:1fr}.tabs{width:100%}.tab{flex:1;justify-content:center;padding:10px 8px}}
 </style>
 </head>
 <body>
-<div class="games-page">
-  <section class="hero">
-    <div class="hero-card">
-      <span class="eyebrow">Game Hub</span>
-      <h1>Solo und LAN sind jetzt klar getrennt.</h1>
-      <p>Die Bibliothek zeigt Einzelspieler- und Netzwerkspiele in eigenen Bereichen. LAN-Titel wie Memory und Pong starten mit Raumcode, Lobby und passender Match-Oberflaeche direkt im App-Fenster.</p>
-      <div class="hero-stats">
-        <div class="stat">
-          <strong id="solo-count">0</strong>
-          <span>Einzelspieler-Spiele fuer kurze Sessions ohne Netzwerk.</span>
-        </div>
-        <div class="stat">
-          <strong id="multi-count">0</strong>
-          <span>LAN-Spiele mit Raumcode, Lobby und synchronem Spielstand.</span>
-        </div>
-        <div class="stat">
-          <strong>Responsive</strong>
-          <span>Optimiert fuer kleine Touch-Displays und grosse Desktop-Fenster.</span>
-        </div>
-      </div>
-    </div>
-    <aside class="status-card">
-      <h2>LAN Status</h2>
-      <p>Der Multiplayer-Server laeuft lokal auf Port 8765. Alle Geraete im selben Netzwerk koennen mit denselben Raumcodes beitreten.</p>
-      <div class="status-stack">
-        <div class="badge-line">
-          <div>
-            <strong style="display:block;font-size:.82rem;color:#fff;margin-bottom:4px">WebSocket Multiplayer</strong>
-            <span class="badge-copy">Room-basierte Spiele, Chat und Match-Sync</span>
-          </div>
-          <span class="ws-badge off" id="ws-badge">Pruefe...</span>
-        </div>
-        <div class="badge-line">
-          <div>
-            <strong style="display:block;font-size:.82rem;color:#fff;margin-bottom:4px">Empfohlener Ablauf</strong>
-            <span class="badge-copy">Host erstellt Raum, Gegenspieler tritt per Code bei, dann Start im Spiel.</span>
-          </div>
-        </div>
-      </div>
-    </aside>
-  </section>
-
-  <div class="toolbar">
-    <div class="tab-bar">
-      <button class="tab active" id="tab-solo" onclick="setTab('solo')">
-        Solo
-        <span class="tab-count" id="tab-solo-count">0</span>
-      </button>
-      <button class="tab" id="tab-multi" onclick="setTab('multi')">
-        LAN
-        <span class="tab-count" id="tab-multi-count">0</span>
-      </button>
-    </div>
-    <div class="toolbar-note" id="toolbar-note">Direkter Start fuer Einzelspieler-Spiele.</div>
+<div class="hub">
+  <div class="top">
+    <h1>🎮 <span>Spielhalle</span></h1>
+    <div class="spacer"></div>
+    <span class="gk-net" id="net-badge"><i></i><span>LAN</span></span>
+    <button class="me-chip hidden" id="me-chip" type="button" title="Profil bearbeiten"></button>
+    <div class="sub">Sofort allein spielen, gegen die KI, zu zweit an einem Gerät – oder im LAN gegen andere Geräte.</div>
   </div>
 
-  <section class="section-card" id="solo-view">
-    <div class="section-head">
-      <div>
-        <h3>Solo Spiele</h3>
-        <p>Fuer lokale Sessions ohne Raumcode. Die Auswahl konzentriert sich auf schnelle, direkte Spiele, waehrend kooperative oder wettbewerbsorientierte Titel in den LAN-Bereich gewandert sind.</p>
-      </div>
-      <div class="pill-row">
-        <span class="pill">Sofort startklar</span>
-        <span class="pill">Keine Lobby</span>
-        <span class="pill">Keyboard und Touch</span>
-      </div>
-    </div>
-    <div class="games-grid" id="solo-grid"></div>
+  <div class="tabs" role="tablist">
+    <button class="tab active" id="tab-games" role="tab" type="button">Alle Spiele <span class="cnt" id="cnt-games">0</span></button>
+    <button class="tab" id="tab-lan" role="tab" type="button">LAN-Lobby <span class="cnt" id="cnt-lan">0</span></button>
+  </div>
+
+  <!-- Spiele -->
+  <section id="view-games">
+    <div class="filter gk-opts" style="justify-content:flex-start;margin:0 0 14px" id="filter"></div>
+    <div class="grid" id="grid"></div>
   </section>
 
-  <section class="section-card hidden" id="multi-view">
-    <div class="section-head">
-      <div>
-        <h3>LAN Spiele</h3>
-        <p>Diese Titel sind fuer echte Netzwerkduelle gedacht. Host und Mitspieler verbinden sich ueber denselben Raumcode, die Spiellogik bleibt synchron und die Darstellung ist fuer kompakte und grosse Displays ausgelegt.</p>
-      </div>
-      <div class="pill-row">
-        <span class="pill">Raumcode und Lobby</span>
-        <span class="pill">Host gesteuerter Match-Sync</span>
-        <span class="pill">Mehrgeraete geeignet</span>
+  <!-- LAN -->
+  <section id="view-lan" class="hidden">
+    <div id="lan-login" class="login hidden">
+      <div class="panel">
+        <h2>Im LAN anmelden</h2>
+        <p class="hint" style="margin:-4px 0 14px">Wähle einen Namen, unter dem dich andere im Netzwerk sehen. Danach geht es direkt in die Lobby.</p>
+        <label class="gk-label" for="login-name" style="display:block;margin-top:0">Name</label>
+        <input class="inp" id="login-name" maxlength="20" autocomplete="nickname" placeholder="z.B. Alex" style="margin-top:6px">
+        <div class="gk-label">Farbe</div>
+        <div class="swatches" id="login-colors"></div>
+        <div class="gk-label">Symbol</div>
+        <div class="emojis" id="login-emojis"></div>
+        <div class="err" id="login-err"></div>
+        <div class="gk-actions"><button class="gk-btn primary" id="login-btn" type="button">Anmelden &amp; zur Lobby</button></div>
       </div>
     </div>
-    <div class="games-grid" id="multi-grid"></div>
-  </section>
 
-  <section class="info-card">
-    <div class="info-grid">
-      <div class="info-box">
-        <strong>Memory jetzt als LAN-Spiel</strong>
-        <span>Turn-basierte Runden mit sichtbar synchronisierten Karten, Punktezaehler und Raumcode fuer zwei Spieler.</span>
-      </div>
-      <div class="info-box">
-        <strong>Pong jetzt als Netzwerkduell</strong>
-        <span>Ein Host simuliert Ball und Punkte, beide Seiten steuern ihre Schlaeger ueber Tastatur oder Touch.</span>
-      </div>
-      <div class="info-box">
-        <strong>Saubere Trennung</strong>
-        <span>Solo-Titel bleiben lokal. Alles, was Wettbewerb oder Match-Sync braucht, sitzt im eigenen LAN-Bereich.</span>
+    <div id="lan-lobby" class="lan-grid hidden">
+      <aside class="panel">
+        <h2>Online im LAN <span class="n" id="online-n">0</span></h2>
+        <div class="plist" id="online"></div>
+        <div class="hint" style="margin-top:14px">Andere Geräte im selben WLAN öffnen diese Adresse im Browser und wählen <b>Spiele → LAN-Lobby</b>:</div>
+        <div class="addr" id="addr"></div>
+      </aside>
+      <div class="roombox">
+        <div class="panel hidden" id="room-panel"></div>
+        <div id="nonroom">
+          <div class="panel">
+            <h2>Neues Spiel erstellen</h2>
+            <div class="create-grid" id="create-grid"></div>
+            <div class="joinrow">
+              <input class="inp" id="join-code" maxlength="4" placeholder="CODE" aria-label="Raumcode" autocomplete="off">
+              <button class="gk-btn" id="join-btn" type="button">Mit Code beitreten</button>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:14px">
+            <h2>Offene Räume <span class="n" id="rooms-n">0</span></h2>
+            <div class="rooms" id="rooms"></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 </div>
 
-<div id="game-overlay">
-  <div class="overlay-shell">
-    <div class="overlay-bar">
-      <div class="overlay-title" id="game-title">Spiel</div>
-      <button class="overlay-btn" type="button" onclick="toggleFullGame()">Vollbild</button>
-      <button class="overlay-btn danger" type="button" onclick="closeGame()">Schliessen</button>
-    </div>
-    <iframe id="game-frame" src="" allow="fullscreen" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-  </div>
-</div>
+<div id="invite-box" class="invite hidden" role="alertdialog"></div>
+<div id="game-layer"><iframe id="game-frame" title="Spiel" allow="fullscreen; autoplay" src="about:blank"></iframe></div>
+<div class="gk-toast" id="toast" role="status"></div>
 
+<script src="/games/shared/net.js"></script>
 <script>
-const SOLO_GAMES = [
-  { title: 'Snake', icon: 'SN', desc: 'Das klassische Sammelspiel fuer schnelle Reflexe.', file: 'games/solo/snake.html', tone: 'solo-b', tags: ['Solo', 'Arcade'] },
-  { title: 'Tetris', icon: 'TT', desc: 'Steine stapeln, Reihen schliessen und Tempo halten.', file: 'games/solo/tetris.html', tone: 'solo-d', tags: ['Solo', 'Puzzle'] },
-  { title: '2048', icon: '20', desc: 'Zahlen verschmelzen, Platz sichern und Rekorde jagen.', file: 'games/solo/2048.html', tone: 'solo-a', tags: ['Solo', 'Denken'] },
-  { title: 'Breakout', icon: 'BR', desc: 'Bloecke zerlegen und den Ball im Spiel halten.', file: 'games/solo/breakout.html', tone: 'solo-c', tags: ['Solo', 'Arcade'] },
-  { title: 'Mathe', icon: 'MX', desc: 'Kurze Rechenrunden fuer Konzentration und Tempo.', file: 'games/solo/math.html', tone: 'solo-a', tags: ['Solo', 'Lernen'] },
-  { title: 'Typer', icon: 'TY', desc: 'Tipprhythmus testen und deine Geschwindigkeit steigern.', file: 'games/solo/typer.html', tone: 'solo-b', tags: ['Solo', 'Skill'] }
+'use strict';
+const GAMES = [
+  { id: 'snake', title: 'Snake', icon: '🐍', bg: ['#0f3b2e', '#1f8a5b'], modes: ['solo', 'ai', 'local', 'lan'], ppl: '1–2', desc: 'Fressen, wachsen, nicht in die Wand – allein, gegen die KI-Schlange oder im Duell.' },
+  { id: 'tetris', title: 'Tetris', icon: '🧱', bg: ['#2b1d5c', '#6d3fd6'], modes: ['solo', 'local', 'lan'], ppl: '1–2', desc: 'Reihen füllen, Combos bauen. Im Duell schickst du deinem Gegner Müllreihen.' },
+  { id: 'g2048', title: '2048', icon: '🔢', bg: ['#4a2c0f', '#c27a1a'], modes: ['solo', 'local', 'lan'], ppl: '1–2', desc: 'Zahlen verschmelzen. Im Duell gewinnt nach 3 Minuten die höhere Punktzahl.' },
+  { id: 'breakout', title: 'Breakout', icon: '🧨', bg: ['#4a1626', '#c2385a'], modes: ['solo', 'local', 'lan'], ppl: '1–2', desc: 'Steine zertrümmern mit Power-Ups. Zu zweit: wer räumt mehr ab?' },
+  { id: 'pong', title: 'Pong', icon: '🏓', bg: ['#0f2b4a', '#2a77c9'], modes: ['ai', 'local', 'lan'], ppl: '1–2', desc: 'Der Klassiker: gegen die KI in drei Stufen, an einem Gerät oder übers Netzwerk.' },
+  { id: 'memory', title: 'Memory', icon: '🃏', bg: ['#123d3d', '#1f9a8f'], modes: ['solo', 'ai', 'local', 'lan'], ppl: '1–2', desc: 'Paare finden. Solo auf Zeit, gegen eine KI mit Gedächtnis oder abwechselnd zu zweit.' },
+  { id: 'ttt', title: 'Tic Tac Toe', icon: '❌', bg: ['#3d1f12', '#c25a2a'], modes: ['ai', 'local', 'lan'], ppl: '2', desc: 'Drei in einer Reihe – die schwere KI ist unschlagbar. Schaffst du ein Remis?' },
+  { id: 'connect4', title: 'Vier gewinnt', icon: '🔴', bg: ['#1d2a5c', '#3a52c2'], modes: ['ai', 'local', 'lan'], ppl: '2', desc: 'Steine einwerfen, vier in einer Reihe verbinden. Mit starker KI.' },
+  { id: 'quiz', title: 'Quiz', icon: '❓', bg: ['#3a1450', '#9b3ad1'], modes: ['solo', 'local', 'lan'], ppl: '1–8', desc: 'Allgemeinwissen in 10 Fragen. Zu zweit als Buzzer-Duell, im LAN mit bis zu 8 Spielern.' },
+  { id: 'math', title: 'Kopfrechnen', icon: '➗', bg: ['#123a4a', '#1f86a8'], modes: ['solo', 'local', 'lan'], ppl: '1–8', desc: '60 Sekunden Rechenblitz. Wer löst die meisten Aufgaben?' },
+  { id: 'typer', title: 'Tipp-Trainer', icon: '⌨️', bg: ['#2a2a2a', '#5a6170'], modes: ['solo', 'local', 'lan'], ppl: '1–8', desc: 'Tippe den Text so schnell und fehlerfrei wie möglich. Im LAN als Tipp-Rennen.' },
 ];
+const MODE_LABEL = { solo: 'Solo', ai: 'Gegen KI', local: '2 Spieler', lan: 'LAN' };
+const GAME_BY_ID = Object.fromEntries(GAMES.map(g => [g.id, g]));
+const COLORS = ['#22d3ee', '#f472b6', '#facc15', '#4ade80', '#a78bfa', '#fb923c', '#60a5fa', '#f87171'];
+const EMOJIS = ['', '😎', '🦊', '🐱', '🐼', '🐸', '🦄', '🤖', '👾', '🚀', '⚡', '🔥'];
 
-const MULTI_GAMES = [
-  { title: 'Memory LAN', icon: 'MM', desc: 'Zwei Spieler decken abwechselnd Karten auf und sammeln Punkte im selben Raum.', file: 'games/multi/memory-lan.html', tone: 'multi-c', tags: ['LAN', '2 Spieler'] },
-  { title: 'Pong LAN', icon: 'PG', desc: 'Schlaeger links gegen rechts. Host simuliert Ball, Netz und Punkte fuer beide Seiten.', file: 'games/multi/pong-lan.html', tone: 'multi-b', tags: ['LAN', '2 Spieler'] },
-  { title: 'Quiz', icon: 'QZ', desc: 'Fragenrunde fuer mehrere Spieler mit Lobby und Live-Punktestand.', file: 'games/multi/quiz-multi.html', tone: 'multi-a', tags: ['LAN', 'Gruppe'] },
-  { title: 'TicTacToe', icon: 'TT', desc: 'Klassisches Duell fuer zwei Spieler mit Raumcode.', file: 'games/multi/ttt-multi.html', tone: 'multi-d', tags: ['LAN', '2 Spieler'] },
-  { title: 'Lobby', icon: 'LB', desc: 'Direkter Einstiegspunkt fuer Raumcode und Spieleruebersicht.', file: 'games/lobby.html', tone: 'multi-a', tags: ['LAN', 'Hub'] }
-];
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let profile = GKNet.getProfile();
+let lobby = { players: [], rooms: [] };
+let myRoom = null;
+let pendingCreate = null;
+let gameOpenFor = null; // {room, round}
+let volume = null;
+let filter = 'all';
 
-let currentTab = 'solo';
-
-function esc(value){
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+function toast(msg, ms) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), ms || 2600);
 }
 
-function gameCard(game, type){
-  return ''
-    + '<article class="game-card" onclick="openGame(\'' + esc(game.file) + '\',\'' + esc(game.title) + '\')">'
-    +   '<div class="game-cover" data-tone="' + esc(game.tone) + '">'
-    +     '<div class="game-topline">'
-    +       '<span class="mode-badge ' + type + '">' + (type === 'solo' ? 'Solo' : 'LAN') + '</span>'
-    +       '<div class="game-mark">' + esc(game.icon) + '</div>'
-    +     '</div>'
-    +   '</div>'
-    +   '<div class="game-body">'
-    +     '<div class="game-title">' + esc(game.title) + '</div>'
-    +     '<p class="game-desc">' + esc(game.desc) + '</p>'
-    +     '<div class="game-meta">' + game.tags.map(tag => '<span class="meta-chip">' + esc(tag) + '</span>').join('') + '</div>'
-    +   '</div>'
-    +   '<div class="play-strip">'
-    +     '<span class="play-text">' + (type === 'solo' ? 'Jetzt spielen' : 'Raum oeffnen') + '</span>'
-    +     '<span class="play-arrow">></span>'
-    +   '</div>'
-    + '</article>';
+function avatarHtml(p, lg) {
+  const ch = p.avatar || (p.name || '?').trim().charAt(0).toUpperCase() || '?';
+  return '<span class="avatar' + (lg ? ' lg' : '') + '" style="background:' + esc(p.color || '#22d3ee') + '">' + esc(ch) + '</span>';
 }
 
-function renderGames(){
-  document.getElementById('solo-grid').innerHTML = SOLO_GAMES.map(game => gameCard(game, 'solo')).join('');
-  document.getElementById('multi-grid').innerHTML = MULTI_GAMES.map(game => gameCard(game, 'multi')).join('');
-  document.getElementById('solo-count').textContent = SOLO_GAMES.length;
-  document.getElementById('multi-count').textContent = MULTI_GAMES.length;
-  document.getElementById('tab-solo-count').textContent = SOLO_GAMES.length;
-  document.getElementById('tab-multi-count').textContent = MULTI_GAMES.length;
+// ── Spielkarten ─────────────────────────────────────────────────────────────
+function bestText(g) {
+  try {
+    const v = JSON.parse(localStorage.getItem('gk_best_' + g.id) || 'null');
+    if (v == null) return '';
+    if (g.id === 'typer') return 'Rekord: ' + v + ' WPM';
+    if (g.id === 'memory') return 'Bestzeit: ' + Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0');
+    return 'Rekord: ' + v.toLocaleString('de-DE');
+  } catch { return ''; }
 }
 
-function setTab(tab){
-  currentTab = tab;
-  const solo = tab === 'solo';
-  document.getElementById('tab-solo').classList.toggle('active', solo);
-  document.getElementById('tab-multi').classList.toggle('active', !solo);
-  document.getElementById('solo-view').classList.toggle('hidden', !solo);
-  document.getElementById('multi-view').classList.toggle('hidden', solo);
-  document.getElementById('toolbar-note').textContent = solo
-    ? 'Direkter Start fuer Einzelspieler-Spiele.'
-    : 'LAN-Spiele mit Raumcode, Lobby und synchronem Spielstand.';
+function renderFilter() {
+  const items = [['all', 'Alle'], ['solo', 'Allein'], ['ai', 'Gegen KI'], ['local', 'Zu zweit (lokal)'], ['lan', 'LAN']];
+  $('filter').innerHTML = items.map(([v, l]) => '<button type="button" class="gk-opt' + (v === filter ? ' sel' : '') + '" data-f="' + v + '">' + l + '</button>').join('');
 }
 
-function openGame(file, title){
-  document.getElementById('game-frame').src = '/' + file;
-  document.getElementById('game-title').textContent = title;
-  document.getElementById('game-overlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
+function renderGames() {
+  const list = GAMES.filter(g => filter === 'all' || g.modes.includes(filter));
+  $('grid').innerHTML = list.map(g => {
+    const btns = g.modes.map((m, i) => '<button type="button" class="mbtn' + (i === 0 ? ' first' : '') + (m === 'lan' ? ' lan' : '') + '" data-g="' + g.id + '" data-m="' + m + '">' + MODE_LABEL[m] + '</button>').join('');
+    return '<article class="card">'
+      + '<div class="cover" data-g="' + g.id + '" data-m="' + g.modes[0] + '" style="background:linear-gradient(135deg,' + g.bg[0] + ',' + g.bg[1] + ')"><span class="ico">' + g.icon + '</span><span class="ppl">' + g.ppl + ' Spieler</span></div>'
+      + '<div class="body"><h3>' + esc(g.title) + '</h3><p>' + esc(g.desc) + '</p><div class="best">' + esc(bestText(g)) + '</div><div class="modes">' + btns + '</div></div>'
+      + '</article>';
+  }).join('');
+  $('cnt-games').textContent = GAMES.length;
 }
 
-function closeGame(){
-  document.getElementById('game-overlay').classList.remove('show');
-  document.getElementById('game-frame').src = '';
-  document.body.style.overflow = '';
-}
-
-function toggleFullGame(){
-  const overlay = document.getElementById('game-overlay');
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
-  } else if (overlay.requestFullscreen) {
-    overlay.requestFullscreen();
-  }
-}
-
-function setWSStatus(isOnline){
-  const el = document.getElementById('ws-badge');
-  el.textContent = isOnline ? 'LAN bereit' : 'Nicht verfuegbar';
-  el.className = 'ws-badge ' + (isOnline ? 'on' : 'off');
-}
-
-function checkWS(){
-  let ws;
-  let done = false;
-  const host = (location.hostname || '127.0.0.1').trim() || '127.0.0.1';
-  const timeout = setTimeout(function(){
-    if (done) return;
-    done = true;
-    try { if (ws) ws.close(); } catch (_) {}
-    setWSStatus(false);
-  }, 2500);
-
-  try{
-    ws = new WebSocket('ws://' + host + ':8765');
-    ws.onopen = function(){
-      if (done) return;
-      done = true;
-      clearTimeout(timeout);
-      setWSStatus(true);
-      ws.onerror = null;
-      ws.onclose = null;
-      ws.close();
-    };
-    ws.onerror = function(){
-      if (done) return;
-      done = true;
-      clearTimeout(timeout);
-      setWSStatus(false);
-    };
-    ws.onclose = function(){
-      if (done) return;
-      done = true;
-      clearTimeout(timeout);
-      setWSStatus(false);
-    };
-  }catch(_){
-    clearTimeout(timeout);
-    done = true;
-    setWSStatus(false);
-  }
-}
-
-document.addEventListener('keydown', function(event){
-  if (event.key === 'Escape') closeGame();
+$('filter').addEventListener('click', e => {
+  const b = e.target.closest('[data-f]');
+  if (!b) return;
+  filter = b.dataset.f;
+  renderFilter();
+  renderGames();
 });
 
-/* Volume vom Parent anfordern */
-try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
-renderGames();
-if (location.hash === '#multi' || location.hash === '#lan') {
-  setTab('multi');
-}
-setTimeout(checkWS, 450);
-
-/* Remote-Keys + Media-Mutex vom Parent */
-window.addEventListener('message', function(e){
-  if(!e.data) return;
-  if(e.data.type === 'media-pause-all') return; // Spiele haben kein Audio zum pausieren
-  if(e.data.type === 'set-volume') return;
-  if(e.data.type === 'remote-key'){
-    var k = e.data.key;
-    // Escape schließt offenes Spiel
-    if(k === 'Escape') closeGame();
+$('grid').addEventListener('click', e => {
+  const b = e.target.closest('[data-g]');
+  if (!b) return;
+  const g = GAME_BY_ID[b.dataset.g];
+  const m = b.dataset.m;
+  if (m === 'lan') {
+    pendingCreate = g.id;
+    setTab('lan');
+    return;
   }
+  openGame(g.id, m);
+});
+
+// ── Spiel öffnen/schließen ──────────────────────────────────────────────────
+function openGame(id, mode, room) {
+  const url = '/games/' + id + '.html?mode=' + mode + (room ? '&room=' + encodeURIComponent(room) : '');
+  $('game-frame').src = url;
+  $('game-layer').classList.add('show');
+  document.body.classList.add('playing');
+  setTimeout(() => { try { $('game-frame').contentWindow.focus(); } catch {} }, 60);
+}
+function closeGame() {
+  $('game-layer').classList.remove('show');
+  document.body.classList.remove('playing');
+  $('game-frame').src = 'about:blank';
+  gameOpenFor = null;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  renderGames();
+  renderLan();
+}
+
+window.addEventListener('message', e => {
+  const d = e.data;
+  if (!d || typeof d !== 'object') return;
+  const frame = $('game-frame').contentWindow;
+  if (e.source === frame) {
+    if (d.type === 'gk-close') closeGame();
+    if (d.type === 'gk-fullscreen') {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else $('game-layer').requestFullscreen?.().catch(() => {});
+    }
+    if (d.type === 'get-volume' && volume != null) frame.postMessage({ type: 'set-volume', vol: volume }, '*');
+    return;
+  }
+  // Nachrichten vom MediaCenter an das Spiel weiterreichen
+  if (d.type === 'set-volume') { volume = d.vol; try { frame.postMessage(d, '*'); } catch {} }
+  if (d.type === 'remote-key') {
+    if ($('game-layer').classList.contains('show')) {
+      if (d.key === 'Escape' || d.key === 'Backspace') { try { frame.postMessage({ type: 'gk-pause' }, '*'); } catch {} }
+      else try { frame.postMessage(d, '*'); } catch {}
+    }
+  }
+  if (d.type === 'media-pause-all' && $('game-layer').classList.contains('show')) { try { frame.postMessage({ type: 'gk-pause' }, '*'); } catch {} }
+});
+try { window.parent !== window && window.parent.postMessage({ type: 'get-volume' }, '*'); } catch {}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+function setTab(t) {
+  const lan = t === 'lan';
+  $('tab-games').classList.toggle('active', !lan);
+  $('tab-lan').classList.toggle('active', lan);
+  $('view-games').classList.toggle('hidden', lan);
+  $('view-lan').classList.toggle('hidden', !lan);
+  if (lan) ensureConnected();
+  renderLan();
+  if (lan && !profile.name) setTimeout(() => $('login-name').focus(), 50);
+  try { history.replaceState(null, '', lan ? '#lan' : '#'); } catch {}
+}
+$('tab-games').onclick = () => setTab('games');
+$('tab-lan').onclick = () => setTab('lan');
+
+// ── LAN-Verbindung ──────────────────────────────────────────────────────────
+let conn = null;
+let loggedIn = false;
+function ensureConnected() {
+  if (conn) return;
+  conn = GKNet.client({ profile: profile.name ? profile : null, lobby: true });
+  conn.on('status', on => {
+    $('net-badge').classList.toggle('on', on);
+    $('net-badge').lastChild.textContent = on ? 'LAN verbunden' : 'LAN getrennt';
+    if (!on) loggedIn = false;
+    renderLan();
+  });
+  conn.on('hello_ok', d => {
+    loggedIn = true;
+    $('login-err').textContent = '';
+    renderLan();
+    if (pendingCreate) { const g = pendingCreate; pendingCreate = null; createRoom(g); }
+  });
+  conn.on('hello_error', d => {
+    loggedIn = false;
+    $('login-err').textContent = d.message;
+    showLogin(true);
+  });
+  conn.on('lobby', d => {
+    lobby = d;
+    const me = d.rooms.find(r => r.players.some(p => p.id === profile.id));
+    myRoom = me || null;
+    renderLan();
+  });
+  conn.on('room', d => {
+    if (!d.room.players.some(p => p.id === profile.id)) return;
+    myRoom = d.room;
+    renderLan();
+  });
+  conn.on('room_left', () => { myRoom = null; renderLan(); });
+  conn.on('room_player_left', d => { if (d.reason === 'timeout') toast(d.name + ' wurde wegen Verbindungsverlust entfernt'); else toast(d.name + ' hat den Raum verlassen'); });
+  conn.on('room_error', d => toast(d.message, 3500));
+  conn.on('room_started', d => {
+    myRoom = d.room;
+    renderLan();
+    if (gameOpenFor && gameOpenFor.room === d.room.id) return; // Spiel läuft bereits (Revanche)
+    gameOpenFor = { room: d.room.id };
+    openGame(d.room.game, 'lan', d.room.id);
+  });
+  conn.on('invite', d => showInvite(d));
+}
+
+// ── Anmeldung ───────────────────────────────────────────────────────────────
+let draft = { color: profile.color || COLORS[0], avatar: profile.avatar || '' };
+function renderPickers() {
+  $('login-colors').innerHTML = COLORS.map(c => '<button type="button" class="sw' + (c === draft.color ? ' sel' : '') + '" data-c="' + c + '" style="background:' + c + '" aria-label="Farbe ' + c + '" aria-pressed="' + (c === draft.color) + '"></button>').join('');
+  $('login-emojis').innerHTML = EMOJIS.map(em => '<button type="button" class="em' + (em === draft.avatar ? ' sel' : '') + '" data-e="' + em + '" aria-pressed="' + (em === draft.avatar) + '">' + (em || 'Aa') + '</button>').join('');
+}
+function showLogin(force) {
+  const need = force || !profile.name;
+  const wasHidden = $('lan-login').classList.contains('hidden');
+  $('lan-login').classList.toggle('hidden', !need);
+  $('lan-lobby').classList.toggle('hidden', need);
+  if (need) {
+    if (wasHidden) $('login-name').value = profile.name || '';
+    renderPickers();
+  }
+}
+$('login-colors').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; draft.color = b.dataset.c; renderPickers(); });
+$('login-emojis').addEventListener('click', e => { const b = e.target.closest('[data-e]'); if (!b) return; draft.avatar = b.dataset.e; renderPickers(); });
+function doLogin() {
+  const name = $('login-name').value.replace(/\s+/g, ' ').trim();
+  if (name.length < 2) { $('login-err').textContent = 'Bitte mindestens 2 Zeichen eingeben.'; return; }
+  profile = Object.assign({}, profile, { name: name.slice(0, 20), color: draft.color, avatar: draft.avatar });
+  GKNet.setProfile(profile);
+  ensureConnected();
+  conn.login(profile);
+  $('lan-login').classList.add('hidden');
+  $('lan-lobby').classList.remove('hidden');
+  renderLan();
+}
+$('login-btn').onclick = doLogin;
+$('login-name').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('me-chip').onclick = () => { draft = { color: profile.color, avatar: profile.avatar || '' }; setTab('lan'); showLogin(true); };
+
+// ── Lobby-Darstellung ───────────────────────────────────────────────────────
+function lanGames() { return GAMES.filter(g => g.modes.includes('lan')); }
+
+function renderLan() {
+  const chip = $('me-chip');
+  if (profile.name) {
+    chip.classList.remove('hidden');
+    chip.innerHTML = avatarHtml(profile) + '<span>' + esc(profile.name) + '</span>';
+  }
+  $('cnt-lan').textContent = lobby.rooms.filter(r => r.state === 'lobby').length;
+  if ($('view-lan').classList.contains('hidden')) return;
+  if (!profile.name) { showLogin(false); return; }
+  if (!$('lan-login').classList.contains('hidden')) return;
+  $('lan-lobby').classList.remove('hidden');
+
+  // Online-Liste
+  const players = lobby.players.filter(p => p.online);
+  $('online-n').textContent = players.length;
+  $('online').innerHTML = players.length ? players.map(p => {
+    const isMe = p.id === profile.id;
+    const room = p.roomId && lobby.rooms.find(r => r.id === p.roomId);
+    const st = room ? (room.state === 'playing' ? 'spielt ' : 'wartet in ') + (GAME_BY_ID[room.game] ? GAME_BY_ID[room.game].title : room.game) : 'frei';
+    const canInvite = myRoom && !isMe && !p.roomId && myRoom.state === 'lobby' && myRoom.players.length < myRoom.maxPlayers;
+    return '<div class="prow">' + avatarHtml(p) + '<div class="nm">' + esc(p.name) + '<div class="st">' + esc(st) + '</div></div>'
+      + (isMe ? '<span class="me">DU</span>' : canInvite ? '<button type="button" class="sbtn" data-invite="' + esc(p.id) + '">Einladen</button>' : '') + '</div>';
+  }).join('') : '<div class="empty">' + (conn && conn.connected ? 'Noch niemand online.' : 'Verbinde mit dem LAN-Server…') + '</div>';
+
+  // Raum oder Erstellen
+  $('room-panel').classList.toggle('hidden', !myRoom);
+  $('nonroom').classList.toggle('hidden', !!myRoom);
+  if (myRoom) renderRoom();
+  else {
+    $('create-grid').innerHTML = lanGames().map(g => '<button type="button" class="cbtn' + (pendingCreate === g.id ? ' pre' : '') + '" data-create="' + g.id + '"><span class="i">' + g.icon + '</span><span>' + esc(g.title) + '<small>' + g.ppl + ' Spieler</small></span></button>').join('');
+    const rooms = lobby.rooms;
+    $('rooms-n').textContent = rooms.length;
+    $('rooms').innerHTML = rooms.length ? rooms.map(r => {
+      const g = GAME_BY_ID[r.game] || { title: r.game, icon: '🎲' };
+      const host = r.players.find(p => p.id === r.host);
+      const full = r.players.length >= r.maxPlayers;
+      const running = r.state !== 'lobby';
+      return '<div class="rrow"><span class="i">' + g.icon + '</span><div class="t"><b>' + esc(g.title) + ' <span class="code">' + esc(r.id) + '</span></b><span>'
+        + esc(host ? 'Host: ' + host.name : '') + ' · ' + r.players.length + '/' + r.maxPlayers + ' Spieler' + (running ? ' · läuft' : '') + '</span></div>'
+        + '<button type="button" class="sbtn" data-join="' + esc(r.id) + '"' + (full || running ? ' disabled style="opacity:.4"' : '') + '>' + (running ? 'Läuft' : full ? 'Voll' : 'Beitreten') + '</button></div>';
+    }).join('') : '<div class="empty">Keine offenen Räume. Erstelle oben ein neues Spiel!</div>';
+  }
+}
+
+function renderRoom() {
+  const r = myRoom;
+  const g = GAME_BY_ID[r.game] || { title: r.game, icon: '🎲' };
+  const isHost = r.host === profile.id;
+  const me = r.players.find(p => p.id === profile.id) || {};
+  const others = r.players.filter(p => p.id !== r.host);
+  const enough = r.players.length >= r.minPlayers;
+  const allReady = others.every(p => p.ready);
+  let status;
+  if (r.state === 'playing') status = 'Spiel läuft.';
+  else if (!enough) status = 'Warte auf Mitspieler (mind. ' + r.minPlayers + '). Teile den Code oder lade jemanden ein.';
+  else if (!allReady) status = 'Warte, bis alle „Bereit“ sind.';
+  else status = isHost ? 'Alle bereit – du kannst starten!' : 'Alle bereit – der Host startet gleich.';
+
+  let actions = '';
+  if (r.state === 'playing') actions += '<button type="button" class="gk-btn primary" data-act="open">Zurück ins Spiel</button>';
+  else if (isHost) actions += '<button type="button" class="gk-btn primary" data-act="start"' + (enough && allReady ? '' : ' disabled') + '>Spiel starten</button>';
+  else actions += '<button type="button" class="gk-btn' + (me.ready ? '' : ' primary') + '" data-act="ready">' + (me.ready ? 'Doch nicht bereit' : 'Bereit!') + '</button>';
+  actions += '<button type="button" class="gk-btn" data-act="leave">Raum verlassen</button>';
+
+  $('room-panel').innerHTML = '<div class="roomhead"><span class="i">' + g.icon + '</span><div class="meta"><b>' + esc(g.title) + '</b><span>' + esc(status) + '</span></div>'
+    + '<div style="text-align:right"><div class="gk-label" style="margin:0">Raumcode</div><div class="code">' + esc(r.id) + '</div></div></div>'
+    + '<div class="rplayers" style="margin-top:14px">' + r.players.map(p => '<div class="prow">' + avatarHtml(p) + '<div class="nm">' + esc(p.name) + (p.online ? '' : ' <span class="st">(getrennt)</span>') + '</div>'
+      + (p.id === r.host ? '<span class="ready h">Host</span>' : '<span class="ready ' + (p.ready ? 'y">Bereit' : 'n">Wartet') + '</span>') + '</div>').join('')
+    + Array.from({ length: Math.max(0, r.minPlayers - r.players.length) }, () => '<div class="prow" style="opacity:.5"><span class="avatar" style="background:#333">?</span><div class="nm">freier Platz</div></div>').join('')
+    + '</div><div class="raction" style="margin-top:14px">' + actions + '</div>';
+}
+
+$('room-panel').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || !myRoom) return;
+  const a = b.dataset.act;
+  if (a === 'start') conn.send({ action: 'room_start' });
+  if (a === 'ready') { const me = myRoom.players.find(p => p.id === profile.id); conn.send({ action: 'room_ready', ready: !(me && me.ready) }); }
+  if (a === 'leave') { conn.send({ action: 'room_leave' }); myRoom = null; renderLan(); }
+  if (a === 'open') { gameOpenFor = { room: myRoom.id }; openGame(myRoom.game, 'lan', myRoom.id); }
+});
+
+function createRoom(id) {
+  const g = GAME_BY_ID[id];
+  if (!conn || !conn.ready) { pendingCreate = id; toast('Verbinde mit dem LAN-Server…'); return; }
+  conn.send({ action: 'room_create', game: id, title: g.title });
+}
+$('create-grid').addEventListener('click', e => { const b = e.target.closest('[data-create]'); if (b) { pendingCreate = null; createRoom(b.dataset.create); } });
+$('rooms').addEventListener('click', e => { const b = e.target.closest('[data-join]'); if (b && !b.disabled) conn.send({ action: 'room_join', roomId: b.dataset.join }); });
+$('online').addEventListener('click', e => { const b = e.target.closest('[data-invite]'); if (b) { conn.send({ action: 'invite', to: b.dataset.invite }); b.disabled = true; b.textContent = 'Eingeladen'; } });
+function joinByCode() {
+  const code = $('join-code').value.trim().toUpperCase();
+  if (code.length !== 4) { toast('Der Raumcode hat 4 Zeichen.'); return; }
+  conn.send({ action: 'room_join', roomId: code });
+}
+$('join-btn').onclick = joinByCode;
+$('join-code').addEventListener('keydown', e => { if (e.key === 'Enter') joinByCode(); });
+
+function showInvite(d) {
+  const g = GAME_BY_ID[d.room.game] || { title: d.room.game, icon: '🎲' };
+  const box = $('invite-box');
+  box.innerHTML = '<div style="display:flex;gap:10px;align-items:center">' + avatarHtml(d.from) + '<div><b>' + esc(d.from.name) + '</b> lädt dich zu <b>' + g.icon + ' ' + esc(g.title) + '</b> ein.</div></div>'
+    + '<div class="raction"><button type="button" class="gk-btn primary" data-i="yes">Beitreten</button><button type="button" class="gk-btn" data-i="no">Ablehnen</button></div>';
+  box.classList.remove('hidden');
+  box.onclick = e => {
+    const b = e.target.closest('[data-i]');
+    if (!b) return;
+    box.classList.add('hidden');
+    if (b.dataset.i === 'yes') { setTab('lan'); conn.send({ action: 'room_join', roomId: d.room.id }); }
+  };
+  clearTimeout(showInvite._t);
+  showInvite._t = setTimeout(() => box.classList.add('hidden'), 30000);
+}
+
+async function loadAddress() {
+  try {
+    const d = await (await fetch('/api/qrcode-url', { cache: 'no-store' })).json();
+    if (!d.success) return;
+    $('addr').innerHTML = '<img alt="QR-Code" src="/api/qrcode?size=200&url=' + encodeURIComponent(d.url) + '"><div class="u">' + esc(d.url) + '</div>';
+  } catch {}
+}
+
+// ── Start ───────────────────────────────────────────────────────────────────
+renderFilter();
+renderGames();
+loadAddress();
+ensureConnected();
+if (/^#(lan|multi)/.test(location.hash)) setTab('lan');
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('game-layer').classList.contains('show')) closeGame();
 });
 </script>
 </body>

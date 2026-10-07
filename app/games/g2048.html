@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>2048</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+<style>
+.b2048{--n:4;--gap:calc(var(--sz)*.03);position:relative;width:var(--sz);height:var(--sz);border-radius:14px;background:#141a2e;padding:var(--gap);
+  box-shadow:0 18px 50px rgba(0,0,0,.45),0 0 0 1px var(--gk-line);touch-action:none}
+.b2048 .bg{position:absolute;border-radius:9px;background:rgba(255,255,255,.04)}
+.tile{position:absolute;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--gk-display);font-weight:800;
+  transition:transform .11s ease-in-out;will-change:transform;color:#1b1f2c}
+.tile .v{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:9px}
+.tile.new .v{animation:t-new .16s ease}
+.tile.merged .v{animation:t-pop .18s ease}
+@keyframes t-new{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes t-pop{0%{transform:scale(1)}50%{transform:scale(1.14)}100%{transform:scale(1)}}
+.b2048 .dead{position:absolute;inset:0;border-radius:14px;background:rgba(5,7,14,.66);display:flex;align-items:center;justify-content:center;
+  font-family:var(--gk-display);font-weight:800;font-size:calc(var(--sz)*.09);color:#fff;text-align:center}
+.mini{font-size:.8rem;color:var(--gk-sub);text-align:center;margin-top:4px}
+</style>
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const N = 4;
+const DUEL_MS = 180000;
+const COLORS = {
+  2: ['#eef2ff', '#1b1f2c'], 4: ['#dbe4ff', '#1b1f2c'], 8: ['#7dd3fc', '#06202e'], 16: ['#38bdf8', '#04131d'], 32: ['#22d3ee', '#03161b'],
+  64: ['#06b6d4', '#fff'], 128: ['#fcd34d', '#3a2500'], 256: ['#fbbf24', '#3a2500'], 512: ['#f59e0b', '#fff'], 1024: ['#f472b6', '#fff'],
+  2048: ['#ec4899', '#fff'], 4096: ['#a78bfa', '#fff'], 8192: ['#8b5cf6', '#fff'],
+};
+
+class Game2048 {
+  constructor(el, seed, opts = {}) {
+    this.el = el;
+    this.opts = opts;
+    this.rand = GK.rng(seed);
+    this.cells = Array.from({ length: N }, () => new Array(N).fill(null));
+    this.score = 0;
+    this.best = 0;
+    this.moves = 0;
+    this.alive = true;
+    this.won = false;
+    this.nextId = 1;
+    this.tiles = new Map();
+    el.className = 'b2048';
+    el.replaceChildren();
+    for (let i = 0; i < N * N; i++) el.appendChild(GK.el('div', { class: 'bg' }));
+    this.size();
+    this.spawn();
+    this.spawn();
+    this.layout();
+  }
+  size() {
+    const box = this.el.parentElement.getBoundingClientRect();
+    const sz = Math.floor(Math.max(160, Math.min(box.width - 8, box.height - 8, 560)));
+    this.el.style.setProperty('--sz', sz + 'px');
+    this.sz = sz;
+    const gap = sz * 0.03;
+    this.cell = (sz - gap * (N + 1)) / N;
+    this.gap = gap;
+    [...this.el.querySelectorAll('.bg')].forEach((b, i) => {
+      const x = i % N, y = (i / N) | 0;
+      Object.assign(b.style, { width: this.cell + 'px', height: this.cell + 'px', left: (gap + x * (this.cell + gap)) + 'px', top: (gap + y * (this.cell + gap)) + 'px' });
+    });
+    for (const t of this.tiles.values()) this.styleTile(t, true);
+  }
+  spawn() {
+    const free = [];
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!this.cells[y][x]) free.push([x, y]);
+    if (!free.length) return;
+    const [x, y] = free[this.rand.int(free.length)];
+    const t = { id: this.nextId++, v: this.rand() < 0.9 ? 2 : 4, x, y, isNew: true };
+    this.cells[y][x] = t;
+    this.tiles.set(t.id, t);
+  }
+  styleTile(t, noAnim) {
+    if (!t.el) {
+      t.el = GK.el('div', { class: 'tile' }, GK.el('div', { class: 'v' }));
+      this.el.appendChild(t.el);
+    }
+    const [bg, fg] = COLORS[t.v] || ['#4c1d95', '#fff'];
+    const v = t.el.firstChild;
+    v.textContent = t.v;
+    v.style.background = bg;
+    v.style.color = fg;
+    v.style.boxShadow = t.v >= 128 ? '0 0 ' + Math.min(30, Math.log2(t.v) * 2) + 'px ' + bg + '80' : 'none';
+    const digits = String(t.v).length;
+    t.el.style.fontSize = (this.cell * (digits <= 2 ? 0.45 : digits === 3 ? 0.38 : 0.3)) + 'px';
+    t.el.style.width = this.cell + 'px';
+    t.el.style.height = this.cell + 'px';
+    if (noAnim) t.el.style.transition = 'none';
+    t.el.style.transform = 'translate(' + (this.gap + t.x * (this.cell + this.gap)) + 'px,' + (this.gap + t.y * (this.cell + this.gap)) + 'px)';
+    if (noAnim) { void t.el.offsetWidth; t.el.style.transition = ''; }
+  }
+  layout() {
+    for (const t of this.tiles.values()) {
+      const fresh = !t.el;
+      this.styleTile(t, fresh);
+      t.el.classList.toggle('new', !!t.isNew);
+      t.el.classList.toggle('merged', !!t.merged);
+      t.isNew = false;
+      t.merged = false;
+    }
+  }
+  move(dir) {
+    if (!this.alive) return false;
+    const vec = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir];
+    const xs = [...Array(N).keys()], ys = [...Array(N).keys()];
+    if (vec[0] === 1) xs.reverse();
+    if (vec[1] === 1) ys.reverse();
+    let moved = false;
+    let gained = 0;
+    const mergedThisTurn = new Set();
+    const removed = [];
+    for (const y of ys) for (const x of xs) {
+      const t = this.cells[y][x];
+      if (!t) continue;
+      let nx = x, ny = y;
+      while (true) {
+        const tx = nx + vec[0], ty = ny + vec[1];
+        if (tx < 0 || ty < 0 || tx >= N || ty >= N) break;
+        const o = this.cells[ty][tx];
+        if (!o) { nx = tx; ny = ty; continue; }
+        if (o.v === t.v && !mergedThisTurn.has(o.id)) {
+          // verschmelzen
+          this.cells[y][x] = null;
+          o.v *= 2;
+          o.merged = true;
+          mergedThisTurn.add(o.id);
+          gained += o.v;
+          t.x = tx; t.y = ty;
+          removed.push(t);
+          moved = true;
+          if (o.v === 2048 && !this.won) { this.won = true; this.opts.onWin && this.opts.onWin(); }
+          nx = -1;
+        }
+        break;
+      }
+      if (nx === -1) continue;
+      if (nx !== x || ny !== y) {
+        this.cells[y][x] = null;
+        this.cells[ny][nx] = t;
+        t.x = nx; t.y = ny;
+        moved = true;
+      }
+    }
+    if (!moved) return false;
+    this.moves++;
+    this.score += gained;
+    // entfernte Kacheln an ihr Ziel gleiten lassen, dann löschen
+    for (const t of removed) {
+      this.tiles.delete(t.id);
+      this.styleTile(t);
+      setTimeout(() => t.el && t.el.remove(), 120);
+    }
+    this.spawn();
+    this.layout();
+    GK.sound(gained >= 64 ? 'good' : gained ? 'eat' : 'move');
+    if (!this.canMove()) { this.alive = false; this.showDead(); this.opts.onDeath && this.opts.onDeath(); }
+    this.opts.onChange && this.opts.onChange();
+    return true;
+  }
+  canMove() {
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const t = this.cells[y][x];
+      if (!t) return true;
+      if (x + 1 < N && this.cells[y][x + 1] && this.cells[y][x + 1].v === t.v) return true;
+      if (y + 1 < N && this.cells[y + 1][x] && this.cells[y + 1][x].v === t.v) return true;
+    }
+    return false;
+  }
+  maxTile() { let m = 0; for (const t of this.tiles.values()) m = Math.max(m, t.v); return m; }
+  showDead(text) {
+    if (this.el.querySelector('.dead')) return;
+    this.el.appendChild(GK.el('div', { class: 'dead', text: text || 'Keine Züge mehr' }));
+  }
+  snapshot() { return { g: this.cells.flat().map(t => t ? t.v : 0), s: this.score, a: this.alive, m: this.maxTile() }; }
+}
+
+// Anzeige des LAN-Gegners
+function renderRemote(el, snap) {
+  const n = N;
+  if (!el._init) {
+    el.className = 'b2048';
+    el._init = true;
+  }
+  const box = el.parentElement.getBoundingClientRect();
+  const sz = Math.floor(Math.max(120, Math.min(box.width - 8, box.height - 8, 340)));
+  el.style.setProperty('--sz', sz + 'px');
+  const gap = sz * 0.03, cell = (sz - gap * (n + 1)) / n;
+  el.replaceChildren(...snap.g.map((v, i) => {
+    const x = i % n, y = (i / n) | 0;
+    const [bg, fg] = v ? (COLORS[v] || ['#4c1d95', '#fff']) : ['rgba(255,255,255,.04)', '#fff'];
+    return GK.el('div', { class: 'tile', style: { width: cell + 'px', height: cell + 'px', transform: 'translate(' + (gap + x * (cell + gap)) + 'px,' + (gap + y * (cell + gap)) + 'px)', fontSize: (cell * (String(v).length <= 2 ? .42 : .3)) + 'px' } },
+      GK.el('div', { class: 'v', style: { background: bg, color: fg }, text: v ? String(v) : '' }));
+  }));
+  if (!snap.a) el.appendChild(GK.el('div', { class: 'dead', text: 'Fertig' }));
+}
+
+// ── Ablauf ─────────────────────────────────────────────────────────────────
+let boards = [];
+let t0 = 0;
+let running = false;
+let finished = false;
+let lan = null;
+let remoteSnap = null;
+let remoteDone = false;
+let remoteEl = null;
+let clock = 0;
+
+GK.init({
+  id: 'g2048', title: '2048', modes: ['solo', 'local', 'lan'],
+  onPause: () => { running = false; GK._pausedAt = performance.now(); },
+  onResume: () => { running = true; t0 += performance.now() - (GK._pausedAt || performance.now()); },
+  onRestart: () => showStart(), isRunning: () => running,
+  help: GK.mode === 'local' ? 'Spieler 1: ' + GK.kbd('W') + GK.kbd('A') + GK.kbd('S') + GK.kbd('D') + ' · Spieler 2: Pfeiltasten' : 'Pfeiltasten oder ' + GK.kbd('W') + GK.kbd('A') + GK.kbd('S') + GK.kbd('D') + ' · Wischen auf Touch',
+});
+const mode = GK.mode;
+const P1 = { KeyW: 'up', KeyA: 'left', KeyS: 'down', KeyD: 'right' };
+const P2 = { ArrowUp: 'up', ArrowLeft: 'left', ArrowDown: 'down', ArrowRight: 'right' };
+
+GK.onKey(e => {
+  if (!running || GK.overlayOpen) return false;
+  if (mode === 'local') {
+    if (P1[e.code]) { boards[0].move(P1[e.code]); return true; }
+    if (P2[e.code]) { boards[1].move(P2[e.code]); return true; }
+    return false;
+  }
+  const d = P1[e.code] || P2[e.code];
+  if (d && boards[0]) { boards[0].move(d); return true; }
+  return false;
+});
+GK.swipe(GK.stage, d => { if (running && !GK.overlayOpen && boards[0] && mode !== 'local') boards[0].move(d); });
+
+function updateScores() {
+  if (mode === 'solo') {
+    const b = boards[0];
+    GK.setScores([{ label: 'Punkte', value: b.score }, { label: 'Größte', value: b.maxTile() }, { label: 'Rekord', value: Math.max(b.score, GK.scores.best('g2048') || 0) }]);
+    return;
+  }
+  const left = Math.max(0, DUEL_MS - (performance.now() - t0));
+  if (mode === 'local') GK.setScores([{ label: 'Spieler 1', value: boards[0].score, color: '#22d3ee' }, { label: 'Zeit', value: GK.fmtTime(left) }, { label: 'Spieler 2', value: boards[1].score, color: '#f472b6' }]);
+  else GK.setScores([{ label: 'Du', value: boards[0].score, color: '#22d3ee' }, { label: 'Zeit', value: GK.fmtTime(left) }, { label: (lan.opponents[0] || {}).name || 'Gegner', value: remoteSnap ? remoteSnap.s : 0, color: '#f472b6' }]);
+}
+
+function setup() {
+  finished = false;
+  remoteSnap = null;
+  remoteDone = false;
+  const seed = mode === 'lan' ? lan.seed : (Math.random() * 1e9) >>> 0;
+  if (mode === 'solo') {
+    const holder = GK.el('div', { style: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' } });
+    GK.stage.replaceChildren(holder);
+    const el = GK.el('div');
+    holder.appendChild(el);
+    boards = [new Game2048(el, seed, { onDeath: () => soloOver(), onChange: updateScores, onWin: () => GK.toast('🎉 2048 erreicht! Du kannst weiterspielen.', 3500) })];
+  } else if (mode === 'local') {
+    const panes = GK.split([{ name: 'Spieler 1', color: '#22d3ee', keys: 'WASD' }, { name: 'Spieler 2', color: '#f472b6', keys: 'Pfeile' }]);
+    boards = panes.map(p => { const el = GK.el('div'); p.body.appendChild(el); return new Game2048(el, seed, { onChange: updateScores, onDeath: checkDuelEnd }); });
+  } else {
+    const opp = lan.opponents[0] || { name: 'Gegner' };
+    const panes = GK.split([{ name: 'Du', color: '#22d3ee', keys: 'Pfeile / Wischen' }, { name: opp.name, color: '#f472b6', small: true }]);
+    const el = GK.el('div');
+    panes[0].body.appendChild(el);
+    remoteEl = GK.el('div');
+    panes[1].body.appendChild(remoteEl);
+    boards = [new Game2048(el, seed, { onChange: () => { sendState(); updateScores(); }, onDeath: () => { sendState(); checkDuelEnd(); } })];
+    renderRemote(remoteEl, { g: new Array(16).fill(0), s: 0, a: true });
+  }
+  t0 = performance.now();
+  running = true;
+  updateScores();
+  clearInterval(clock);
+  clock = setInterval(() => {
+    if (!running) return;
+    updateScores();
+    if (mode !== 'solo' && performance.now() - t0 >= DUEL_MS) {
+      for (const b of boards) if (b.alive) { b.alive = false; b.showDead('Zeit um!'); }
+      if (mode === 'lan') sendState();
+      checkDuelEnd();
+    }
+  }, 250);
+  GK.sound('start');
+}
+
+function sendState() { if (lan && boards[0]) lan.send({ t: 's', s: boards[0].snapshot() }); }
+
+function checkDuelEnd() {
+  if (finished) return;
+  if (mode === 'local') {
+    if (boards.some(b => b.alive)) return;
+  } else {
+    if (boards[0].alive || !remoteDone) return;
+  }
+  finished = true;
+  running = false;
+  clearInterval(clock);
+  const scores = mode === 'local' ? [boards[0].score, boards[1].score] : [boards[0].score, remoteSnap ? remoteSnap.s : 0];
+  const names = mode === 'local' ? ['Spieler 1', 'Spieler 2'] : ['Du', (lan.opponents[0] || {}).name || 'Gegner'];
+  const w = scores[0] === scores[1] ? -1 : scores[0] > scores[1] ? 0 : 1;
+  GK.sound(w < 0 ? 'score' : (mode === 'lan' && w === 1) ? 'lose' : 'win');
+  const rows = names.map((n, i) => ({ name: n, color: i ? '#f472b6' : '#22d3ee', score: scores[i], win: i === w }));
+  const title = w < 0 ? 'Unentschieden!' : mode === 'lan' ? (w === 0 ? '🏆 Du gewinnst!' : names[1] + ' gewinnt!') : '🏆 ' + names[w] + ' gewinnt!';
+  if (mode === 'lan') return GKNet.endScreen(lan, { title, content: GK.resultList(rows) });
+  GK.overlay({ title, content: GK.resultList(rows), buttons: [{ label: 'Revanche', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+}
+
+async function soloOver() {
+  running = false;
+  const b = boards[0];
+  GK.sound('lose');
+  const card = GK.overlay({ title: 'Keine Züge mehr', big: b.score.toLocaleString('de-DE'), text: 'Größte Kachel: ' + b.maxTile(),
+    buttons: [{ label: 'Nochmal', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+  const res = await GK.scores.submit('g2048', b.score, { detail: 'max ' + b.maxTile() });
+  if (res.isBest && b.score > 0) card.querySelector('p').textContent = '🎉 Neuer Rekord! · Größte Kachel: ' + b.maxTile();
+  const v = GK.scores.view(res.list, res.rank, s => s.toLocaleString('de-DE'));
+  if (v && GK.overlayOpen) card.insertBefore(v, card.querySelector('.gk-actions'));
+}
+
+new ResizeObserver(() => { for (const b of boards) b.size(); if (remoteEl && remoteSnap) renderRemote(remoteEl, remoteSnap); }).observe(GK.stage);
+
+function showStart() {
+  if (mode === 'lan') return;
+  running = false;
+  GK.overlay({
+    title: '2048',
+    text: mode === 'solo' ? 'Schiebe die Kacheln. Gleiche Zahlen verschmelzen. Erreichst du die 2048?' : 'Duell: Beide starten mit demselben Brett. Nach 3 Minuten gewinnt die höhere Punktzahl.',
+    buttons: [{ label: 'Start', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }],
+    help: GK.cfg.help,
+  });
+}
+
+if (mode === 'lan') {
+  lan = GKNet.game();
+  lan.on('start', () => setup());
+  lan.on('msg', d => {
+    if (d.t === 's') {
+      remoteSnap = d.s;
+      if (remoteEl) renderRemote(remoteEl, d.s);
+      if (!d.s.a) { remoteDone = true; checkDuelEnd(); }
+      updateScores();
+    }
+  });
+} else showStart();
+</script>
+</body>
+</html>

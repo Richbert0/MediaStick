@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kopfrechnen</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script src="/games/shared/qa.js"></script>
+<script>
+'use strict';
+const LEVELS = {
+  leicht: { add: 20, mul: 5 },
+  mittel: { add: 100, mul: 10 },
+  schwer: { add: 500, mul: 15 },
+};
+
+function task(rand, lvl) {
+  const L = LEVELS[lvl] || LEVELS.mittel;
+  const op = rand.pick(lvl === 'leicht' ? ['+', '-', '×'] : ['+', '-', '×', '÷']);
+  let a, b, r;
+  if (op === '+') { a = 1 + rand.int(L.add); b = 1 + rand.int(L.add); r = a + b; }
+  if (op === '-') { a = 1 + rand.int(L.add); b = 1 + rand.int(L.add); if (b > a) [a, b] = [b, a]; r = a - b; }
+  if (op === '×') { a = 2 + rand.int(L.mul); b = 2 + rand.int(L.mul); r = a * b; }
+  if (op === '÷') { b = 2 + rand.int(L.mul - 1); r = 1 + rand.int(L.mul); a = b * r; }
+  // plausible falsche Antworten (nah am Ergebnis, nie doppelt, nie negativ)
+  const wrong = new Set();
+  const deltas = op === '×' || op === '÷' ? [1, -1, 2, -2, b || 1, -(b || 1), 10, -10] : [1, -1, 2, -2, 10, -10, 3, -3];
+  let guard = 0;
+  while (wrong.size < 3 && guard++ < 50) {
+    const w = r + rand.pick(deltas) * (guard > 20 ? 1 + rand.int(3) : 1);
+    if (w !== r && w >= 0) wrong.add(w);
+  }
+  const answers = rand.shuffle([r, ...wrong]);
+  return { q: a + ' ' + op + ' ' + b + ' = ?', a: answers, c: answers.indexOf(r), big: true };
+}
+
+QAGame({
+  id: 'math', title: 'Kopfrechnen', flavor: 'race', raceSeconds: 60, count: 15, perQuestion: 10,
+  intro: 'Löse in 60 Sekunden so viele Aufgaben wie möglich. Eine falsche Antwort kostet eine kurze Sperre.',
+  options: [{ key: 'lvl', label: 'Schwierigkeit', value: 'mittel', scoreKey: true, items: [{ label: 'Leicht', value: 'leicht' }, { label: 'Mittel', value: 'mittel' }, { label: 'Schwer', value: 'schwer' }] }],
+  make(rand, i, opts) { return task(rand, GK.mode === 'lan' ? 'mittel' : opts.lvl); },
+});
+</script>
+</body>
+</html>

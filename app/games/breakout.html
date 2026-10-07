@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Breakout</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const W = 600, H = 720;
+const BC = 10, BR = 8, BW = 54, BH = 20, BGAP = 4, BTOP = 80;
+const BLEFT = (W - (BC * BW + (BC - 1) * BGAP)) / 2;
+const PADDLE_Y = H - 50, PADDLE_H = 14;
+const ROW_COLORS = ['#f43f5e', '#fb923c', '#facc15', '#4ade80', '#22d3ee', '#60a5fa', '#a78bfa', '#f472b6'];
+const POWERS = { wide: { c: '#4ade80', l: 'W' }, multi: { c: '#22d3ee', l: 'M' }, slow: { c: '#facc15', l: 'S' }, life: { c: '#f472b6', l: '♥' } };
+const LEVELS = [
+  (x, y) => y >= 2 ? 1 : 0,
+  (x, y) => (x + y) % 2 === 0 ? 1 : 0,
+  (x, y) => y < 2 ? 2 : (x === 0 || x === BC - 1 || y === BR - 1) ? 1 : (y % 2 ? 1 : 0),
+  (x, y) => Math.abs(x - 4.5) + y < 8 ? (y < 3 ? 2 : 1) : 0,
+  (x, y) => y % 3 === 0 ? 3 : 1,
+];
+
+class Breakout {
+  constructor(seed, opts = {}) {
+    this.rand = GK.rng(seed);
+    this.opts = opts;
+    this.score = 0;
+    this.lives = 3;
+    this.level = 0;
+    this.alive = true;
+    this.px = W / 2;
+    this.pw = 100;
+    this.wideT = 0;
+    this.slowT = 0;
+    this.vel = 0;
+    this.particles = [];
+    this.loadLevel(0);
+  }
+  loadLevel(n) {
+    this.level = n;
+    const f = LEVELS[n % LEVELS.length];
+    this.bricks = [];
+    for (let y = 0; y < BR; y++) for (let x = 0; x < BC; x++) {
+      const hp = f(x, y);
+      if (hp) this.bricks.push({ x: BLEFT + x * (BW + BGAP), y: BTOP + y * (BH + BGAP), hp, max: hp, row: y });
+    }
+    this.drops = [];
+    this.resetBall();
+  }
+  resetBall() {
+    this.balls = [{ x: this.px, y: PADDLE_Y - 9, vx: 0, vy: 0, stuck: true }];
+  }
+  baseSpeed() { return (380 + this.level * 30) * (this.slowT > 0 ? 0.7 : 1); }
+  launch() {
+    for (const b of this.balls) if (b.stuck) {
+      const a = -Math.PI / 2 + (this.rand() - 0.5) * 0.7;
+      const s = this.baseSpeed();
+      b.vx = Math.cos(a) * s;
+      b.vy = Math.sin(a) * s;
+      b.stuck = false;
+    }
+  }
+  power(kind) {
+    GK.sound('good');
+    if (kind === 'wide') this.wideT = 15;
+    if (kind === 'slow') { this.slowT = 10; for (const b of this.balls) { b.vx *= 0.75; b.vy *= 0.75; } }
+    if (kind === 'life') this.lives = Math.min(5, this.lives + 1);
+    if (kind === 'multi') {
+      const extra = [];
+      for (const b of this.balls.slice(0, 3)) {
+        if (b.stuck) continue;
+        for (const a of [-0.4, 0.4]) {
+          const c = Math.cos(a), s = Math.sin(a);
+          extra.push({ x: b.x, y: b.y, vx: b.vx * c - b.vy * s, vy: b.vx * s + b.vy * c, stuck: false });
+        }
+      }
+      this.balls.push(...extra);
+    }
+  }
+  update(dt, dir, pointerX) {
+    if (!this.alive) return;
+    this.wideT = Math.max(0, this.wideT - dt);
+    this.slowT = Math.max(0, this.slowT - dt);
+    const targetW = this.wideT > 0 ? 160 : 100;
+    this.pw += (targetW - this.pw) * Math.min(1, dt * 8);
+    if (pointerX != null) this.px += (pointerX - this.px) * Math.min(1, dt * 18);
+    else this.px += dir * 620 * dt;
+    this.px = Math.max(this.pw / 2, Math.min(W - this.pw / 2, this.px));
+    for (const b of this.balls) {
+      if (b.stuck) { b.x = this.px; b.y = PADDLE_Y - 9; continue; }
+      // in Teilschritten bewegen, damit schnelle Bälle nicht durch Steine tunneln
+      const steps = Math.ceil(Math.hypot(b.vx, b.vy) * dt / 6);
+      for (let i = 0; i < steps; i++) this.stepBall(b, dt / steps);
+    }
+    const before = this.balls.length;
+    this.balls = this.balls.filter(b => b.y < H + 20);
+    if (!this.balls.length) {
+      this.lives--;
+      GK.sound('lose');
+      GK.vibrate(80);
+      if (this.lives <= 0) { this.alive = false; this.opts.onDeath && this.opts.onDeath(); return; }
+      this.wideT = 0;
+      this.resetBall();
+    } else if (this.balls.length < before) GK.sound('wall');
+    for (const d of this.drops) d.y += 160 * dt;
+    this.drops = this.drops.filter(d => {
+      if (d.y > PADDLE_Y - 6 && d.y < PADDLE_Y + PADDLE_H && Math.abs(d.x - this.px) < this.pw / 2 + 10) { this.power(d.kind); this.score += 25; return false; }
+      return d.y < H;
+    });
+    for (const p of this.particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; p.t -= dt; }
+    this.particles = this.particles.filter(p => p.t > 0);
+    if (!this.bricks.some(b => b.hp < 9)) {
+      this.score += 500;
+      GK.sound('win');
+      this.loadLevel(this.level + 1);
+      this.opts.onLevel && this.opts.onLevel(this.level);
+    }
+  }
+  stepBall(b, dt) {
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (b.x < 7) { b.x = 7; b.vx = Math.abs(b.vx); GK.sound('wall'); }
+    if (b.x > W - 7) { b.x = W - 7; b.vx = -Math.abs(b.vx); GK.sound('wall'); }
+    if (b.y < 7) { b.y = 7; b.vy = Math.abs(b.vy); GK.sound('wall'); }
+    // Schläger
+    if (b.vy > 0 && b.y + 7 >= PADDLE_Y && b.y + 7 <= PADDLE_Y + PADDLE_H + 8 && Math.abs(b.x - this.px) <= this.pw / 2 + 7) {
+      const rel = Math.max(-1, Math.min(1, (b.x - this.px) / (this.pw / 2)));
+      const s = Math.min(Math.hypot(b.vx, b.vy) * 1.01, this.baseSpeed() * 1.6);
+      const a = -Math.PI / 2 + rel * 1.1;
+      b.vx = Math.cos(a) * s;
+      b.vy = Math.sin(a) * s;
+      b.y = PADDLE_Y - 7;
+      GK.sound('hit');
+    }
+    // Steine
+    for (const br of this.bricks) {
+      if (br.hp <= 0) continue;
+      if (b.x + 7 < br.x || b.x - 7 > br.x + BW || b.y + 7 < br.y || b.y - 7 > br.y + BH) continue;
+      const ox = Math.min(b.x + 7 - br.x, br.x + BW - (b.x - 7));
+      const oy = Math.min(b.y + 7 - br.y, br.y + BH - (b.y - 7));
+      if (ox < oy) b.vx = -b.vx; else b.vy = -b.vy;
+      br.hp--;
+      this.score += br.hp <= 0 ? 10 * (BR - br.row) : 5;
+      GK.sound(br.hp <= 0 ? 'eat' : 'wall');
+      if (br.hp <= 0) {
+        for (let i = 0; i < 6; i++) this.particles.push({ x: br.x + BW / 2, y: br.y + BH / 2, vx: (this.rand() - 0.5) * 300, vy: (this.rand() - 0.8) * 250, t: 0.5, c: ROW_COLORS[br.row] });
+        if (this.rand() < 0.12) {
+          const kinds = Object.keys(POWERS);
+          this.drops.push({ x: br.x + BW / 2, y: br.y + BH / 2, kind: kinds[this.rand.int(kinds.length)] });
+        }
+      }
+      this.bricks = this.bricks.filter(x => x.hp > 0);
+      break;
+    }
+  }
+  snapshot() {
+    return { b: this.bricks.map(br => [Math.round(br.x), Math.round(br.y), br.hp, br.max, br.row]), p: [Math.round(this.px), Math.round(this.pw)], bl: this.balls.map(b => [Math.round(b.x), Math.round(b.y)]), s: this.score, l: this.lives, lv: this.level, a: this.alive };
+  }
+}
+
+function draw(ctx, g) {
+  ctx.fillStyle = '#060912';
+  ctx.fillRect(0, 0, W, H);
+  const grd = ctx.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, 'rgba(34,211,238,.05)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+  if (!g) return;
+  const bricks = g.bricks || g.b.map(([x, y, hp, max, row]) => ({ x, y, hp, max, row }));
+  for (const br of bricks) {
+    ctx.globalAlpha = br.max > 1 ? 0.45 + 0.55 * br.hp / br.max : 1;
+    ctx.fillStyle = ROW_COLORS[br.row];
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(br.x, br.y, BW, BH, 4) : ctx.rect(br.x, br.y, BW, BH);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.25)';
+    ctx.fillRect(br.x + 3, br.y + 2, BW - 6, 3);
+  }
+  ctx.globalAlpha = 1;
+  for (const p of g.particles || []) { ctx.globalAlpha = p.t * 2; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 4, 4); }
+  ctx.globalAlpha = 1;
+  for (const d of g.drops || []) {
+    const pw = POWERS[d.kind];
+    ctx.fillStyle = pw.c;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#06080f';
+    ctx.font = '800 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(pw.l, d.x, d.y + 5);
+  }
+  const px = g.px != null ? g.px : g.p[0], pw = g.pw != null ? g.pw : g.p[1];
+  ctx.fillStyle = '#e6ecfa';
+  ctx.shadowColor = '#22d3ee';
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(px - pw / 2, PADDLE_Y, pw, PADDLE_H, 7) : ctx.rect(px - pw / 2, PADDLE_Y, pw, PADDLE_H);
+  ctx.fill();
+  ctx.shadowColor = '#fff';
+  const balls = g.balls || g.bl.map(([x, y]) => ({ x, y }));
+  for (const b of balls) { ctx.beginPath(); ctx.arc(b.x, b.y, 7, 0, Math.PI * 2); ctx.fill(); }
+  ctx.shadowBlur = 0;
+  // HUD
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#e6ecfa';
+  ctx.font = '800 20px ui-monospace,Consolas,monospace';
+  ctx.fillText(String(g.score != null ? g.score : g.s), 16, 36);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#f472b6';
+  ctx.fillText('♥'.repeat(Math.max(0, g.lives != null ? g.lives : g.l)), W - 16, 36);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#8391ad';
+  ctx.font = '700 14px system-ui';
+  ctx.fillText('Level ' + ((g.level != null ? g.level : g.lv) + 1), W / 2, 34);
+  const alive = g.alive != null ? g.alive : g.a;
+  if (!alive) {
+    ctx.fillStyle = 'rgba(5,7,14,.7)';
+    ctx.fillRect(0, H / 2 - 50, W, 100);
+    ctx.fillStyle = '#f43f5e';
+    ctx.font = '800 36px system-ui';
+    ctx.fillText('Keine Leben mehr', W / 2, H / 2 + 12);
+  } else if (balls.length === 1 && g.balls && g.balls[0].stuck) {
+    ctx.fillStyle = 'rgba(255,255,255,.6)';
+    ctx.font = '600 16px system-ui';
+    ctx.fillText(GK.isTouch ? 'Tippen zum Starten' : 'Leertaste / Klick zum Starten', W / 2, H / 2 + 120);
+  }
+}
+
+// ── Ablauf ─────────────────────────────────────────────────────────────────
+let games = [];  // {g, ctx, keys:[left,right,launch], pointer}
+let running = false;
+let finished = false;
+let lan = null, remoteSnap = null, remoteCtx = null, remoteDone = false, netT = 0;
+
+GK.init({
+  id: 'breakout', title: 'Breakout', modes: ['solo', 'local', 'lan'],
+  onPause: () => { running = false; }, onResume: () => { running = true; },
+  onRestart: () => showStart(), isRunning: () => running,
+  help: GK.mode === 'local'
+    ? 'Spieler 1: ' + GK.kbd('A') + GK.kbd('D') + ' + ' + GK.kbd('W') + ' Start · Spieler 2: ' + GK.kbd('←') + GK.kbd('→') + ' + ' + GK.kbd('↑') + ' Start'
+    : 'Maus/Finger oder ' + GK.kbd('←') + GK.kbd('→') + ' · ' + GK.kbd('Leertaste') + ' startet den Ball · Power-Ups: W breit, M Multiball, S langsam, ♥ Leben',
+});
+const mode = GK.mode;
+
+GK.onKey(e => {
+  if (!running || GK.overlayOpen) return false;
+  for (const x of games) if (x.keys[2].includes(e.code)) { x.g.launch(); return true; }
+  return false;
+});
+
+function makeCanvas(box, pointerTarget) {
+  const c = GK.el('canvas', { 'aria-label': 'Spielfeld' });
+  box.appendChild(c);
+  const ctx = GK.fit(c, W, H, box);
+  return { c, ctx };
+}
+
+function setup() {
+  finished = false;
+  remoteSnap = null;
+  remoteDone = false;
+  games = [];
+  const seed = mode === 'lan' ? lan.seed : (Math.random() * 1e9) >>> 0;
+  if (mode === 'solo' || mode === 'lan') {
+    let box = GK.stage;
+    if (mode === 'lan') {
+      const opp = lan.opponents[0] || { name: 'Gegner' };
+      const panes = GK.split([{ name: 'Du', color: '#22d3ee' }, { name: opp.name, color: '#f472b6', small: true }]);
+      box = panes[0].body;
+      remoteCtx = makeCanvas(panes[1].body).ctx;
+    } else GK.stage.replaceChildren();
+    const { c, ctx } = makeCanvas(box);
+    const g = new Breakout(seed, { onDeath: () => mode === 'solo' ? soloOver() : (sendState(), checkEnd()) });
+    const entry = { g, ctx, keys: [['ArrowLeft', 'KeyA'], ['ArrowRight', 'KeyD'], ['Space', 'ArrowUp', 'KeyW']], pointer: null };
+    const move = ev => { entry.pointer = GK.canvasPoint(c, ev).x; };
+    c.addEventListener('pointermove', move);
+    c.addEventListener('pointerdown', ev => { move(ev); g.launch(); });
+    c.addEventListener('touchmove', ev => { move(ev); }, { passive: true });
+    c.addEventListener('pointerleave', () => { entry.pointer = null; });
+    games.push(entry);
+  } else {
+    const panes = GK.split([{ name: 'Spieler 1', color: '#22d3ee', keys: 'A/D · W' }, { name: 'Spieler 2', color: '#f472b6', keys: '←/→ · ↑' }]);
+    const keysets = [[['KeyA'], ['KeyD'], ['KeyW', 'Space']], [['ArrowLeft'], ['ArrowRight'], ['ArrowUp', 'Enter']]];
+    panes.forEach((p, i) => {
+      const { c, ctx } = makeCanvas(p.body);
+      const g = new Breakout(seed, { onDeath: () => checkEnd() });
+      const entry = { g, ctx, keys: keysets[i], pointer: null };
+      c.addEventListener('pointerdown', ev => { entry.pointer = GK.canvasPoint(c, ev).x; g.launch(); });
+      c.addEventListener('pointermove', ev => { if (ev.pointerType !== 'mouse' || ev.buttons) entry.pointer = GK.canvasPoint(c, ev).x; });
+      c.addEventListener('pointerup', () => { entry.pointer = null; });
+      games.push(entry);
+    });
+  }
+  running = true;
+  GK.sound('start');
+}
+
+function sendState() { if (lan && games[0]) lan.send({ t: 's', s: games[0].g.snapshot() }); }
+
+function updateScores() {
+  if (mode === 'solo') {
+    const g = games[0].g;
+    GK.setScores([{ label: 'Punkte', value: g.score }, { label: 'Level', value: g.level + 1 }, { label: 'Rekord', value: Math.max(g.score, GK.scores.best('breakout') || 0) }]);
+  } else if (mode === 'local') {
+    GK.setScores(games.map((x, i) => ({ label: 'Spieler ' + (i + 1), value: x.g.score, color: i ? '#f472b6' : '#22d3ee' })));
+  } else if (games[0]) {
+    GK.setScores([{ label: 'Du', value: games[0].g.score, color: '#22d3ee' }, { label: (lan.opponents[0] || {}).name || 'Gegner', value: remoteSnap ? remoteSnap.s : 0, color: '#f472b6' }]);
+  }
+}
+
+function checkEnd() {
+  if (finished) return;
+  if (mode === 'local' && games.some(x => x.g.alive)) return;
+  if (mode === 'lan' && (games[0].g.alive || !remoteDone)) return;
+  finished = true;
+  running = false;
+  const scores = mode === 'local' ? games.map(x => x.g.score) : [games[0].g.score, remoteSnap ? remoteSnap.s : 0];
+  const names = mode === 'local' ? ['Spieler 1', 'Spieler 2'] : ['Du', (lan.opponents[0] || {}).name || 'Gegner'];
+  const w = scores[0] === scores[1] ? -1 : scores[0] > scores[1] ? 0 : 1;
+  GK.sound(w === 1 && mode === 'lan' ? 'lose' : 'win');
+  const rows = names.map((n, i) => ({ name: n, color: i ? '#f472b6' : '#22d3ee', score: scores[i], win: i === w }));
+  const title = w < 0 ? 'Unentschieden!' : mode === 'lan' ? (w === 0 ? '🏆 Du gewinnst!' : names[1] + ' gewinnt!') : '🏆 ' + names[w] + ' gewinnt!';
+  if (mode === 'lan') return GKNet.endScreen(lan, { title, content: GK.resultList(rows) });
+  GK.overlay({ title, content: GK.resultList(rows), buttons: [{ label: 'Revanche', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+}
+
+async function soloOver() {
+  running = false;
+  const g = games[0].g;
+  const card = GK.overlay({ title: 'Game Over', big: g.score.toLocaleString('de-DE'), text: 'Level ' + (g.level + 1) + ' erreicht',
+    buttons: [{ label: 'Nochmal', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+  const res = await GK.scores.submit('breakout', g.score, { detail: 'Level ' + (g.level + 1) });
+  if (res.isBest && g.score > 0) card.querySelector('p').textContent = '🎉 Neuer Rekord! · Level ' + (g.level + 1);
+  const v = GK.scores.view(res.list, res.rank, s => s.toLocaleString('de-DE'));
+  if (v && GK.overlayOpen) card.insertBefore(v, card.querySelector('.gk-actions'));
+}
+
+GK.loop({
+  update(dt) {
+    if (!running) return;
+    for (const x of games) {
+      const K = GK.keys;
+      const dir = (x.keys[1].some(k => K.has(k)) ? 1 : 0) - (x.keys[0].some(k => K.has(k)) ? 1 : 0);
+      if (dir) x.pointer = null;
+      x.g.update(dt, dir, x.pointer);
+    }
+    if (mode === 'lan') { netT += dt; if (netT > 0.12) { netT = 0; sendState(); } }
+  },
+  render() {
+    for (const x of games) draw(x.ctx, x.g);
+    if (remoteCtx && remoteSnap) draw(remoteCtx, remoteSnap);
+    if (games.length) updateScores();
+  },
+}).start();
+
+function showStart() {
+  if (mode === 'lan') return;
+  running = false;
+  GK.overlay({
+    title: 'Breakout',
+    text: mode === 'solo' ? 'Zerstöre alle Steine. Fange Power-Ups mit dem Schläger. Du hast 3 Leben.' : 'Duell: Jeder hat ein eigenes Spielfeld mit denselben Steinen. Wenn beide keine Leben mehr haben, gewinnt die höhere Punktzahl.',
+    buttons: [{ label: 'Start', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }],
+    help: GK.cfg.help,
+  });
+}
+
+if (mode === 'lan') {
+  lan = GKNet.game();
+  lan.on('start', () => setup());
+  lan.on('msg', d => {
+    if (d.t === 's') {
+      remoteSnap = d.s;
+      if (!d.s.a && !remoteDone) { remoteDone = true; checkEnd(); }
+    }
+  });
+} else showStart();
+</script>
+</body>
+</html>

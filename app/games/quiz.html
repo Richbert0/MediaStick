@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quiz</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script src="/games/shared/qa.js"></script>
+<script>
+'use strict';
+// [Kategorie, Frage, richtige Antwort, falsch, falsch, falsch]
+const BANK = [
+  ['Geografie', 'Was ist die Hauptstadt von Australien?', 'Canberra', 'Sydney', 'Melbourne', 'Perth'],
+  ['Geografie', 'Welcher ist der längste Fluss Deutschlands (auf deutschem Gebiet)?', 'Rhein', 'Elbe', 'Donau', 'Main'],
+  ['Geografie', 'Welches ist das flächenmäßig größte Land der Erde?', 'Russland', 'Kanada', 'China', 'USA'],
+  ['Geografie', 'Auf welchem Kontinent liegt Ägypten?', 'Afrika', 'Asien', 'Europa', 'Ozeanien'],
+  ['Geografie', 'Wie heißt der höchste Berg Deutschlands?', 'Zugspitze', 'Watzmann', 'Brocken', 'Feldberg'],
+  ['Geografie', 'Welche Stadt liegt an der Mündung der Elbe in die Nordsee am nächsten?', 'Cuxhaven', 'Kiel', 'Rostock', 'Emden'],
+  ['Geografie', 'Wie viele Bundesländer hat Deutschland?', '16', '12', '14', '18'],
+  ['Geografie', 'Was ist die Hauptstadt von Kanada?', 'Ottawa', 'Toronto', 'Vancouver', 'Montreal'],
+  ['Geografie', 'Welcher Ozean ist der größte?', 'Pazifik', 'Atlantik', 'Indischer Ozean', 'Arktischer Ozean'],
+  ['Geografie', 'In welchem Land liegt die Stadt Marrakesch?', 'Marokko', 'Tunesien', 'Algerien', 'Ägypten'],
+  ['Geografie', 'Welcher Fluss fließt durch Wien?', 'Donau', 'Inn', 'Rhein', 'Moldau'],
+  ['Geografie', 'Was ist die Hauptstadt der Schweiz (Bundesstadt)?', 'Bern', 'Zürich', 'Genf', 'Basel'],
+  ['Geografie', 'Welches Land hat die meisten Einwohner (Stand 2024)?', 'Indien', 'China', 'USA', 'Indonesien'],
+  ['Geografie', 'Welcher See ist der größte in Deutschland (ganz auf deutschem Gebiet)?', 'Müritz', 'Chiemsee', 'Bodensee', 'Starnberger See'],
+  ['Wissenschaft', 'Wie viele Planeten hat unser Sonnensystem?', '8', '7', '9', '10'],
+  ['Wissenschaft', 'Welches chemische Symbol hat Gold?', 'Au', 'Ag', 'Go', 'Gd'],
+  ['Wissenschaft', 'Wofür steht H₂O?', 'Wasser', 'Wasserstoffperoxid', 'Sauerstoff', 'Salz'],
+  ['Wissenschaft', 'Welcher Planet ist der Sonne am nächsten?', 'Merkur', 'Venus', 'Mars', 'Erde'],
+  ['Wissenschaft', 'Wie schnell ist Licht im Vakuum ungefähr?', '300.000 km/s', '30.000 km/s', '3.000 km/s', '3 Mio. km/s'],
+  ['Wissenschaft', 'Welches Gas nehmen Pflanzen bei der Fotosynthese auf?', 'Kohlendioxid', 'Sauerstoff', 'Stickstoff', 'Helium'],
+  ['Wissenschaft', 'Wie viele Knochen hat ein erwachsener Mensch ungefähr?', '206', '150', '312', '98'],
+  ['Wissenschaft', 'Bei wie viel Grad Celsius siedet Wasser auf Meereshöhe?', '100 °C', '90 °C', '120 °C', '80 °C'],
+  ['Wissenschaft', 'Was ist der größte Planet unseres Sonnensystems?', 'Jupiter', 'Saturn', 'Neptun', 'Uranus'],
+  ['Wissenschaft', 'Welches Organ produziert Insulin?', 'Bauchspeicheldrüse', 'Leber', 'Niere', 'Milz'],
+  ['Wissenschaft', 'Welches Element hat das Symbol „Fe“?', 'Eisen', 'Fluor', 'Francium', 'Fermium'],
+  ['Wissenschaft', 'Wie nennt man ein Dreieck mit drei gleich langen Seiten?', 'Gleichseitig', 'Rechtwinklig', 'Stumpfwinklig', 'Gleichschenklig'],
+  ['Wissenschaft', 'Wie viel ist die Quadratwurzel aus 144?', '12', '14', '11', '16'],
+  ['Wissenschaft', 'Was misst ein Barometer?', 'Luftdruck', 'Temperatur', 'Luftfeuchtigkeit', 'Windgeschwindigkeit'],
+  ['Natur', 'Welches ist das größte Tier der Welt?', 'Blauwal', 'Afrikanischer Elefant', 'Pottwal', 'Walhai'],
+  ['Natur', 'Welches Landtier ist am schnellsten?', 'Gepard', 'Löwe', 'Gazelle', 'Windhund'],
+  ['Natur', 'Wie viele Beine hat eine Spinne?', '8', '6', '10', '12'],
+  ['Natur', 'Wovon ernähren sich Pandas hauptsächlich?', 'Bambus', 'Fisch', 'Beeren', 'Insekten'],
+  ['Natur', 'Welcher Vogel kann rückwärts fliegen?', 'Kolibri', 'Spatz', 'Adler', 'Pinguin'],
+  ['Natur', 'Wie heißt ein junges Pferd?', 'Fohlen', 'Kalb', 'Lamm', 'Ferkel'],
+  ['Natur', 'Zu welcher Tiergruppe gehört der Wal?', 'Säugetiere', 'Fische', 'Reptilien', 'Amphibien'],
+  ['Natur', 'Welcher Baum trägt Eicheln?', 'Eiche', 'Buche', 'Linde', 'Ahorn'],
+  ['Geschichte', 'In welchem Jahr fiel die Berliner Mauer?', '1989', '1987', '1990', '1991'],
+  ['Geschichte', 'Wer war der erste Bundeskanzler der Bundesrepublik Deutschland?', 'Konrad Adenauer', 'Willy Brandt', 'Ludwig Erhard', 'Helmut Schmidt'],
+  ['Geschichte', 'In welchem Jahr betrat der erste Mensch den Mond?', '1969', '1965', '1972', '1959'],
+  ['Geschichte', 'Wer erfand den Buchdruck mit beweglichen Lettern in Europa?', 'Johannes Gutenberg', 'Martin Luther', 'Albrecht Dürer', 'Leonardo da Vinci'],
+  ['Geschichte', 'Seit welchem Jahr ist Deutschland wiedervereinigt?', '1990', '1989', '1991', '1993'],
+  ['Geschichte', 'Welche Stadt war Hauptstadt der Bundesrepublik vor Berlin?', 'Bonn', 'Frankfurt am Main', 'Köln', 'München'],
+  ['Geschichte', 'Wie hieß das Schiff, das 1912 nach einer Kollision mit einem Eisberg sank?', 'Titanic', 'Lusitania', 'Britannic', 'Queen Mary'],
+  ['Geschichte', 'In welchem Jahr wurde der Euro als Bargeld eingeführt?', '2002', '1999', '2000', '2004'],
+  ['Geschichte', 'Welches Volk baute die Pyramiden von Gizeh?', 'Die alten Ägypter', 'Die Römer', 'Die Griechen', 'Die Maya'],
+  ['Kultur', 'Wer schrieb „Faust“?', 'Johann Wolfgang von Goethe', 'Friedrich Schiller', 'Heinrich Heine', 'Thomas Mann'],
+  ['Kultur', 'Wer malte die „Mona Lisa“?', 'Leonardo da Vinci', 'Michelangelo', 'Raffael', 'Botticelli'],
+  ['Kultur', 'Welcher Komponist wurde in Bonn geboren?', 'Ludwig van Beethoven', 'Wolfgang Amadeus Mozart', 'Johann Sebastian Bach', 'Richard Wagner'],
+  ['Kultur', 'Wie viele Saiten hat eine klassische Gitarre?', '6', '4', '5', '8'],
+  ['Kultur', 'Aus welchem Land stammt die Band ABBA?', 'Schweden', 'Norwegen', 'Dänemark', 'Finnland'],
+  ['Kultur', 'Wer schrieb die „Harry Potter“-Bücher?', 'J. K. Rowling', 'J. R. R. Tolkien', 'Stephen King', 'Cornelia Funke'],
+  ['Kultur', 'Welche Farbe ergibt sich aus Blau und Gelb?', 'Grün', 'Lila', 'Orange', 'Braun'],
+  ['Kultur', 'Wie heißt der Zauberer in „Der Herr der Ringe“, der „der Graue“ genannt wird?', 'Gandalf', 'Saruman', 'Radagast', 'Elrond'],
+  ['Kultur', 'Wie viele Tasten hat ein Standard-Klavier?', '88', '76', '64', '100'],
+  ['Sport', 'Wie viele Spieler einer Mannschaft stehen beim Fußball auf dem Feld?', '11', '10', '12', '9'],
+  ['Sport', 'Wie oft wurde Deutschland (Männer) Fußball-Weltmeister?', '4', '3', '5', '2'],
+  ['Sport', 'In welcher Sportart gibt es einen „Slam Dunk“?', 'Basketball', 'Volleyball', 'Tennis', 'Handball'],
+  ['Sport', 'Wie lang ist ein Marathon?', '42,195 km', '40 km', '45 km', '38,5 km'],
+  ['Sport', 'Wie viele Ringe hat das olympische Symbol?', '5', '4', '6', '7'],
+  ['Sport', 'Wie viele Felder hat ein Schachbrett?', '64', '36', '81', '100'],
+  ['Sport', 'In welcher Stadt fanden die Olympischen Sommerspiele 1972 statt?', 'München', 'Berlin', 'Montreal', 'Moskau'],
+  ['Technik', 'Wofür steht die Abkürzung „WWW“?', 'World Wide Web', 'Wide World Web', 'World Web Wide', 'Web World Wide'],
+  ['Technik', 'Wie viele Bits hat ein Byte?', '8', '4', '16', '10'],
+  ['Technik', 'Welche Firma entwickelte das Betriebssystem Windows?', 'Microsoft', 'Apple', 'IBM', 'Google'],
+  ['Technik', 'Wofür steht „USB“?', 'Universal Serial Bus', 'Unified System Bus', 'Universal Speed Bridge', 'User Serial Board'],
+  ['Technik', 'Wer gilt als Erfinder des ersten funktionsfähigen programmgesteuerten Computers (Z3)?', 'Konrad Zuse', 'Alan Turing', 'Charles Babbage', 'John von Neumann'],
+  ['Technik', 'Was bedeutet „LED“?', 'Leuchtdiode', 'Laser-Elektrode', 'Licht-Energie-Draht', 'Langzeit-Elektronik-Display'],
+  ['Allgemein', 'Wie viele Minuten hat ein Tag?', '1.440', '1.240', '1.640', '960'],
+  ['Allgemein', 'Wie viele Tage hat ein Schaltjahr?', '366', '365', '364', '367'],
+  ['Allgemein', 'Welche Farbe hat ein Rubin?', 'Rot', 'Grün', 'Blau', 'Gelb'],
+  ['Allgemein', 'Wie viele Seiten hat ein Sechseck?', '6', '5', '7', '8'],
+  ['Allgemein', 'Was ist das Ergebnis von 7 × 8?', '56', '54', '64', '48'],
+  ['Allgemein', 'Wie viele Kontinente gibt es (übliche Zählung)?', '7', '5', '6', '8'],
+  ['Allgemein', 'Welcher Wochentag folgt auf Donnerstag?', 'Freitag', 'Mittwoch', 'Samstag', 'Sonntag'],
+  ['Allgemein', 'Wie viele Farben hat ein Regenbogen (klassisch)?', '7', '5', '6', '8'],
+  ['Allgemein', 'Was ist Pi auf zwei Nachkommastellen gerundet?', '3,14', '3,16', '3,12', '3,41'],
+  ['Allgemein', 'Wie heißt die Währung Japans?', 'Yen', 'Won', 'Yuan', 'Baht'],
+  ['Allgemein', 'Wie viele Zentimeter hat ein Meter?', '100', '10', '1.000', '50'],
+  ['Allgemein', 'Welches Instrument hat Pedale und Pfeifen?', 'Orgel', 'Harfe', 'Trompete', 'Geige'],
+];
+
+QAGame({
+  id: 'quiz', title: 'Quiz', flavor: 'paced', count: 10, perQuestion: 15,
+  intro: '10 Fragen aus Allgemeinwissen. Je schneller du richtig antwortest, desto mehr Punkte gibt es (50–100).',
+  options: [{ key: 'cat', label: 'Kategorie', value: 'alle', items: [{ label: 'Alle', value: 'alle' }, { label: 'Geografie', value: 'Geografie' }, { label: 'Wissen', value: 'Wissenschaft' }, { label: 'Geschichte', value: 'Geschichte' }, { label: 'Kultur', value: 'Kultur' }] }],
+  make(rand, i, opts) {
+    if (i === 0 || !rand._order) {
+      let pool = BANK.map((_, k) => k);
+      if (opts.cat && opts.cat !== 'alle' && GK.mode !== 'lan') {
+        const f = pool.filter(k => BANK[k][0] === opts.cat);
+        if (f.length >= 10) pool = f;
+      }
+      rand._order = rand.shuffle(pool);
+    }
+    const [cat, q, right, ...wrong] = BANK[rand._order[i % rand._order.length]];
+    const answers = rand.shuffle([right, ...wrong]);
+    return { cat, q, a: answers, c: answers.indexOf(right) };
+  },
+});
+</script>
+</body>
+</html>
