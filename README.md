@@ -38,13 +38,21 @@ Lade die passende Datei aus den **[Releases](https://github.com/Richbert0/MediaS
 
 > 💡 Tipp: Lege die Datei direkt auf den USB-Stick. Beim ersten Start entsteht daneben der Ordner `MediaCenter-Daten`.
 
+> [!IMPORTANT]
+> **Linux: AppImage startet nicht?** Viele aktuelle Distributionen (Ubuntu 22.04 und neuer, Linux Mint 21+, Debian 12) bringen die nötige Bibliothek **libfuse2** nicht mehr mit. Einmalig installieren:
+> ```bash
+> sudo apt install libfuse2        # Ubuntu 22.04, Mint 21, Debian 12
+> sudo apt install libfuse2t64     # Ubuntu 24.04 und neuer
+> ```
+> Ohne Installation geht es auch: `./MediaCenter-*.AppImage --appimage-extract-and-run`
+
 ### 2. Medien hinzufügen
 
 Entweder **im Upload-Bereich** der App Dateien hineinziehen (die App sortiert automatisch) – oder Dateien direkt in die Ordner kopieren und in der App auf „Aktualisieren“ klicken:
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.2.0-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.2.1-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
     │   ├── 📁 Movies      ← Filme  (mp4, mkv, webm, …)
@@ -80,8 +88,8 @@ Medien müssen nicht auf den Stick kopiert werden. Unter **⚙️ Einstellungen 
 Für einen Heim-PC oder Mini-Server ohne Bildschirm:
 
 ```bash
-MediaCenter-3.2.0-portable.exe --server          # Windows
-./MediaCenter-3.2.0-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
+MediaCenter-3.2.1-portable.exe --server          # Windows
+./MediaCenter-3.2.1-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
 ```
 
 Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
@@ -169,14 +177,14 @@ Die EXE ist (noch) nicht digital signiert, deshalb kennt Windows den Herausgeber
 - Oder: Rechtsklick auf die EXE → *Eigenschaften* → Haken bei **„Zulassen“**.
 - **Vom USB-Stick (exFAT/FAT32) gestartet erscheint die Warnung nicht**, weil dort die Download-Markierung verloren geht.
 
-Dauerhaft verschwindet die Meldung mit einer Code-Signatur. Die Build-Pipeline ist dafür vorbereitet: **[Anleitung](docs/SIGNIEREN.md)**. Beim AppImage unter Linux gibt es keine solche Warnung.
+Dauerhaft verschwindet die Meldung mit der kostenlosen Code-Signatur der SignPath Foundation (siehe [Code-Signatur](#-code-signatur)). Beim AppImage unter Linux gibt es keine solche Warnung.
 </details>
 
 <details>
 <summary><b>Das AppImage startet nicht</b></summary>
 
 - Ausführbar machen: `chmod +x MediaCenter-*.AppImage`
-- Fehlt FUSE (z. B. Ubuntu 22.04+): `sudo apt install libfuse2` oder starten mit `./MediaCenter-*.AppImage --appimage-extract-and-run`
+- Fehlt **libfuse2** (Ubuntu 22.04+, Mint 21+, Debian 12): `sudo apt install libfuse2`, unter Ubuntu 24.04 `sudo apt install libfuse2t64`, oder ohne Installation starten mit `./MediaCenter-*.AppImage --appimage-extract-and-run`
 </details>
 
 <details>
@@ -190,6 +198,25 @@ Alle Geräte müssen im selben Netzwerk sein (kein Gast-WLAN). Prüfe die Firewa
 
 Dann speichert MediaCenter die Daten im Benutzerprofil und weist beim Start darauf hin.
 </details>
+
+---
+
+## 🔏 Code-Signatur
+
+Kostenlose Code-Signatur bereitgestellt von [SignPath.io](https://about.signpath.io), Zertifikat von der [SignPath Foundation](https://signpath.org).
+*Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).*
+
+**Code-Signing-Richtlinie**
+
+- Signiert wird ausschließlich die Windows-Datei `MediaCenter-*-portable.exe`. Sie wird von [GitHub Actions](.github/workflows/build.yml) direkt aus dem Quellcode dieses Repositorys gebaut. Lokal gebaute oder fremde Dateien werden nicht signiert.
+- Jede Release-Signatur muss vorher von einem Approver freigegeben werden.
+- **Rollen:**
+  - Committer und Reviewer: [Richbert0](https://github.com/Richbert0)
+  - Approver: [Richbert0](https://github.com/Richbert0)
+- **Datenschutz:** Dieses Programm überträgt keine Informationen an andere vernetzte Systeme, außer wenn der Benutzer es ausdrücklich veranlasst. Beispiele dafür sind das Freigeben von Medien, der Chat oder Spiele im eigenen lokalen Netzwerk. Es gibt keine Telemetrie und keine Verbindung zu Servern im Internet.
+  *This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.*
+
+Einrichtung und Hintergründe: [docs/SIGNIEREN.md](docs/SIGNIEREN.md).
 
 ---
 
@@ -230,4 +257,4 @@ Unter Windows erledigen `start.bat` (Server-Modus) und `BUILD.bat` (Build-Menü)
 └── .github/workflows/      CI: Tests, Builds, Releases
 ```
 
-Alle Abhängigkeiten der fertigen App sind gebündelt: Node.js-Laufzeit (über Electron), WebSocket (`ws`) und QR-Code-Erzeugung (`qrcode`); die Schriftarten Syne und Outfit liegen lokal unter `app/fonts` (SIL Open Font License).
+**Lizenz:** [MIT](LICENSE). Alle Abhängigkeiten der fertigen App sind Open Source und gebündelt: Node.js-Laufzeit (über Electron), WebSocket (`ws`) und QR-Code-Erzeugung (`qrcode`); die Schriftarten Syne und Outfit liegen lokal unter `app/fonts` (SIL Open Font License).

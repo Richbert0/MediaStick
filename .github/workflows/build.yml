@@ -62,6 +62,52 @@ jobs:
           # Ohne diese Secrets wird unsigniert gebaut.
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      # ── Kostenlose Code-Signatur über die SignPath Foundation (siehe docs/SIGNIEREN.md) ──
+      - name: SignPath-Signatur verfügbar?
+        id: sign
+        shell: bash
+        env:
+          SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ] && [ -n "$SIGNPATH_TOKEN" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Signatur über SignPath aktiv."
+          else
+            echo "Keine Signatur (SignPath nicht eingerichtet, kein Push oder nicht Windows)."
+          fi
+      - name: Unsignierte EXE für SignPath bereitstellen
+        if: steps.sign.outputs.enabled == 'true'
+        id: unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediaCenter-Windows-unsigniert
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 1
+      - name: EXE mit SignPath signieren
+        if: steps.sign.outputs.enabled == 'true'
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'MediaStick' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 7200
+          output-artifact-directory: signed
+      - name: Signierte EXE übernehmen und prüfen
+        if: steps.sign.outputs.enabled == 'true'
+        shell: pwsh
+        run: |
+          Copy-Item -Force signed/*.exe dist/
+          Get-ChildItem dist/*.exe | ForEach-Object {
+            $sig = Get-AuthenticodeSignature $_.FullName
+            Write-Host "$($_.Name): $($sig.Status) – $($sig.SignerCertificate.Subject)"
+            if ($sig.Status -ne 'Valid') { throw "Signatur ungültig: $($sig.Status)" }
+          }
+
       - name: Smoke-Test (Server-Modus der gepackten App)
         shell: bash
         run: |
@@ -103,8 +149,9 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then TAG="${GITHUB_REF#refs/tags/}"; fi
           ls -la release
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG existiert – Dateien werden aktualisiert."
+            echo "Release $TAG existiert – Dateien und Text werden aktualisiert."
             gh release upload "$TAG" release/* --clobber
+            gh release edit "$TAG" --notes-file .github/RELEASE_NOTES.md
           else
             gh release create "$TAG" release/* \
               --target "$GITHUB_SHA" \

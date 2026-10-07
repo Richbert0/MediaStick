@@ -1,51 +1,79 @@
-# Windows-Warnung „Der Computer wurde durch Windows geschützt“
+# Windows-Code-Signatur (kostenlos über die SignPath Foundation)
 
-## Warum erscheint die Meldung?
+## Warum erscheint „Der Computer wurde durch Windows geschützt“?
 
 Microsoft Defender **SmartScreen** prüft jede `.exe`, die aus dem Internet heruntergeladen wurde.
-Windows markiert solche Dateien beim Download („Mark of the Web“). Bei einer markierten Datei
-ohne digitale Signatur und ohne bekannte „Reputation“ (also noch wenig heruntergeladen) blendet Windows diese Warnung ein.
+Ohne digitale Signatur kennt Windows den Herausgeber nicht und warnt. Die Datei ist deshalb nicht gefährlich.
 
-Die Meldung heißt **nicht**, dass die Datei gefährlich ist. Windows kennt den Herausgeber nur noch nicht.
+Mit einer Signatur steht in der Meldung ein bekannter Herausgeber, und die Warnung verschwindet dauerhaft.
+Für Open-Source-Projekte bietet die **[SignPath Foundation](https://signpath.org)** das **kostenlos** an.
+MediaCenter ist dafür vorbereitet:
 
-## Sofort-Lösungen für Nutzer (kostenlos)
+- Open-Source-Lizenz: [MIT](../LICENSE)
+- keine proprietären Bestandteile: Abhängigkeiten MIT/ISC, Schriftarten SIL OFL
+- vollautomatischer Build auf GitHub Actions direkt aus dem Quellcode
+- Code-Signing-Richtlinie im [README](../README.md#-code-signatur)
+- fertige Signier-Schritte im [Workflow](../.github/workflows/build.yml) und eine Artefakt-Konfiguration in [`.signpath/artifact-configuration.xml`](../.signpath/artifact-configuration.xml)
+
+Solange SignPath nicht eingerichtet ist, baut der Workflow wie bisher unsigniert. Es geht nichts kaputt.
+
+---
+
+## Einrichtung (einmalig, ca. 15 Minuten + Wartezeit auf Freigabe)
+
+### 1. Bei der SignPath Foundation bewerben
+1. Auf **https://signpath.org** → *Apply* das Formular ausfüllen:
+   - Projekt: **MediaCenter**, Repository: `https://github.com/Richbert0/MediaStick`
+   - Lizenz: **MIT**
+   - Download-Seite: `https://github.com/Richbert0/MediaStick/releases`
+   - Build-System: **GitHub Actions**
+2. Die Foundation prüft das Projekt und meldet sich per E-Mail. Danach gibt es einen Zugang zu **app.signpath.io** mit einem fertigen Projekt.
+
+### 2. In SignPath (app.signpath.io) vorbereiten
+1. **Projekt** öffnen, den *Slug* notieren (z. B. `MediaStick`).
+2. **Trusted Build System:** *GitHub.com* mit dem Projekt verknüpfen. Dann wird nur signiert, was wirklich aus diesem Repository gebaut wurde.
+3. **Artifact Configuration:** Inhalt von `.signpath/artifact-configuration.xml` einfügen und als Standard markieren.
+4. **Signing Policy:** Slug notieren, meist `release-signing`.
+5. **API-Token:** Unter *Users* einen CI-Benutzer (bzw. dein Konto) mit der Rolle *Submitter* anlegen und ein API-Token erzeugen.
+6. Die **Organization ID** steht unter *Settings* bzw. in der URL.
+
+### 3. In GitHub eintragen
+Repository → **Settings → Secrets and variables → Actions**:
+
+| Art | Name | Wert |
+|---|---|---|
+| Secret | `SIGNPATH_API_TOKEN` | das API-Token aus Schritt 2.5 |
+| Variable | `SIGNPATH_ORGANIZATION_ID` | Organization ID |
+| Variable | `SIGNPATH_PROJECT_SLUG` | z. B. `MediaStick` (Standard, falls leer) |
+| Variable | `SIGNPATH_SIGNING_POLICY_SLUG` | z. B. `release-signing` (Standard, falls leer) |
+| Variable *(optional)* | `SIGNPATH_ARTIFACT_CONFIGURATION_SLUG` | nur nötig, wenn nicht die Standard-Konfiguration genutzt wird |
+
+### 4. Signieren
+- Bei jedem Push auf `main` (bzw. Tag `v*`) baut GitHub die EXE und schickt sie an SignPath.
+- Bei der Release-Signatur muss ein **Approver** zustimmen: SignPath schickt eine E-Mail mit Link, ein Klick auf *Approve* genügt. Der Workflow wartet bis zu 2 Stunden darauf.
+- Danach landet die **signierte EXE** automatisch im GitHub-Release. Der Workflow prüft die Signatur (`Get-AuthenticodeSignature`).
+
+---
+
+## Bis dahin: Warnung umgehen (für Nutzer)
 
 | Weg | So geht's |
 |---|---|
-| **Einmal bestätigen** | *Weitere Informationen* → *Trotzdem ausführen*. Danach fragt Windows für diese Datei nicht mehr. |
-| **Datei freigeben** | Rechtsklick auf die `.exe` → *Eigenschaften* → unten Haken bei **„Zulassen“** → *OK*. |
-| **Vom USB-Stick starten** | Kopiert man die `.exe` auf einen Stick mit **exFAT/FAT32** (Standard bei USB-Sticks), geht die Download-Markierung verloren – dann erscheint keine Warnung. Genau so ist MediaCenter gedacht. |
-| **PowerShell** | `Unblock-File .\MediaCenter-*-portable.exe` |
+| Einmal bestätigen | *Weitere Informationen* → *Trotzdem ausführen* |
+| Datei freigeben | Rechtsklick → *Eigenschaften* → Haken bei **„Zulassen“** |
+| Vom USB-Stick starten | Auf exFAT/FAT32-Sticks geht die Download-Markierung verloren, dann erscheint keine Warnung |
+| PowerShell | `Unblock-File .\MediaCenter-*-portable.exe` |
 
-## Dauerhafte Lösung: Code-Signatur
+## Alternative: eigenes Zertifikat
 
-Damit die Warnung für **alle** verschwindet, muss die `.exe` digital signiert sein. Die Build-Pipeline ist darauf vorbereitet. Es fehlt nur ein Zertifikat.
-
-| Option | Kosten | Hinweise |
-|---|---|---|
-| **SignPath Foundation** | kostenlos | Für Open-Source-Projekte. Voraussetzung: öffentliches Repository **mit Open-Source-Lizenz** (z. B. MIT). Bewerbung unter signpath.org. |
-| **Microsoft Trusted Signing** (Azure) | ca. 10 $/Monat | Günstigster kommerzieller Weg mit sehr guter SmartScreen-Akzeptanz. Für Privatpersonen nicht in allen Ländern verfügbar – Verfügbarkeit im Azure-Portal prüfen. |
-| **OV-Code-Signing-Zertifikat** (z. B. Certum, Sectigo) | ca. 50–300 €/Jahr | Die Warnung verschwindet erst, wenn die signierte Datei genug Reputation gesammelt hat (einige hundert Downloads). Seit 2024 gilt das auch für teurere EV-Zertifikate. |
-
-### Zertifikat (.pfx) in GitHub hinterlegen
-
-1. Zertifikat als `.pfx`-Datei exportieren und in Base64 umwandeln:
-   ```powershell
-   [Convert]::ToBase64String([IO.File]::ReadAllBytes("zertifikat.pfx")) | Set-Clipboard
-   ```
-2. Auf GitHub: **Settings → Secrets and variables → Actions → New repository secret**
-   - `WIN_CSC_LINK` = der kopierte Base64-Text
-   - `WIN_CSC_KEY_PASSWORD` = Passwort des Zertifikats
-3. Fertig: Der nächste Build auf `main` signiert die `.exe` automatisch (electron-builder), und das Release enthält die signierte Datei.
-
-> Hinweis: Neuere Zertifikate werden oft nur noch auf Hardware-Token bzw. in der Cloud ausgegeben (kein `.pfx`-Export).
-> In dem Fall Microsoft Trusted Signing oder SignPath nutzen. Die Einbindung in den Workflow passe ich gern an.
+Wer ein eigenes Code-Signing-Zertifikat als `.pfx` besitzt, kann es stattdessen nutzen. Dafür in GitHub die Secrets
+`WIN_CSC_LINK` (Base64 der `.pfx`) und `WIN_CSC_KEY_PASSWORD` anlegen. electron-builder signiert dann direkt beim Build.
 
 ## Und unter Linux (AppImage)?
 
-Unter Linux gibt es **keine** vergleichbare Warnung. Nötig ist nur:
+Linux kennt keine solche Warnung. Nötig ist nur:
 
-1. Datei ausführbar machen: Rechtsklick → *Eigenschaften* → *Als Programm ausführen erlauben*,
-   oder `chmod +x MediaCenter-*.AppImage`.
-2. Auf manchen Systemen (z. B. Ubuntu 22.04+) fehlt FUSE: `sudo apt install libfuse2`,
-   oder ohne FUSE starten: `./MediaCenter-*.AppImage --appimage-extract-and-run`.
+1. Ausführbar machen: Rechtsklick → *Eigenschaften* → *Als Programm ausführen erlauben*, oder `chmod +x MediaCenter-*.AppImage`.
+2. **libfuse2** installieren, falls das AppImage nicht startet (u. a. Ubuntu 22.04 und neuer, Linux Mint 21+, Debian 12):
+   `sudo apt install libfuse2` (Ubuntu 24.04: `sudo apt install libfuse2t64`).
+   Ohne Installation geht es auch: `./MediaCenter-*.AppImage --appimage-extract-and-run`.

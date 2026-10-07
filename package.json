@@ -1,9 +1,14 @@
 {
   "name": "mediacenter",
   "productName": "MediaCenter",
-  "version": "3.2.0",
+  "version": "3.2.1",
   "description": "MediaCenter – portables Medien- und Spielecenter (Filme, Serien, Musik, Fotos, Spiele, LAN-Multiplayer)",
   "author": "Richbert0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Richbert0/MediaStick.git"
+  },
   "homepage": "https://github.com/Richbert0/MediaStick",
   "main": "electron-main.js",
   "scripts": {
