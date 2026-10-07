@@ -6,7 +6,9 @@
 <title>Spiele – MediaCenter</title>
 <link rel="stylesheet" href="/games/shared/kit.css">
 <style>
-html,body{overflow:auto;height:auto;min-height:100%}
+/* eigener Scroll-Container: zuverlässig auch in iframes auf iPhone/Android */
+html,body{height:100%;overflow:hidden}
+.scroller{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-x pan-y}
 body{user-select:auto;-webkit-user-select:auto}
 .hub{max-width:1320px;margin:0 auto;padding:18px 18px 40px}
 .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
@@ -118,6 +120,7 @@ body.playing{overflow:hidden}
 </style>
 </head>
 <body>
+<div class="scroller" id="scroller">
 <div class="hub">
   <div class="top">
     <h1>🎮 <span>Spielhalle</span></h1>
@@ -161,6 +164,8 @@ body.playing{overflow:hidden}
         <div class="plist" id="online"></div>
         <div class="hint" style="margin-top:14px">Andere Geräte im selben WLAN öffnen diese Adresse im Browser und wählen <b>Spiele → LAN-Lobby</b>:</div>
         <div class="addr" id="addr"></div>
+        <div id="addr-list"></div>
+        <div class="mca-tip" id="addr-tip"></div>
       </aside>
       <div class="roombox">
         <div class="panel hidden" id="room-panel"></div>
@@ -182,12 +187,14 @@ body.playing{overflow:hidden}
     </div>
   </section>
 </div>
+</div>
 
 <div id="invite-box" class="invite hidden" role="alertdialog"></div>
 <div id="game-layer"><iframe id="game-frame" title="Spiel" allow="fullscreen; autoplay" src="about:blank"></iframe></div>
 <div class="gk-toast" id="toast" role="status"></div>
 
 <script src="/games/shared/net.js"></script>
+<script src="/js/lanaddr.js"></script>
 <script>
 'use strict';
 const GAMES = [
@@ -286,11 +293,13 @@ function openGame(id, mode, room) {
   $('game-frame').src = url;
   $('game-layer').classList.add('show');
   document.body.classList.add('playing');
+  try { if (window.parent !== window) window.parent.postMessage({ type: 'app-immersive', on: true }, '*'); } catch {}
   setTimeout(() => { try { $('game-frame').contentWindow.focus(); } catch {} }, 60);
 }
 function closeGame() {
   $('game-layer').classList.remove('show');
   document.body.classList.remove('playing');
+  try { if (window.parent !== window) window.parent.postMessage({ type: 'app-immersive', on: false }, '*'); } catch {}
   $('game-frame').src = 'about:blank';
   gameOpenFor = null;
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -536,11 +545,13 @@ function showInvite(d) {
 }
 
 async function loadAddress() {
-  try {
-    const d = await (await fetch('/api/qrcode-url', { cache: 'no-store' })).json();
-    if (!d.success) return;
-    $('addr').innerHTML = '<img alt="QR-Code" src="/api/qrcode?size=200&url=' + encodeURIComponent(d.url) + '"><div class="u">' + esc(d.url) + '</div>';
-  } catch {}
+  const show = a => {
+    $('addr').innerHTML = '<img alt="QR-Code" src="/api/qrcode?size=200&url=' + encodeURIComponent(a.full) + '"><div class="u">' + esc(a.full) + '</div>';
+  };
+  const r = await MCAddr.load('?page=lan');
+  show(r.current);
+  MCAddr.chips($('addr-list'), r.list, r.current, show);
+  $('addr-tip').textContent = MCAddr.TIP;
 }
 
 // ── Start ───────────────────────────────────────────────────────────────────

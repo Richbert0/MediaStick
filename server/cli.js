@@ -10,7 +10,7 @@
 
 const path = require('path');
 const { createMediaServer, VERSION } = require('./index');
-const { lanAddresses } = require('./util');
+const { rankedLanAddresses } = require('./util');
 
 function arg(name) {
   const i = process.argv.indexOf('--' + name);
@@ -36,7 +36,7 @@ async function main() {
   console.log(`   MediaCenter Server v${VERSION}`);
   console.log(line);
   console.log(`   Lokal:  http://localhost:${port}/`);
-  for (const a of lanAddresses()) console.log(`   LAN:    http://${a.address}:${port}/${a.virtual ? '  (virtuell)' : ''}`);
+  for (const a of await rankedLanAddresses()) console.log(`   LAN:    http://${a.address}:${port}/${a.virtual ? '  (virtuell)' : ''}`);
   console.log(`   Daten:  ${dataDir}`);
   console.log('   Stop:   STRG+C');
   console.log(line + '\n');

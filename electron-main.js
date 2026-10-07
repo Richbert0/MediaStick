@@ -253,6 +253,11 @@ ipcMain.on('window-fullscreen', () => {
   mainWindow.setFullScreen(!mainWindow.isFullScreen());
   sendWindowState();
 });
+ipcMain.on('window-set-fullscreen', (_, on) => {
+  if (!mainWindow) return;
+  if (mainWindow.isFullScreen() !== !!on) mainWindow.setFullScreen(!!on);
+  sendWindowState();
+});
 ipcMain.on('window-reload', () => mainWindow?.webContents.reload());
 ipcMain.on('open-external', (_, url) => {
   if (typeof url === 'string' && /^https?:\/\//.test(url)) shell.openExternal(url);
@@ -287,9 +292,9 @@ app.whenReady().then(async () => {
   }
 
   if (HEADLESS) {
-    const { lanAddresses } = require('./server/util');
+    const { rankedLanAddresses } = require('./server/util');
     console.log(`MediaCenter-Server läuft: http://localhost:${serverPort}/`);
-    for (const a of lanAddresses()) console.log(`  LAN: http://${a.address}:${serverPort}/`);
+    for (const a of await rankedLanAddresses()) console.log(`  LAN: http://${a.address}:${serverPort}/`);
     console.log(`  Daten: ${DATA_DIR}`);
     return;
   }

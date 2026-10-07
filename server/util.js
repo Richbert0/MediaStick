@@ -101,13 +101,14 @@ function writeJson(file, data) {
 
 // ── Serien-/Episodenerkennung ────────────────────────────────────────────────
 const EP_PATTERNS = [
-  [/[Ss](\d{1,2})[ ._-]?[Ee](\d{1,3})/, m => [+m[1], +m[2]]],
+  // S01E01, S1E1, S01F01, S1F1 (F = Folge), auch mit Trennzeichen: S01.E01, S1 F1
+  [/[Ss](\d{1,2})[ ._-]?[EeFf](\d{1,3})(?!\d)/, m => [+m[1], +m[2]]],
   [/\b(\d{1,2})[xX](\d{1,3})\b/, m => [+m[1], +m[2]]],
   [/(?:[Ss]taffel|[Ss]eason)[ ._-]*(\d{1,2})[ ._-]*(?:[Ee]pisode|[Ff]olge|[Ee]p?)[ ._-]*(\d{1,3})/, m => [+m[1], +m[2]]],
   [/\b[Ee][Pp]\.?[ ._-]*(\d{1,3})\b/, m => [null, +m[1]]],
   [/(?:[Ee]pisode|[Ff]olge)[ ._-]*(\d{1,3})/, m => [null, +m[1]]],
 ];
-const EP_STRIP = /[Ss]\d{1,2}[ ._-]?[Ee]\d{1,3}|\b\d{1,2}[xX]\d{1,3}\b|(?:[Ss]taffel|[Ss]eason)[ ._-]*\d{1,2}[ ._-]*(?:[Ee]pisode|[Ff]olge|[Ee]p?)[ ._-]*\d{1,3}|\b[Ee][Pp]\.?[ ._-]*\d{1,3}\b|(?:[Ee]pisode|[Ff]olge)[ ._-]*\d{1,3}/g;
+const EP_STRIP = /[Ss]\d{1,2}[ ._-]?[EeFf]\d{1,3}(?!\d)|\b\d{1,2}[xX]\d{1,3}\b|(?:[Ss]taffel|[Ss]eason)[ ._-]*\d{1,2}[ ._-]*(?:[Ee]pisode|[Ff]olge|[Ee]p?)[ ._-]*\d{1,3}|\b[Ee][Pp]\.?[ ._-]*\d{1,3}\b|(?:[Ee]pisode|[Ff]olge)[ ._-]*\d{1,3}/g;
 
 function detectEpisode(filename) {
   const stem = path.parse(filename).name;
@@ -151,6 +152,8 @@ function seasonFromDir(dirName) {
 }
 
 // ── Netzwerk ────────────────────────────────────────────────────────────────
+const VIRTUAL_IF = /vethernet|default switch|hyper-?v|vmware|vmnet|virtualbox|vbox|docker|wsl|veth|br-|virbr|tailscale|zerotier|hamachi|radmin|vpn|tap|tun\d|utun|wireguard|wg\d|nordlynx|npcap|bluetooth|loopback|virtual|pseudo/i;
+
 function lanAddresses() {
   const out = [];
   const ifaces = os.networkInterfaces();
@@ -158,15 +161,49 @@ function lanAddresses() {
     for (const a of list || []) {
       if (a.family !== 'IPv4' && a.family !== 4) continue;
       if (a.internal) continue;
-      if (/^169\.254\./.test(a.address)) continue;
-      // virtuelle Adapter (VirtualBox, Docker, WSL, VPN) nach hinten sortieren
-      const virtual = /vbox|virtual|docker|veth|br-|vmnet|wsl|hyper-v|loopback|tailscale|zerotier/i.test(name);
+      if (/^169\.254\./.test(a.address)) continue; // keine DHCP-Adresse erhalten
+      const virtual = VIRTUAL_IF.test(name) || /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(a.address); // CGNAT/Tailscale
       out.push({ name, address: a.address, virtual });
     }
   }
   const score = a => (a.virtual ? 10 : 0) + (/^192\.168\./.test(a.address) ? 0 : /^10\./.test(a.address) ? 1 : 2);
   out.sort((a, b) => score(a) - score(b));
   return out;
+}
+
+/**
+ * IP-Adresse der Netzwerkkarte, über die der PC ins Netz geht (Standardroute).
+ * Ein UDP-"connect" sendet keine Daten, sondern ermittelt nur die passende Quelladresse.
+ */
+let routeCache = { ip: null, at: 0 };
+function defaultRouteIp() {
+  if (Date.now() - routeCache.at < 30000) return Promise.resolve(routeCache.ip);
+  return new Promise(resolve => {
+    const dgram = require('dgram');
+    const sock = dgram.createSocket('udp4');
+    const done = ip => { try { sock.close(); } catch { /* */ } routeCache = { ip, at: Date.now() }; resolve(ip); };
+    const t = setTimeout(() => done(null), 500);
+    sock.on('error', () => { clearTimeout(t); done(null); });
+    try {
+      sock.connect(53, '1.1.1.1', () => {
+        clearTimeout(t);
+        let ip = null;
+        try { ip = sock.address().address; } catch { /* */ }
+        done(ip && ip !== '0.0.0.0' ? ip : null);
+      });
+    } catch { clearTimeout(t); done(null); }
+  });
+}
+
+/** LAN-Adressen, beste zuerst: Standardroute > echte Adapter > virtuelle Adapter */
+async function rankedLanAddresses() {
+  const list = lanAddresses();
+  const route = await defaultRouteIp();
+  if (route) {
+    const hit = list.find(a => a.address === route);
+    if (hit) { hit.primary = true; hit.virtual = false; list.splice(list.indexOf(hit), 1); list.unshift(hit); }
+  }
+  return list;
 }
 
 function primaryLanIp() {
@@ -209,5 +246,5 @@ module.exports = {
   mimeFor, isCompressible, md5, isInside, safeJoin, toWebPath,
   readJson, writeJson,
   detectEpisode, seriesNameFromFile, episodeTitle, seasonFromDir, cleanName,
-  lanAddresses, primaryLanIp, formatSize, uniquePath, sanitizeFilename,
+  lanAddresses, rankedLanAddresses, defaultRouteIp, primaryLanIp, formatSize, uniquePath, sanitizeFilename,
 };

@@ -79,6 +79,8 @@ body.kiosk .ctrl-bar{padding:5px 10px;}
 .mp-card-item.mp-wide{grid-column:1/-1;flex-direction:row;justify-content:center;gap:10px;padding:11px 8px;}
 .mp-card-item.mp-wide .mci-icon{font-size:1.15rem;}
 @media(max-width:400px){.mp-grid{gap:7px;}.mp-card-item{padding:10px 6px;font-size:.68rem;}.mp-card-item .mci-icon{font-size:1.2rem;}}
+body.video-fs #page-container,body.immersive #page-container{position:fixed!important;inset:0!important;z-index:2147483000!important;display:flex!important;background:#000}
+body.video-fs #page-frame,body.immersive #page-frame{width:100vw!important;height:100vh!important;height:100dvh!important}
 #page-container{flex:1;display:none;flex-direction:column;overflow:hidden;background:var(--bg);}
 #page-container.active{display:flex;}
 #page-frame{flex:1;border:none;width:100%;display:block;background:var(--bg);height:100%;min-height:0;}
@@ -623,6 +625,7 @@ let currentSrc='';
 let currentLabel='';
 
 function loadPage(src,label){
+  document.body.classList.remove('immersive');
   src=src||'';
   label=label||PAGE_LABELS[src]||('📄 '+src);
 
@@ -750,6 +753,24 @@ function closeFsOverlay(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeFsOverlay();});
 
+/* ─── Video-Vollbild: Seiten-iFrame füllt den ganzen Bildschirm ─── */
+let _videoFs=false,_videoFsAt=0;
+function _tellFrames(msg){['page-frame','fs-frame'].forEach(id=>{try{document.getElementById(id)?.contentWindow?.postMessage(msg,'*');}catch{}});}
+function setVideoFs(on){
+  if(on===_videoFs)return;
+  _videoFs=on;_videoFsAt=Date.now();
+  document.body.classList.toggle('video-fs',on);
+  const E=window.electron;
+  if(E&&E.setFullscreen){E.setFullscreen(on);}
+  else if(on){document.documentElement.requestFullscreen?.().catch(()=>{});}
+  else if(document.fullscreenElement){document.exitFullscreen().catch(()=>{});}
+  _tellFrames({type:'player-fs-state',on});
+}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&_videoFs&&!window.electron)setVideoFs(false);});
+// Vollbild per Betriebssystem beendet (z. B. F11) → Player-Zustand angleichen
+window.electron?.onWindowState?.(st=>{if(!st.fullscreen&&_videoFs&&Date.now()-_videoFsAt>1500)setVideoFs(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&_videoFs)setVideoFs(false);});
+
 /* ─── postMessage von iFrames ────────────────────────────── */
 window.addEventListener('message',e=>{
   const d=e.data;
@@ -757,6 +778,9 @@ window.addEventListener('message',e=>{
   if(d.type==='openPage')   loadPage(d.url,d.label);
   if(d.type==='openGame')   loadPage(d.url||'SPIELE.html#lan','🎮 Spiele');
   if(d.type==='videoPlaying') _pauseMusic();
+  if(d.type==='player-fullscreen') setVideoFs(!!d.on);
+  if(d.type==='videoStopped') setVideoFs(false);
+  if(d.type==='app-immersive') document.body.classList.toggle('immersive',!!d.on);
   if(d.type==='fullscreen') toggleFullscreen();
   if(d.type==='navigate') loadPage(d.page||'',d.label||'');
   if(d.type==='radio-status'){
@@ -1206,6 +1230,17 @@ setActiveNav('nav-home');
       upBtn.style.display = '';
       if(sub) sub.textContent = 'Noch keine Inhalte – mit Upload starten';
     }
+  }catch{}
+})();
+
+/* Direktlink ?page=SPIELE (z. B. vom QR-Code) */
+(function(){
+  try{
+    const p=new URLSearchParams(location.search).get('page');
+    if(!p)return;
+    const src=p==='lan'?'SPIELE.html#lan':Object.keys(PAGE_LABELS).find(k=>k&&k.replace(/\.html$/i,'').toLowerCase()===p.replace(/\.html$/i,'').toLowerCase());
+    if(src&&!sessionStorage.getItem('mc_refresh_state')) loadPage(src);
+    history.replaceState(null,'',location.pathname);
   }catch{}
 })();
 
