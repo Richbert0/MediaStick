@@ -1,55 +1,105 @@
 {
   "name": "mediacenter",
-  "version": "2.1.0",
-  "description": "MediaCenter Desktop Application",
+  "productName": "MediaCenter",
+  "version": "3.1.0",
+  "description": "MediaCenter – portables Medien- und Spielecenter (Filme, Serien, Musik, Fotos, Spiele, LAN-Multiplayer)",
+  "author": "Richbert0",
+  "homepage": "https://github.com/Richbert0/MediaStick",
   "main": "electron-main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win portable",
-    "build:installer": "electron-builder --win nsis",
-    "build:all": "electron-builder --win"
+    "server": "node server/cli.js",
+    "test": "node --test test/*.test.js",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win portable --x64",
+    "build:linux": "electron-builder --linux AppImage --x64",
+    "build:dir": "electron-builder --dir"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0",
+    "electron-builder": "^26.0.12"
   },
   "build": {
     "appId": "com.mediacenter.portable",
     "productName": "MediaCenter",
-    "copyright": "MediaCenter Portable v2.0",
-    "asar": false,
+    "copyright": "MediaCenter Portable",
+    "asar": true,
     "files": [
       "electron-main.js",
       "preload.js",
-      "package.json"
+      "server/**/*",
+      "package.json",
+      "!**/*.map"
     ],
     "extraResources": [
       {
-        "from": "./app",
+        "from": "app",
         "to": "app",
-        "filter": ["**/*", "!node_modules/**"]
+        "filter": [
+          "**/*",
+          "!media/**",
+          "!api/**",
+          "!**/node_modules/**",
+          "!**/*.log",
+          "!**/*.pid",
+          "!**/*.port",
+          "!**/__pycache__/**",
+          "!**/*.py",
+          "!**/*.pyc",
+          "!games/server.js",
+          "!games/package*.json"
+        ]
       }
     ],
     "directories": {
       "buildResources": "build-resources",
       "output": "dist"
     },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "win": {
       "target": [
-        { "target": "portable", "arch": ["x64"] },
-        { "target": "nsis",     "arch": ["x64"] }
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "build-resources/icon.ico",
       "requestedExecutionLevel": "asInvoker"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "build-resources/icon.ico",
-      "uninstallerIcon": "build-resources/icon.ico",
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "MediaCenter"
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build-resources/icon.png",
+      "category": "AudioVideo",
+      "synopsis": "Portables Medien- und Spielecenter",
+      "desktop": {
+        "entry": {
+          "Name": "MediaCenter",
+          "Comment": "Portables Medien- und Spielecenter",
+          "StartupWMClass": "MediaCenter"
+        }
+      }
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-x86_64.AppImage"
+    },
+    "extraMetadata": {
+      "desktopName": "mediacenter.desktop"
     }
-  },
-  "devDependencies": {
-    "electron": "^31.0.0",
-    "electron-builder": "^24.13.3"
   }
 }
