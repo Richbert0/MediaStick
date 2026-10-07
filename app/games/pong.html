@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pong</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const FW = 800, FH = 500, PW = 12, PH = 90, PX = 26, BALL = 10;
+const WIN_SCORE = 7;
+const PADDLE_SPEED = 520;
+const AI = {
+  leicht: { speed: 300, react: 0.22, error: 70 },
+  mittel: { speed: 420, react: 0.12, error: 34 },
+  schwer: { speed: 560, react: 0.05, error: 10 },
+};
+
+let difficulty = GK.store.get('pong_ai', 'mittel');
+let lan = null;
+let st = null;
+let running = false;
+let netTimer = 0;
+let lastNet = 0;
+let pointerY = [null, null];
+
+GK.init({
+  id: 'pong', title: 'Pong', modes: ['ai', 'local', 'lan'],
+  onPause: () => { running = false; }, onResume: () => { running = true; },
+  onRestart: () => showStart(), isRunning: () => running,
+  help: GK.mode === 'local'
+    ? 'Links: ' + GK.kbd('W') + GK.kbd('S') + ' · Rechts: ' + GK.kbd('↑') + GK.kbd('↓') + ' · Touch: jede Hälfte steuert ihren Schläger'
+    : 'Steuerung: ' + GK.kbd('↑') + GK.kbd('↓') + ' oder ' + GK.kbd('W') + GK.kbd('S') + ', Maus oder Finger',
+});
+const mode = GK.mode;
+
+const canvas = GK.el('canvas', { 'aria-label': 'Spielfeld' });
+GK.stage.appendChild(canvas);
+const ctx = GK.fit(canvas, FW, FH, GK.stage);
+
+// Maus/Touch: Schläger folgt dem Zeiger
+function pointer(ev) {
+  if (!st) return;
+  const list = ev.touches ? [...ev.touches] : [ev];
+  for (const t of list) {
+    const p = GK.canvasPoint(canvas, t);
+    let side = mySide();
+    if (mode === 'local') side = p.x < FW / 2 ? 0 : 1;
+    pointerY[side] = p.y;
+  }
+}
+canvas.addEventListener('pointermove', ev => { if (ev.pointerType === 'mouse') pointer(ev); });
+canvas.addEventListener('touchstart', pointer, { passive: true });
+canvas.addEventListener('touchmove', pointer, { passive: true });
+canvas.addEventListener('touchend', () => { pointerY = [null, null]; });
+canvas.addEventListener('mouseleave', () => { pointerY = [null, null]; });
+
+function mySide() { return mode === 'lan' && lan ? (lan.isHost ? 0 : 1) : 0; }
+
+function newState() {
+  const P = GK.localPlayers();
+  const prof = GK.profile();
+  let names;
+  if (mode === 'ai') names = [prof.name || 'Du', 'KI (' + difficulty + ')'];
+  else if (mode === 'local') names = [P[0].name, P[1].name];
+  else names = [lan.players[0].name, (lan.players[1] || {}).name || 'Gegner'];
+  return {
+    names, colors: ['#22d3ee', '#f472b6'],
+    p: [FH / 2 - PH / 2, FH / 2 - PH / 2],
+    score: [0, 0],
+    ball: { x: FW / 2, y: FH / 2, vx: 0, vy: 0 },
+    serveTimer: 1, serveDir: Math.random() < 0.5 ? -1 : 1,
+    hits: 0, over: false, aiTarget: FH / 2, aiTimer: 0, flash: 0,
+  };
+}
+
+function serve() {
+  const b = st.ball;
+  b.x = FW / 2;
+  b.y = FH / 2;
+  const ang = (Math.random() * 0.8 - 0.4);
+  const sp = 340;
+  b.vx = Math.cos(ang) * sp * st.serveDir;
+  b.vy = Math.sin(ang) * sp;
+  st.hits = 0;
+}
+
+function movePaddle(i, dt) {
+  let dir = 0;
+  const K = GK.keys;
+  const isMine = mode === 'local' || i === mySide();
+  if (!isMine) return;
+  if (mode === 'local') {
+    if (i === 0) dir = (K.has('KeyS') ? 1 : 0) - (K.has('KeyW') ? 1 : 0);
+    else dir = (K.has('ArrowDown') ? 1 : 0) - (K.has('ArrowUp') ? 1 : 0);
+  } else {
+    dir = ((K.has('ArrowDown') || K.has('KeyS')) ? 1 : 0) - ((K.has('ArrowUp') || K.has('KeyW')) ? 1 : 0);
+  }
+  if (dir) { st.p[i] += dir * PADDLE_SPEED * dt; pointerY[i] = null; }
+  else if (pointerY[i] != null) {
+    const target = pointerY[i] - PH / 2;
+    const d = target - st.p[i];
+    st.p[i] += Math.sign(d) * Math.min(Math.abs(d), PADDLE_SPEED * 1.6 * dt);
+  }
+  st.p[i] = Math.max(0, Math.min(FH - PH, st.p[i]));
+}
+
+function aiPaddle(dt) {
+  const cfg = AI[difficulty];
+  st.aiTimer -= dt;
+  const b = st.ball;
+  if (st.aiTimer <= 0) {
+    st.aiTimer = cfg.react;
+    if (b.vx > 0) {
+      // Auftreffpunkt vorhersagen (inkl. Abprallen an Wänden)
+      let t = (FW - PX - PW - b.x) / b.vx;
+      let y = b.y + b.vy * t;
+      const span = FH - BALL;
+      y = ((y % (2 * span)) + 2 * span) % (2 * span);
+      if (y > span) y = 2 * span - y;
+      st.aiTarget = y + (Math.random() * 2 - 1) * cfg.error;
+    } else {
+      st.aiTarget = FH / 2 + (b.y - FH / 2) * 0.3;
+    }
+  }
+  const center = st.p[1] + PH / 2;
+  const d = st.aiTarget - center;
+  st.p[1] += Math.sign(d) * Math.min(Math.abs(d), cfg.speed * dt);
+  st.p[1] = Math.max(0, Math.min(FH - PH, st.p[1]));
+}
+
+function physics(dt) {
+  const b = st.ball;
+  if (st.serveTimer > 0) {
+    st.serveTimer -= dt;
+    if (st.serveTimer <= 0) serve();
+    return;
+  }
+  b.x += b.vx * dt;
+  b.y += b.vy * dt;
+  if (b.y < BALL / 2) { b.y = BALL / 2; b.vy = Math.abs(b.vy); GK.sound('wall'); }
+  if (b.y > FH - BALL / 2) { b.y = FH - BALL / 2; b.vy = -Math.abs(b.vy); GK.sound('wall'); }
+  for (let i = 0; i < 2; i++) {
+    const px = i === 0 ? PX : FW - PX - PW;
+    const toward = i === 0 ? b.vx < 0 : b.vx > 0;
+    if (!toward) continue;
+    if (b.x + BALL / 2 >= px && b.x - BALL / 2 <= px + PW && b.y + BALL / 2 >= st.p[i] && b.y - BALL / 2 <= st.p[i] + PH) {
+      const rel = ((b.y - st.p[i]) / PH - 0.5) * 2; // -1..1
+      const speed = Math.min(900, Math.hypot(b.vx, b.vy) * 1.05 + 8);
+      const ang = rel * 1.05;
+      b.vx = Math.cos(ang) * speed * (i === 0 ? 1 : -1);
+      b.vy = Math.sin(ang) * speed;
+      b.x = i === 0 ? px + PW + BALL / 2 : px - BALL / 2;
+      st.hits++;
+      st.flash = 0.12;
+      GK.sound('hit');
+      if (mode !== 'lan' || i === mySide()) GK.vibrate(15);
+    }
+  }
+  if (b.x < -BALL || b.x > FW + BALL) {
+    const scorer = b.x < 0 ? 1 : 0;
+    st.score[scorer]++;
+    st.serveDir = scorer === 0 ? 1 : -1;
+    st.serveTimer = 0.9;
+    b.vx = b.vy = 0;
+    b.x = FW / 2;
+    b.y = FH / 2;
+    GK.sound('score');
+    if (st.score[scorer] >= WIN_SCORE) finish(scorer);
+    updateScores();
+  }
+}
+
+function update(dt) {
+  if (!running || !st) return;
+  if (st.flash > 0) st.flash -= dt;
+  movePaddle(0, dt);
+  movePaddle(1, dt);
+  if (mode === 'ai') aiPaddle(dt);
+  if (mode !== 'lan' || lan.isHost) physics(dt);
+  else {
+    // Gast: Ball extrapolieren
+    st.ball.x += st.ball.vx * dt;
+    st.ball.y += st.ball.vy * dt;
+    if (st.ball.y < BALL / 2 || st.ball.y > FH - BALL / 2) st.ball.vy *= -1;
+  }
+  if (mode === 'lan') netSync();
+}
+
+function netSync() {
+  const now = performance.now();
+  if (now - lastNet < 33) return;
+  lastNet = now;
+  const me = mySide();
+  if (lan.isHost) lan.send({ t: 's', b: [Math.round(st.ball.x), Math.round(st.ball.y), Math.round(st.ball.vx), Math.round(st.ball.vy)], p: Math.round(st.p[0]), sc: st.score, h: st.hits });
+  else lan.send({ t: 'p', p: Math.round(st.p[me]) });
+}
+
+function updateScores() {
+  GK.setScores([
+    { label: st.names[0], value: st.score[0], color: st.colors[0] },
+    { label: st.names[1], value: st.score[1], color: st.colors[1] },
+  ]);
+}
+
+function finish(winner) {
+  running = false;
+  st.over = true;
+  const youWin = mode === 'local' || winner === mySide();
+  GK.sound(youWin ? 'win' : 'lose');
+  const rows = [0, 1].map(i => ({ name: st.names[i], color: st.colors[i], score: st.score[i], win: i === winner }));
+  const opts = { title: '🏆 ' + st.names[winner] + ' gewinnt!', content: GK.resultList(rows) };
+  if (mode === 'lan') {
+    if (lan.isHost) lan.send({ t: 'end', w: winner, sc: st.score });
+    return GKNet.endScreen(lan, opts);
+  }
+  GK.overlay(Object.assign(opts, { buttons: [{ label: 'Revanche', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }] }));
+}
+
+function begin() {
+  GK.hideOverlay();
+  st = newState();
+  updateScores();
+  running = true;
+  GK.sound('start');
+}
+
+function showStart() {
+  running = false;
+  const content = mode === 'ai' ? GK.options('Schwierigkeit', [{ label: 'Leicht', value: 'leicht' }, { label: 'Mittel', value: 'mittel' }, { label: 'Schwer', value: 'schwer' }], difficulty, v => { difficulty = v; GK.store.set('pong_ai', v); }) : null;
+  GK.overlay({
+    title: 'Pong',
+    text: (mode === 'ai' ? 'Du spielst links gegen die KI.' : 'Zwei Spieler an einem Gerät.') + ' Wer zuerst ' + WIN_SCORE + ' Punkte hat, gewinnt.',
+    content,
+    buttons: [{ label: 'Anpfiff', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }],
+    help: GK.cfg.help,
+  });
+}
+
+function setupLan() {
+  lan = GKNet.game();
+  lan.on('start', () => {
+    st = newState();
+    updateScores();
+    running = true;
+    GK.toast('Du spielst ' + (lan.isHost ? 'links (blau)' : 'rechts (pink)'), 2500);
+    GK.sound('start');
+  });
+  lan.on('msg', d => {
+    if (!st) return;
+    if (lan.isHost && d.t === 'p') st.p[1] = d.p;
+    if (!lan.isHost) {
+      if (d.t === 's') {
+        const [x, y, vx, vy] = d.b;
+        // sanft korrigieren, um Ruckeln zu vermeiden
+        const dx = x - st.ball.x, dy = y - st.ball.y;
+        if (Math.abs(dx) > 60 || Math.abs(dy) > 60) { st.ball.x = x; st.ball.y = y; }
+        else { st.ball.x += dx * 0.5; st.ball.y += dy * 0.5; }
+        st.ball.vx = vx;
+        st.ball.vy = vy;
+        st.serveTimer = (vx || vy) ? 0 : 1;
+        st.p[0] = d.p;
+        if (d.h !== st.hits) { if (d.h > st.hits) GK.sound('hit'); st.hits = d.h; }
+        if (d.sc[0] !== st.score[0] || d.sc[1] !== st.score[1]) { st.score = d.sc; GK.sound('score'); updateScores(); }
+      }
+      if (d.t === 'end') { st.score = d.sc; updateScores(); finish(d.w); }
+    }
+  });
+}
+
+// ── Darstellung ─────────────────────────────────────────────────────────────
+function render() {
+  ctx.fillStyle = '#050810';
+  ctx.fillRect(0, 0, FW, FH);
+  ctx.strokeStyle = 'rgba(255,255,255,.12)';
+  ctx.setLineDash([10, 14]);
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(FW / 2, 10);
+  ctx.lineTo(FW / 2, FH - 10);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (!st) return;
+  ctx.font = '700 64px ' + getComputedStyle(document.body).getPropertyValue('--gk-mono');
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,.08)';
+  ctx.fillText(st.score[0], FW / 2 - 90, 86);
+  ctx.fillText(st.score[1], FW / 2 + 90, 86);
+  for (let i = 0; i < 2; i++) {
+    const x = i === 0 ? PX : FW - PX - PW;
+    ctx.fillStyle = st.colors[i];
+    ctx.shadowColor = st.colors[i];
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, st.p[i], PW, PH, 6) : ctx.rect(x, st.p[i], PW, PH);
+    ctx.fill();
+  }
+  ctx.shadowBlur = st.flash > 0 ? 26 : 12;
+  ctx.shadowColor = '#fff';
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(st.ball.x, st.ball.y, BALL / 2 + (st.flash > 0 ? 1.5 : 0), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  if (st.serveTimer > 0 && !st.over && running) {
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.font = '600 18px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillText('Bereit…', FW / 2, FH / 2 + 40);
+  }
+}
+
+GK.loop({ update, render }).start();
+if (mode === 'lan') setupLan();
+else showStart();
+</script>
+</body>
+</html>

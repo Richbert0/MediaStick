@@ -130,7 +130,8 @@
       if (port) {
         state.port = port;
         setServerReady(true, `Lokal auf Port ${port}`);
-        setText('desktop-footnote-port', `Server aktiv auf localhost:${port}`);
+        const data = await electron.getDataDir?.().catch(() => null);
+        setText('desktop-footnote-port', `Server aktiv auf Port ${port}` + (data ? ` · Daten: ${data.path}` : ''));
       } else {
         setServerReady(false, 'Lokaler Server wird vorbereitet');
       }
@@ -146,12 +147,17 @@
     }
   }
 
+  function wireDataButton() {
+    $('desktop-open-data')?.addEventListener('click', () => electron.openDataDir?.('media'));
+  }
+
   async function init() {
     await hydrateDesktopMeta();
     initDesktopHomeCopy();
     wrapLoadPage();
     wireWindowButtons();
     wireQuickLaunches();
+    wireDataButton();
     updateLibraryStats();
   }
 

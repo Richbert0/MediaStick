@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tipp-Trainer</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+<style>
+.ty{width:min(920px,100%);display:flex;flex-direction:column;gap:16px}
+.ty-who{text-align:center;font-weight:800;font-size:1rem;min-height:1.3em}
+.ty-text{position:relative;padding:22px 24px;border-radius:18px;border:1px solid var(--gk-line);background:linear-gradient(160deg,rgba(18,24,44,.95),rgba(8,11,22,.95));
+  font-family:var(--gk-mono);font-size:clamp(1rem,2.6vw,1.45rem);line-height:1.75;letter-spacing:.01em;cursor:text;user-select:none;word-break:break-word}
+.ty-text span{color:#5b6882;border-radius:3px}
+.ty-text span.ok{color:#e6ecfa}
+.ty-text span.cur{background:rgba(34,211,238,.25);color:#fff;box-shadow:0 2px 0 var(--gk-accent)}
+.ty-text span.err{background:rgba(244,63,94,.45);color:#fff}
+.ty-text.focusless::after{content:'Hier klicken und lostippen';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(5,7,14,.6);border-radius:18px;font-family:var(--gk-font);font-weight:800;color:var(--gk-accent)}
+.ty-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.ty-stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ty-stat{padding:10px 16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--gk-line2);text-align:center;min-width:110px}
+.ty-stat b{display:block;font-family:var(--gk-mono);font-size:1.4rem}
+.ty-stat span{font-size:.7rem;color:var(--gk-sub);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.ty-race{display:grid;gap:8px}
+.ty-lane{display:flex;align-items:center;gap:10px;font-size:.82rem;font-weight:700}
+.ty-lane .n{width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ty-lane .track{flex:1;height:10px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.ty-lane .track i{display:block;height:100%;border-radius:999px;transition:width .2s}
+.ty-lane .w{width:70px;text-align:right;font-family:var(--gk-mono);color:var(--gk-sub)}
+</style>
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const SENTENCES = [
+  'Der frühe Vogel fängt den Wurm, aber die zweite Maus bekommt den Käse.',
+  'Heute scheint die Sonne über den Dächern der Stadt und alle gehen nach draußen.',
+  'Ein guter Film braucht eine spannende Geschichte, starke Figuren und gute Musik.',
+  'Im Herbst fallen die bunten Blätter von den Bäumen und der Wind wird kälter.',
+  'Wer schnell tippen möchte, sollte zuerst auf Genauigkeit achten und dann auf Tempo.',
+  'Die Katze schläft auf dem warmen Sofa, während draußen der Regen gegen die Fenster prasselt.',
+  'Am Wochenende treffen wir uns mit Freunden, kochen zusammen und spielen bis spät in die Nacht.',
+  'Ein kleiner Schritt für einen Menschen kann manchmal ein großer Sprung für alle sein.',
+  'Musik verbindet Menschen auf der ganzen Welt, egal welche Sprache sie sprechen.',
+  'Der Zug fährt pünktlich um acht Uhr ab, also sollten wir uns lieber beeilen.',
+  'Ohne Fleiß kein Preis: Übung macht den Meister, auch beim Zehnfingersystem.',
+  'Auf dem Markt gibt es frisches Obst, knuspriges Brot und duftende Kräuter.',
+  'Das Spiel beginnt, sobald alle Spieler bereit sind und der Host auf Start drückt.',
+  'Gestern Abend haben wir einen alten Film geschaut und dabei viel Popcorn gegessen.',
+  'Wenn der Akku leer ist, hilft nur noch ein Ladekabel oder ein gutes Buch.',
+];
+const WORDS = 'haus baum auto sonne mond stern wasser feuer erde luft licht nacht tag zeit welt hand kopf fuss tisch stuhl buch spiel musik bild film text katze hund maus vogel fisch blume garten strasse stadt land meer berg fluss wald wiese apfel brot milch kaffee tee'.split(' ');
+const DUR_LIMIT = 180000;
+
+let level = GK.store.get('typer_level', 'normal');
+let target = '';
+let pos = 0;
+let errors = 0;
+let errAt = -1;
+let t0 = 0;
+let running = false;
+let finished = false;
+let turn = 0;            // lokal: welcher Spieler tippt
+let results = [];        // lokal: Ergebnisse je Spieler
+let lan = null;
+let racers = new Map();  // LAN: id → {name,color,progress,wpm,done,place}
+let place = 0;
+let spans = [];
+let clock = 0;
+
+GK.init({
+  id: 'typer', title: 'Tipp-Trainer', modes: ['solo', 'local', 'lan'],
+  onPause: () => { if (running) { running = false; GK._pausedAt = performance.now(); } },
+  onResume: () => { if (t0 && !finished) { running = true; t0 += performance.now() - GK._pausedAt; focusInput(); } },
+  onRestart: () => showStart(), isRunning: () => running,
+  help: 'Tippe den Text exakt ab – Groß-/Kleinschreibung und Satzzeichen zählen. Falsche Zeichen werden rot markiert.',
+});
+const mode = GK.mode;
+
+const who = GK.el('div', { class: 'ty-who' });
+const textEl = GK.el('div', { class: 'ty-text focusless', role: 'textbox', 'aria-label': 'Text zum Abtippen' });
+const input = GK.el('input', { class: 'ty-input', type: 'text', autocomplete: 'off', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', 'aria-label': 'Eingabe' });
+const statWpm = GK.el('b', { text: '0' });
+const statAcc = GK.el('b', { text: '100%' });
+const statTime = GK.el('b', { text: '0:00' });
+const stats = GK.el('div', { class: 'ty-stats' },
+  GK.el('div', { class: 'ty-stat' }, statWpm, GK.el('span', { text: 'Wörter/Min' })),
+  GK.el('div', { class: 'ty-stat' }, statAcc, GK.el('span', { text: 'Genauigkeit' })),
+  GK.el('div', { class: 'ty-stat' }, statTime, GK.el('span', { text: 'Zeit' })));
+const race = GK.el('div', { class: 'ty-race' });
+GK.stage.appendChild(GK.el('div', { class: 'ty' }, who, textEl, input, stats, race));
+
+function focusInput() { input.focus({ preventScroll: true }); }
+textEl.addEventListener('click', focusInput);
+input.addEventListener('focus', () => textEl.classList.remove('focusless'));
+input.addEventListener('blur', () => { if (running) textEl.classList.add('focusless'); });
+
+function makeText(rand) {
+  if (level === 'einfach') {
+    const w = [];
+    while (w.join(' ').length < 120) w.push(rand.pick(WORDS));
+    return w.join(' ');
+  }
+  const order = rand.shuffle(SENTENCES.slice());
+  let t = '';
+  for (const s of order) { if (t.length > 150) break; t += (t ? ' ' : '') + s; }
+  return t;
+}
+
+function renderText() {
+  textEl.replaceChildren(...[...target].map(ch => GK.el('span', { text: ch })));
+  spans = [...textEl.children];
+  paint();
+}
+function paint(prev) {
+  const from = prev == null ? 0 : Math.max(0, prev - 1);
+  for (let i = from; i < spans.length && (prev == null || i <= pos + 1); i++) {
+    spans[i].className = i < pos ? 'ok' : i === pos ? (errAt === pos ? 'cur err' : 'cur') : '';
+  }
+}
+
+function wpm() {
+  const min = Math.max(1 / 60, (performance.now() - t0) / 60000);
+  return Math.round((pos / 5) / min);
+}
+function accuracy() { return pos + errors ? Math.round(pos / (pos + errors) * 100) : 100; }
+
+function handleChar(ch) {
+  if (!running || finished) return;
+  if (!t0) t0 = performance.now();
+  const prev = pos;
+  if (ch === target[pos] || (ch === ' ' && target[pos] === ' ')) {
+    pos++;
+    errAt = -1;
+    if (pos % 12 === 0) GK.sound('tick');
+  } else {
+    errors++;
+    errAt = pos;
+    GK.sound('bad');
+  }
+  paint(prev);
+  updateStats();
+  if (mode === 'lan' && (pos % 3 === 0 || pos === target.length)) lan.send({ t: 'p', p: pos / target.length, w: wpm() });
+  if (pos >= target.length) done();
+}
+input.addEventListener('input', () => {
+  const v = input.value;
+  input.value = '';
+  for (const ch of v) handleChar(ch);
+});
+input.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && GK.pausable) { GK.togglePause(); e.preventDefault(); }
+  if (e.key === 'Enter') e.preventDefault();
+});
+
+function updateStats() {
+  const ms = t0 ? performance.now() - t0 : 0;
+  statWpm.textContent = t0 ? wpm() : 0;
+  statAcc.textContent = accuracy() + '%';
+  statTime.textContent = GK.fmtTime(ms);
+  if (mode === 'solo') GK.setScores([{ label: 'Fortschritt', value: Math.round(pos / target.length * 100) + '%' }, { label: 'Rekord', value: (GK.scores.best('typer') || 0) + ' WPM' }]);
+  if (mode === 'lan') {
+    const me = racers.get(lan.me);
+    if (me) { me.progress = pos / target.length; me.wpm = t0 ? wpm() : 0; }
+    renderRace();
+  }
+  if (t0 && ms > DUR_LIMIT && !finished) done(true);
+}
+
+function renderRace() {
+  race.replaceChildren(...[...racers.values()].map(r => GK.el('div', { class: 'ty-lane' },
+    GK.el('span', { class: 'n', style: { color: r.color }, text: (r.place ? r.place + '. ' : '') + r.name }),
+    GK.el('span', { class: 'track' }, GK.el('i', { style: { width: Math.round(r.progress * 100) + '%', background: r.color } })),
+    GK.el('span', { class: 'w', text: r.wpm + ' WPM' }))));
+  GK.setScores([...racers.values()].map(r => ({ label: r.name, value: Math.round(r.progress * 100) + '%', color: r.color })));
+}
+
+function startRun(seed) {
+  target = makeText(GK.rng(seed));
+  pos = 0; errors = 0; errAt = -1; t0 = 0; finished = false; running = true;
+  renderText();
+  updateStats();
+  clearInterval(clock);
+  clock = setInterval(() => { if (running && t0) updateStats(); }, 250);
+  textEl.classList.add('focusless');
+  setTimeout(focusInput, 50);
+}
+
+async function done(timeout) {
+  finished = true;
+  running = false;
+  clearInterval(clock);
+  const w = t0 ? wpm() : 0;
+  const acc = accuracy();
+  const score = Math.round(w * acc / 100);
+  if (mode === 'solo') {
+    GK.sound('win');
+    const card = GK.overlay({ title: timeout ? 'Zeit abgelaufen' : 'Geschafft!', big: w + ' WPM', text: 'Genauigkeit ' + acc + '% · ' + errors + ' Fehler',
+      buttons: [{ label: 'Neuer Text', primary: true, onClick: () => { GK.hideOverlay(); startRun((Math.random() * 1e9) >>> 0); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+    const res = await GK.scores.submit('typer', score, { detail: acc + '% genau' });
+    if (res.isBest && score > 0) card.querySelector('p').textContent = '🎉 Neuer Rekord! · Genauigkeit ' + acc + '%';
+    const v = GK.scores.view(res.list, res.rank, s => s + ' WPM');
+    if (v && GK.overlayOpen) card.insertBefore(v, card.querySelector('.gk-actions'));
+    return;
+  }
+  if (mode === 'local') {
+    results[turn] = { w, acc, score, errors };
+    GK.sound('score');
+    const P = GK.localPlayers();
+    if (turn === 0) {
+      GK.overlay({ title: P[0].name + ': ' + w + ' WPM', text: 'Genauigkeit ' + acc + '%. Jetzt ist ' + P[1].name + ' dran – mit demselben Text.',
+        buttons: [{ label: P[1].name + ' starten', primary: true, onClick: () => { GK.hideOverlay(); turn = 1; setWho(); startRun(localSeed); } }] });
+      return;
+    }
+    const wIdx = results[0].score === results[1].score ? -1 : results[0].score > results[1].score ? 0 : 1;
+    const rows = P.map((p, i) => ({ name: p.name, color: p.color, score: results[i].w + ' WPM · ' + results[i].acc + '%', win: i === wIdx }));
+    GK.sound('win');
+    GK.overlay({ title: wIdx < 0 ? 'Unentschieden!' : '🏆 ' + P[wIdx].name + ' gewinnt!', text: 'Wertung: WPM × Genauigkeit', content: GK.resultList(rows),
+      buttons: [{ label: 'Neue Runde', primary: true, onClick: () => startLocal() }, { label: 'Zurück', onClick: () => GK.back() }] });
+    return;
+  }
+  // LAN
+  lan.send({ t: 'done', w, acc, score });
+  const me = racers.get(lan.me);
+  me.done = true; me.wpm = w; me.acc = acc; me.score = score; me.progress = pos / target.length;
+  if (!timeout && !me.place) me.place = ++place;
+  renderRace();
+  checkLanEnd();
+}
+
+function checkLanEnd() {
+  const all = [...racers.values()];
+  const meDone = racers.get(lan.me).done;
+  if (!meDone) return;
+  if (!all.every(r => r.done || r.offline)) {
+    GK.overlay({ title: 'Ziel erreicht!', spinner: true, text: 'Warte auf die anderen Spieler…' });
+    return;
+  }
+  const rows = all.slice().sort((a, b) => (a.place || 99) - (b.place || 99) || (b.score || 0) - (a.score || 0))
+    .map((r, i) => ({ name: (r.place ? r.place + '. ' : '') + r.name, color: r.color, score: (r.wpm || 0) + ' WPM · ' + (r.acc || 0) + '%', win: i === 0 }));
+  GK.sound('win');
+  GKNet.endScreen(lan, { title: '🏁 Rennen beendet', content: GK.resultList(rows) });
+}
+
+let localSeed = 0;
+function setWho() {
+  if (mode !== 'local') { who.textContent = ''; return; }
+  const p = GK.localPlayers()[turn];
+  who.textContent = p.name + ' tippt';
+  who.style.color = p.color;
+}
+function startLocal() {
+  GK.hideOverlay();
+  turn = 0;
+  results = [];
+  localSeed = (Math.random() * 1e9) >>> 0;
+  setWho();
+  startRun(localSeed);
+}
+
+function showStart() {
+  if (mode === 'lan') return;
+  running = false;
+  const content = GK.options('Text', [{ label: 'Einfache Wörter', value: 'einfach' }, { label: 'Sätze', value: 'normal' }], level, v => { level = v; GK.store.set('typer_level', v); });
+  GK.overlay({
+    title: 'Tipp-Trainer',
+    text: mode === 'solo' ? 'Tippe den Text so schnell und genau wie möglich. Die Zeit startet mit dem ersten Tastendruck.' : 'Abwechselnd zu zweit: Beide tippen denselben Text nacheinander. Gewertet wird Tempo × Genauigkeit.',
+    content,
+    buttons: [{ label: 'Start', primary: true, onClick: () => { GK.hideOverlay(); if (mode === 'local') startLocal(); else startRun((Math.random() * 1e9) >>> 0); } }, { label: 'Zurück', onClick: () => GK.back() }],
+    help: GK.cfg.help,
+  });
+}
+
+if (mode === 'lan') {
+  lan = GKNet.game();
+  lan.on('start', room => {
+    level = 'normal';
+    racers = new Map();
+    place = 0;
+    const used = new Set();
+    room.players.forEach((p, i) => {
+      const color = p.color && !used.has(p.color) ? p.color : GK.COLORS.find(c => !used.has(c));
+      used.add(color);
+      racers.set(p.id, { name: p.name, color, progress: 0, wpm: 0, done: false, place: 0 });
+    });
+    GK.overlay({ title: 'Bereit machen…', big: 3 });
+    let n = 3;
+    const cd = setInterval(() => {
+      n--;
+      if (n > 0) { GK.overlay({ title: 'Bereit machen…', big: n }); GK.sound('tick'); return; }
+      clearInterval(cd);
+      GK.hideOverlay();
+      GK.sound('start');
+      startRun(room.seed);
+      renderRace();
+    }, 800);
+  });
+  lan.on('msg', (d, from) => {
+    const r = racers.get(from);
+    if (!r) return;
+    if (d.t === 'p') { r.progress = d.p; r.wpm = d.w; }
+    if (d.t === 'done') {
+      r.done = true; r.wpm = d.w; r.acc = d.acc; r.score = d.score;
+      if (d.score > 0 && !r.place) r.place = ++place;
+      if (finished) checkLanEnd();
+    }
+    renderRace();
+  });
+  lan.on('left', d => { const r = racers.get(d.playerId); if (r) { r.offline = true; if (finished) checkLanEnd(); } });
+} else showStart();
+</script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tetris</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const COLS = 10, ROWS = 20, VIS = 20, CS = 30;
+const PANEL = 150;
+const BW = COLS * CS + PANEL, BH = ROWS * CS;
+const PIECES = {
+  I: { c: '#22d3ee', s: [[0, 1], [1, 1], [2, 1], [3, 1]] },
+  O: { c: '#facc15', s: [[1, 0], [2, 0], [1, 1], [2, 1]] },
+  T: { c: '#a78bfa', s: [[1, 0], [0, 1], [1, 1], [2, 1]] },
+  S: { c: '#4ade80', s: [[1, 0], [2, 0], [0, 1], [1, 1]] },
+  Z: { c: '#f87171', s: [[0, 0], [1, 0], [1, 1], [2, 1]] },
+  J: { c: '#60a5fa', s: [[0, 0], [0, 1], [1, 1], [2, 1]] },
+  L: { c: '#fb923c', s: [[2, 0], [0, 1], [1, 1], [2, 1]] },
+};
+const TYPES = Object.keys(PIECES);
+const GARBAGE = '#4b5563';
+const LINE_SCORE = [0, 100, 300, 500, 800];
+const SEND = [0, 0, 1, 2, 4];
+const KICKS = [[0, 0], [-1, 0], [1, 0], [0, -1], [-2, 0], [2, 0], [0, 1]];
+
+function rotateCells(cells, type, dir) {
+  if (type === 'O') return cells.map(c => c.slice());
+  const size = type === 'I' ? 4 : 3;
+  return cells.map(([x, y]) => dir > 0 ? [size - 1 - y, x] : [y, size - 1 - x]);
+}
+
+class Board {
+  constructor(opts) {
+    this.opts = opts;
+    this.rand = GK.rng(opts.seed);
+    this.grid = Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
+    this.bag = [];
+    this.queue = [];
+    this.hold = null;
+    this.canHold = true;
+    this.score = 0;
+    this.lines = 0;
+    this.level = opts.startLevel || 1;
+    this.combo = -1;
+    this.alive = true;
+    this.pendingGarbage = 0;
+    this.garbageHole = this.rand.int(COLS);
+    this.dropTimer = 0;
+    this.lockTimer = 0;
+    this.lockMoves = 0;
+    this.flash = 0;
+    this.sent = 0;
+    for (let i = 0; i < 5; i++) this.queue.push(this.nextType());
+    this.spawn();
+  }
+  nextType() {
+    if (!this.bag.length) this.bag = this.rand.shuffle(TYPES.slice());
+    return this.bag.pop();
+  }
+  spawn(type) {
+    const t = type || this.queue.shift();
+    if (!type) this.queue.push(this.nextType());
+    this.piece = { t, cells: PIECES[t].s.map(c => c.slice()), x: 3, y: t === 'I' ? -1 : 0 };
+    this.lockTimer = 0;
+    this.lockMoves = 0;
+    if (this.collides(this.piece.cells, this.piece.x, this.piece.y)) { this.alive = false; this.opts.onDeath && this.opts.onDeath(this); }
+  }
+  collides(cells, x, y) {
+    for (const [cx, cy] of cells) {
+      const gx = cx + x, gy = cy + y;
+      if (gx < 0 || gx >= COLS || gy >= ROWS) return true;
+      if (gy >= 0 && this.grid[gy][gx]) return true;
+    }
+    return false;
+  }
+  move(dx) {
+    if (!this.alive) return false;
+    if (!this.collides(this.piece.cells, this.piece.x + dx, this.piece.y)) {
+      this.piece.x += dx;
+      this.touchLock();
+      return true;
+    }
+    return false;
+  }
+  rotate(dir) {
+    if (!this.alive) return;
+    const cells = rotateCells(this.piece.cells, this.piece.t, dir);
+    for (const [kx, ky] of KICKS) {
+      if (!this.collides(cells, this.piece.x + kx, this.piece.y + ky)) {
+        this.piece.cells = cells;
+        this.piece.x += kx;
+        this.piece.y += ky;
+        this.touchLock();
+        GK.sound('move');
+        return;
+      }
+    }
+  }
+  touchLock() {
+    if (this.onGround() && this.lockMoves < 15) { this.lockTimer = 0; this.lockMoves++; }
+  }
+  onGround() { return this.collides(this.piece.cells, this.piece.x, this.piece.y + 1); }
+  ghostY() {
+    let y = this.piece.y;
+    while (!this.collides(this.piece.cells, this.piece.x, y + 1)) y++;
+    return y;
+  }
+  softDrop() {
+    if (!this.alive) return;
+    if (!this.onGround()) { this.piece.y++; this.score += 1; this.dropTimer = 0; }
+  }
+  hardDrop() {
+    if (!this.alive) return;
+    const y = this.ghostY();
+    this.score += (y - this.piece.y) * 2;
+    this.piece.y = y;
+    GK.sound('drop');
+    this.lock();
+  }
+  doHold() {
+    if (!this.alive || !this.canHold) return;
+    const cur = this.piece.t;
+    if (this.hold) this.spawn(this.hold); else this.spawn();
+    this.hold = cur;
+    this.canHold = false;
+    GK.sound('turn');
+  }
+  speed() { return Math.max(0.05, Math.pow(0.8 - (this.level - 1) * 0.007, this.level - 1)); }
+  lock() {
+    let above = true;
+    for (const [cx, cy] of this.piece.cells) {
+      const gy = cy + this.piece.y, gx = cx + this.piece.x;
+      if (gy >= 0) { this.grid[gy][gx] = PIECES[this.piece.t].c; above = false; }
+    }
+    if (above) { this.alive = false; this.opts.onDeath && this.opts.onDeath(this); return; }
+    let cleared = 0;
+    for (let y = ROWS - 1; y >= 0; y--) {
+      if (this.grid[y].every(Boolean)) {
+        this.grid.splice(y, 1);
+        this.grid.unshift(new Array(COLS).fill(null));
+        cleared++;
+        y++;
+      }
+    }
+    if (cleared) {
+      this.combo++;
+      this.lines += cleared;
+      this.score += LINE_SCORE[cleared] * this.level + Math.max(0, this.combo) * 50 * this.level;
+      this.level = Math.max(this.level, (this.opts.startLevel || 1) + Math.floor(this.lines / 10));
+      this.flash = 0.2;
+      GK.sound(cleared === 4 ? 'win' : 'line');
+      let send = SEND[cleared] + (this.combo >= 2 ? 1 : 0);
+      // erst eigene Müllreihen abbauen
+      const cancel = Math.min(send, this.pendingGarbage);
+      this.pendingGarbage -= cancel;
+      send -= cancel;
+      if (send > 0 && this.opts.onSend) { this.sent += send; this.opts.onSend(send); }
+    } else {
+      this.combo = -1;
+      if (this.pendingGarbage) this.applyGarbage();
+    }
+    this.canHold = true;
+    this.spawn();
+  }
+  addGarbage(n) { this.pendingGarbage += n; }
+  applyGarbage() {
+    const n = Math.min(this.pendingGarbage, 8);
+    this.pendingGarbage -= n;
+    for (let i = 0; i < n; i++) {
+      if (this.rand() < 0.3) this.garbageHole = this.rand.int(COLS);
+      const row = new Array(COLS).fill(GARBAGE);
+      row[this.garbageHole] = null;
+      this.grid.shift();
+      this.grid.push(row);
+    }
+    GK.sound('bad');
+    if (this.collides(this.piece.cells, this.piece.x, this.piece.y)) this.piece.y = Math.max(-2, this.piece.y - n);
+  }
+  update(dt, soft) {
+    if (!this.alive) return;
+    if (this.flash > 0) this.flash -= dt;
+    this.dropTimer += dt;
+    const interval = soft ? Math.min(0.05, this.speed()) : this.speed();
+    while (this.dropTimer >= interval) {
+      this.dropTimer -= interval;
+      if (!this.onGround()) { this.piece.y++; if (soft) this.score += 1; }
+    }
+    if (this.onGround()) {
+      this.lockTimer += dt;
+      if (this.lockTimer >= 0.5) this.lock();
+    } else this.lockTimer = 0;
+  }
+  snapshot() {
+    const g = this.grid.map(r => r.map(c => c ? (c === GARBAGE ? 'G' : TYPES[Object.values(PIECES).findIndex(p => p.c === c)] || 'G') : '.').join('')).join('');
+    return { g, p: this.alive ? { t: this.piece.t, c: this.piece.cells, x: this.piece.x, y: this.piece.y } : null, s: this.score, l: this.lines, lv: this.level, a: this.alive, pg: this.pendingGarbage, h: this.hold, q: this.queue.slice(0, 3) };
+  }
+}
+
+// Board aus Snapshot (Anzeige des LAN-Gegners)
+class RemoteBoard {
+  constructor() { this.grid = Array.from({ length: ROWS }, () => new Array(COLS).fill(null)); this.alive = true; this.score = 0; this.lines = 0; this.level = 1; this.queue = []; this.hold = null; this.pendingGarbage = 0; this.piece = null; this.flash = 0; }
+  apply(s) {
+    for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+      const ch = s.g[y * COLS + x];
+      this.grid[y][x] = ch === '.' ? null : ch === 'G' ? GARBAGE : PIECES[ch].c;
+    }
+    this.piece = s.p ? { t: s.p.t, cells: s.p.c, x: s.p.x, y: s.p.y } : null;
+    Object.assign(this, { score: s.s, lines: s.l, level: s.lv, alive: s.a, pendingGarbage: s.pg, hold: s.h, queue: s.q });
+  }
+  ghostY() { return null; }
+}
+
+// ── Darstellung ─────────────────────────────────────────────────────────────
+function drawCell(ctx, x, y, color, alpha) {
+  ctx.globalAlpha = alpha == null ? 1 : alpha;
+  ctx.fillStyle = color;
+  ctx.fillRect(x * CS + 1, y * CS + 1, CS - 2, CS - 2);
+  ctx.fillStyle = 'rgba(255,255,255,.22)';
+  ctx.fillRect(x * CS + 1, y * CS + 1, CS - 2, 4);
+  ctx.fillStyle = 'rgba(0,0,0,.18)';
+  ctx.fillRect(x * CS + 1, y * CS + CS - 5, CS - 2, 4);
+  ctx.globalAlpha = 1;
+}
+function drawMini(ctx, type, x, y, scale) {
+  if (!type) return;
+  const p = PIECES[type];
+  const s = CS * scale;
+  const minX = Math.min(...p.s.map(c => c[0])), maxX = Math.max(...p.s.map(c => c[0]));
+  const w = (maxX - minX + 1) * s;
+  for (const [cx, cy] of p.s) {
+    ctx.fillStyle = p.c;
+    ctx.fillRect(x - w / 2 + (cx - minX) * s + 1, y + cy * s + 1, s - 2, s - 2);
+  }
+}
+function render(ctx, b, label, color) {
+  ctx.fillStyle = '#05070e';
+  ctx.fillRect(0, 0, BW, BH);
+  ctx.fillStyle = '#080c18';
+  ctx.fillRect(0, 0, COLS * CS, BH);
+  ctx.strokeStyle = 'rgba(255,255,255,.04)';
+  ctx.lineWidth = 1;
+  for (let x = 1; x < COLS; x++) { ctx.beginPath(); ctx.moveTo(x * CS + .5, 0); ctx.lineTo(x * CS + .5, BH); ctx.stroke(); }
+  for (let y = 1; y < ROWS; y++) { ctx.beginPath(); ctx.moveTo(0, y * CS + .5); ctx.lineTo(COLS * CS, y * CS + .5); ctx.stroke(); }
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (b.grid[y][x]) drawCell(ctx, x, y, b.grid[y][x], b.alive ? 1 : 0.35);
+  if (b.alive && b.piece) {
+    const gy = b.ghostY();
+    if (gy != null) for (const [cx, cy] of b.piece.cells) if (cy + gy >= 0) {
+      ctx.strokeStyle = PIECES[b.piece.t].c;
+      ctx.globalAlpha = 0.45;
+      ctx.strokeRect((cx + b.piece.x) * CS + 2.5, (cy + gy) * CS + 2.5, CS - 5, CS - 5);
+      ctx.globalAlpha = 1;
+    }
+    for (const [cx, cy] of b.piece.cells) if (cy + b.piece.y >= 0) drawCell(ctx, cx + b.piece.x, cy + b.piece.y, PIECES[b.piece.t].c);
+  }
+  if (b.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (b.flash * 0.6) + ')'; ctx.fillRect(0, 0, COLS * CS, BH); }
+  // Müll-Anzeige
+  if (b.pendingGarbage) { ctx.fillStyle = '#f43f5e'; const h = Math.min(ROWS, b.pendingGarbage) * CS; ctx.fillRect(COLS * CS - 4, BH - h, 4, h); }
+  // Seitenleiste
+  const px = COLS * CS;
+  ctx.fillStyle = 'rgba(255,255,255,.03)';
+  ctx.fillRect(px, 0, PANEL, BH);
+  ctx.textAlign = 'center';
+  ctx.font = '700 13px system-ui,sans-serif';
+  const cx = px + PANEL / 2;
+  const lab = (t, y) => { ctx.fillStyle = '#8391ad'; ctx.fillText(t, cx, y); };
+  const val = (t, y) => { ctx.fillStyle = '#e6ecfa'; ctx.font = '800 22px ui-monospace,Consolas,monospace'; ctx.fillText(t, cx, y); ctx.font = '700 13px system-ui,sans-serif'; };
+  if (label) { ctx.fillStyle = color || '#f59e0b'; ctx.font = '800 15px system-ui,sans-serif'; ctx.fillText(label.slice(0, 14), cx, 24); ctx.font = '700 13px system-ui,sans-serif'; }
+  lab('HALTEN', 52); drawMini(ctx, b.hold, cx, 62, 0.7);
+  lab('NÄCHSTE', 130);
+  (b.queue || []).slice(0, 3).forEach((t, i) => drawMini(ctx, t, cx, 140 + i * 58, 0.6));
+  lab('PUNKTE', 340); val(String(b.score), 366);
+  lab('REIHEN', 404); val(String(b.lines), 430);
+  lab('LEVEL', 468); val(String(b.level), 494);
+  if (!b.alive) {
+    ctx.fillStyle = 'rgba(5,7,14,.7)';
+    ctx.fillRect(0, BH / 2 - 40, COLS * CS, 80);
+    ctx.fillStyle = '#f43f5e';
+    ctx.font = '800 30px system-ui,sans-serif';
+    ctx.fillText('K.O.', COLS * CS / 2, BH / 2 + 10);
+  }
+}
+
+// ── Steuerung ───────────────────────────────────────────────────────────────
+const KEYMAPS = {
+  solo: { left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], soft: ['ArrowDown', 'KeyS'], rot: ['ArrowUp', 'KeyW', 'KeyX'], ccw: ['KeyZ', 'KeyY'], hard: ['Space'], hold: ['KeyC', 'ShiftLeft', 'ShiftRight'] },
+  p1: { left: ['KeyA'], right: ['KeyD'], soft: ['KeyS'], rot: ['KeyW'], ccw: ['KeyE'], hard: ['Space'], hold: ['KeyQ'] },
+  p2: { left: ['ArrowLeft'], right: ['ArrowRight'], soft: ['ArrowDown'], rot: ['ArrowUp'], ccw: ['ControlRight'], hard: ['Enter', 'NumpadEnter'], hold: ['ShiftRight', 'Numpad0'] },
+};
+class Controller {
+  constructor(board, map) { this.b = board; this.map = map; this.das = 0; this.dir = 0; }
+  has(name, code) { return this.map[name].includes(code); }
+  keydown(e) {
+    const b = this.b;
+    if (!b || !b.alive) return false;
+    const c = e.code;
+    if (this.has('left', c) || this.has('right', c)) {
+      if (e.repeat) return true;
+      const d = this.has('left', c) ? -1 : 1;
+      this.dir = d;
+      this.das = 0;
+      if (b.move(d)) GK.sound('move');
+      return true;
+    }
+    if (this.has('rot', c)) { if (!e.repeat) b.rotate(1); return true; }
+    if (this.has('ccw', c)) { if (!e.repeat) b.rotate(-1); return true; }
+    if (this.has('hard', c)) { if (!e.repeat) b.hardDrop(); return true; }
+    if (this.has('hold', c)) { if (!e.repeat) b.doHold(); return true; }
+    if (this.has('soft', c)) return true;
+    return false;
+  }
+  update(dt) {
+    const K = GK.keys;
+    const held = d => this.map[d < 0 ? 'left' : 'right'].some(k => K.has(k));
+    if (this.dir && held(this.dir)) {
+      this.das += dt;
+      while (this.das > 0.17) { this.das -= 0.045; this.b.move(this.dir); }
+    } else this.dir = 0;
+    return this.map.soft.some(k => K.has(k));
+  }
+}
+
+// ── Spielablauf ─────────────────────────────────────────────────────────────
+let players = []; // {board, ctrl, ctx, label, color}
+let running = false;
+let over = false;
+let lan = null;
+let remote = null;
+let remoteCtx = null;
+let netTimer = 0;
+let startLevel = GK.store.get('tetris_level', 1);
+
+GK.init({
+  id: 'tetris', title: 'Tetris', modes: ['solo', 'local', 'lan'],
+  onPause: () => { running = false; }, onResume: () => { running = true; },
+  onRestart: () => showStart(), isRunning: () => running,
+  help: GK.mode === 'local'
+    ? 'Spieler 1: ' + GK.kbd('A') + GK.kbd('D') + ' bewegen, ' + GK.kbd('W') + ' drehen, ' + GK.kbd('S') + ' fallen, ' + GK.kbd('Leertaste') + ' ablegen, ' + GK.kbd('Q') + ' halten<br>Spieler 2: Pfeile, ' + GK.kbd('Enter') + ' ablegen, ' + GK.kbd('Shift rechts') + ' halten'
+    : GK.kbd('←') + GK.kbd('→') + ' bewegen · ' + GK.kbd('↑') + ' drehen · ' + GK.kbd('↓') + ' schneller · ' + GK.kbd('Leertaste') + ' ablegen · ' + GK.kbd('C') + ' halten',
+});
+const mode = GK.mode;
+
+GK.onKey(e => {
+  if (!running || GK.overlayOpen) return false;
+  for (const p of players) if (p.ctrl && p.ctrl.keydown(e)) return true;
+  return false;
+});
+GK.touchControls([
+  { buttons: [{ label: '⟲', code: 'KeyC', aria: 'Halten' }, { label: '◀', code: 'ArrowLeft' }, { label: '▶', code: 'ArrowRight' }] },
+  { buttons: [{ label: '↻', code: 'ArrowUp', aria: 'Drehen' }, { label: '▼', code: 'ArrowDown' }, { label: '⤓', code: 'Space', aria: 'Ablegen' }] },
+]);
+
+function makeCanvas(box) {
+  const c = GK.el('canvas');
+  box.appendChild(c);
+  return GK.fit(c, BW, BH, box);
+}
+
+function setup() {
+  players = [];
+  remote = null;
+  const seed = mode === 'lan' ? lan.seed : (Math.random() * 1e9) >>> 0;
+  const prof = GK.profile();
+  if (mode === 'solo') {
+    GK.stage.replaceChildren();
+    const ctx = makeCanvas(GK.stage);
+    const board = new Board({ seed, startLevel, onDeath: () => end() });
+    players.push({ board, ctrl: new Controller(board, KEYMAPS.solo), ctx, label: '', color: '' });
+  } else if (mode === 'local') {
+    const P = GK.localPlayers();
+    const panes = GK.split([{ name: P[0].name, color: P[0].color, keys: 'WASD · Leertaste' }, { name: P[1].name, color: P[1].color, keys: 'Pfeile · Enter' }]);
+    const boards = [];
+    [0, 1].forEach(i => {
+      const board = new Board({ seed, startLevel, onDeath: () => end(), onSend: n => boards[1 - i].addGarbage(n) });
+      boards.push(board);
+      players.push({ board, ctrl: new Controller(board, i === 0 ? KEYMAPS.p1 : KEYMAPS.p2), ctx: makeCanvas(panes[i].body), label: P[i].name, color: P[i].color });
+    });
+  } else {
+    const me = lan.players.find(p => p.id === lan.me);
+    const opp = lan.opponents[0] || { name: 'Gegner' };
+    const panes = GK.split([{ name: (me && me.name) || prof.name, color: '#22d3ee', keys: 'Pfeile · Leertaste' }, { name: opp.name, color: '#f472b6', small: true }]);
+    const board = new Board({ seed, startLevel: 1, onDeath: () => { sendState(); lan.send({ t: 'dead' }); end(); }, onSend: n => lan.send({ t: 'g', n }) });
+    players.push({ board, ctrl: new Controller(board, KEYMAPS.solo), ctx: makeCanvas(panes[0].body), label: '', color: '#22d3ee' });
+    remote = new RemoteBoard();
+    remoteCtx = makeCanvas(panes[1].body);
+    remote.label = opp.name;
+  }
+  over = false;
+  running = true;
+  GK.sound('start');
+  updateScores();
+}
+
+function sendState() { if (lan && players[0]) lan.send({ t: 's', s: players[0].board.snapshot() }); }
+
+function updateScores() {
+  if (mode === 'solo') {
+    const b = players[0].board;
+    GK.setScores([{ label: 'Punkte', value: b.score }, { label: 'Reihen', value: b.lines }, { label: 'Rekord', value: Math.max(b.score, GK.scores.best('tetris') || 0) }]);
+  } else if (mode === 'local') {
+    GK.setScores(players.map(p => ({ label: p.label, value: p.board.score, color: p.color })));
+  } else if (remote) {
+    GK.setScores([{ label: 'Du', value: players[0].board.score, color: '#22d3ee' }, { label: remote.label, value: remote.score, color: '#f472b6' }]);
+  }
+}
+
+async function end() {
+  if (over) return;
+  if (mode === 'solo') {
+    over = true;
+    running = false;
+    const b = players[0].board;
+    GK.sound('lose');
+    const card = GK.overlay({ title: 'Game Over', big: b.score.toLocaleString('de-DE'), text: b.lines + ' Reihen · Level ' + b.level,
+      buttons: [{ label: 'Nochmal', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+    const res = await GK.scores.submit('tetris', b.score, { detail: b.lines + ' Reihen' });
+    if (res.isBest && b.score > 0) card.querySelector('p').textContent = '🎉 Neuer Rekord! · ' + b.lines + ' Reihen';
+    const v = GK.scores.view(res.list, res.rank, s => s.toLocaleString('de-DE'));
+    if (v && GK.overlayOpen) card.insertBefore(v, card.querySelector('.gk-actions'));
+    return;
+  }
+  if (mode === 'local') {
+    const loser = players.findIndex(p => !p.board.alive);
+    const winner = players[1 - loser];
+    over = true;
+    running = false;
+    GK.sound('win');
+    renderAll();
+    const rows = players.map(p => ({ name: p.label, color: p.color, score: p.board.score + ' P · ' + p.board.lines + ' R', win: p === winner }));
+    GK.overlay({ title: '🏆 ' + winner.label + ' gewinnt!', content: GK.resultList(rows),
+      buttons: [{ label: 'Revanche', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }] });
+    return;
+  }
+  // LAN: Ende erst, wenn ein Spieler K.O. ist
+  const meAlive = players[0].board.alive;
+  const oppAlive = remote ? remote.alive : true;
+  if (meAlive && oppAlive) return;
+  over = true;
+  running = false;
+  renderAll();
+  const iWin = meAlive;
+  GK.sound(iWin ? 'win' : 'lose');
+  const rows = [
+    { name: 'Du', color: '#22d3ee', score: players[0].board.score + ' P · ' + players[0].board.lines + ' R', win: iWin },
+    { name: remote.label, color: '#f472b6', score: remote.score + ' P · ' + remote.lines + ' R', win: !iWin },
+  ];
+  GKNet.endScreen(lan, { title: iWin ? '🏆 Du gewinnst!' : remote.label + ' gewinnt!', content: GK.resultList(rows) });
+}
+
+function renderAll() {
+  for (const p of players) render(p.ctx, p.board, mode === 'local' ? '' : '', p.color);
+  if (remote && remoteCtx) render(remoteCtx, remote, '', '#f472b6');
+}
+
+GK.loop({
+  update(dt) {
+    if (!running) return;
+    for (const p of players) {
+      const soft = p.ctrl.update(dt);
+      p.board.update(dt, soft);
+    }
+    if (mode === 'lan') {
+      netTimer += dt;
+      if (netTimer > 0.15) { netTimer = 0; sendState(); }
+    }
+  },
+  render() {
+    if (!players.length) return;
+    renderAll();
+    updateScores();
+  },
+}).start();
+
+function showStart() {
+  if (mode === 'lan') return;
+  running = false;
+  const content = GK.options('Start-Level', [1, 3, 5, 8, 10].map(v => ({ label: String(v), value: v })), startLevel, v => { startLevel = v; GK.store.set('tetris_level', v); });
+  const text = mode === 'solo'
+    ? 'Fülle Reihen, um sie aufzulösen. Mit jedem 10. Reihen-Paket steigt das Tempo.'
+    : 'Duell an einem Gerät: Wer mehrere Reihen auf einmal abräumt, schickt dem Gegner Müllreihen. Wer zuerst oben anstößt, verliert.';
+  GK.overlay({ title: 'Tetris', text, content, buttons: [{ label: 'Start', primary: true, onClick: () => { GK.hideOverlay(); setup(); } }, { label: 'Zurück', onClick: () => GK.back() }], help: GK.cfg.help });
+}
+
+if (mode === 'lan') {
+  lan = GKNet.game();
+  lan.on('start', () => setup());
+  lan.on('msg', d => {
+    if (!remote) return;
+    if (d.t === 's') remote.apply(d.s);
+    if (d.t === 'g' && players[0]) { players[0].board.addGarbage(d.n); GK.toast('+' + d.n + ' Müllreihe' + (d.n > 1 ? 'n' : '') + '!', 1200); }
+    if (d.t === 'dead') { remote.alive = false; end(); }
+  });
+} else {
+  showStart();
+}
+</script>
+</body>
+</html>

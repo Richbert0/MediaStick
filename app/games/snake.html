@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Snake</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const W = 28, H = 20, CELL = 24;
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+const ROUNDS_TO_WIN = 2;
+const ROUND_TIME = 120000;
+
+let mode;
+let game = null;          // Simulationszustand
+let view = null;          // (LAN-Gast) zuletzt empfangener Zustand
+let tickTimer = 0;
+let running = false;
+let lan = null;
+let difficulty = GK.store.get('snake_ai', 'mittel');
+let canvas, ctx;
+let lastTick = 0;
+
+GK.init({
+  id: 'snake', title: 'Snake', modes: ['solo', 'ai', 'local', 'lan'],
+  onPause: () => stopTicker(), onResume: () => startTicker(),
+  onRestart: () => showStart(), isRunning: () => running,
+  help: helpText(),
+});
+mode = GK.mode;
+
+function helpText() {
+  if (GK.mode === 'local') return 'Spieler 1: ' + GK.kbd('W') + GK.kbd('A') + GK.kbd('S') + GK.kbd('D') + ' · Spieler 2: Pfeiltasten';
+  return 'Steuerung: Pfeiltasten oder ' + GK.kbd('W') + GK.kbd('A') + GK.kbd('S') + GK.kbd('D') + ' · Wischen auf Touch · ' + GK.kbd('P') + ' Pause';
+}
+
+canvas = GK.el('canvas', { 'aria-label': 'Spielfeld' });
+GK.stage.appendChild(canvas);
+ctx = GK.fit(canvas, W * CELL, H * CELL, GK.stage);
+GK.swipe(GK.stage, d => input(myIndex(), d));
+GK.touchControls([{ pad: true, buttons: [null, { label: '▲', code: 'ArrowUp' }, null, { label: '◀', code: 'ArrowLeft' }, { label: '▼', code: 'ArrowDown' }, { label: '▶', code: 'ArrowRight' }] }]);
+
+const P1_KEYS = { KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
+const P2_KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+GK.onKey(e => {
+  if (GK.overlayOpen) return false;
+  if (mode === 'local') {
+    if (P1_KEYS[e.code]) { input(0, P1_KEYS[e.code]); return true; }
+    if (P2_KEYS[e.code]) { input(1, P2_KEYS[e.code]); return true; }
+    return false;
+  }
+  const d = P2_KEYS[e.code] || P1_KEYS[e.code];
+  if (d) { input(myIndex(), d); return true; }
+  return false;
+});
+
+function myIndex() { return mode === 'lan' && lan ? Math.max(0, lan.index) : 0; }
+
+// ── Simulation ──────────────────────────────────────────────────────────────
+function newSnake(i, n, color, name, isAi) {
+  const y = n === 1 ? Math.floor(H / 2) : (i === 0 ? 5 : H - 6);
+  const dir = n === 1 || i === 0 ? 'right' : 'left';
+  const x = dir === 'right' ? 5 : W - 6;
+  const body = [];
+  for (let k = 0; k < 4; k++) body.push([x - DIRS[dir][0] * k, y]);
+  return { body, dir, queue: [], alive: true, grow: 0, color, name, isAi, score: 0, wins: 0 };
+}
+
+function newGame(players) {
+  return {
+    players, // [{name,color,isAi}]
+    snakes: [],
+    food: null, bonus: null, bonusTtl: 0,
+    round: 0, roundStart: 0, over: false, eaten: 0,
+    speed: mode === 'solo' ? 8 : 10,
+    rand: GK.rng((Math.random() * 1e9) >>> 0),
+  };
+}
+
+function startRound() {
+  const g = game;
+  g.round++;
+  g.snakes = g.players.map((p, i) => {
+    const s = newSnake(i, g.players.length, p.color, p.name, p.isAi);
+    s.wins = (g.snakes[i] && g.snakes[i].wins) || 0;
+    return s;
+  });
+  g.food = freeCell();
+  g.bonus = null;
+  g.eaten = 0;
+  g.roundStart = performance.now();
+  g.speed = mode === 'solo' ? 8 : 10;
+}
+
+function occupied(x, y) {
+  for (const s of game.snakes) for (const [bx, by] of s.body) if (bx === x && by === y) return true;
+  return false;
+}
+function freeCell() {
+  for (let t = 0; t < 2000; t++) {
+    const x = game.rand.int(W);
+    const y = game.rand.int(H);
+    if (!occupied(x, y) && !(game.food && game.food[0] === x && game.food[1] === y)) return [x, y];
+  }
+  return [0, 0];
+}
+
+function input(i, dir) {
+  if (!running) return;
+  if (mode === 'lan' && lan && !lan.isHost) { lan.send({ t: 'dir', d: dir }); return; }
+  queueDir(i, dir);
+}
+function queueDir(i, dir) {
+  const s = game && game.snakes[i];
+  if (!s || !s.alive || s.isAi) return;
+  const last = s.queue.length ? s.queue[s.queue.length - 1] : s.dir;
+  if (dir === last || dir === OPP[last] || s.queue.length >= 2) return;
+  s.queue.push(dir);
+}
+
+function step() {
+  const g = game;
+  const n = g.snakes.length;
+  for (const s of g.snakes) {
+    if (!s.alive) continue;
+    if (s.isAi) s.dir = aiMove(s);
+    else if (s.queue.length) s.dir = s.queue.shift();
+  }
+  // neue Köpfe berechnen
+  const heads = g.snakes.map(s => {
+    if (!s.alive) return null;
+    const [dx, dy] = DIRS[s.dir];
+    return [s.body[0][0] + dx, s.body[0][1] + dy];
+  });
+  // Schwänze, die sich wegbewegen, sind frei
+  const willDie = new Array(n).fill(false);
+  for (let i = 0; i < n; i++) {
+    const h = heads[i];
+    if (!h) continue;
+    if (h[0] < 0 || h[1] < 0 || h[0] >= W || h[1] >= H) { willDie[i] = true; continue; }
+    for (let j = 0; j < n; j++) {
+      const s = g.snakes[j];
+      if (!s.alive) continue;
+      const len = s.body.length - (s.grow > 0 ? 0 : 1); // letztes Segment wandert weiter
+      for (let k = 0; k < len; k++) {
+        if (s.body[k][0] === h[0] && s.body[k][1] === h[1]) { willDie[i] = true; break; }
+      }
+      if (willDie[i]) break;
+    }
+    for (let j = 0; j < n; j++) {
+      if (j !== i && heads[j] && heads[j][0] === h[0] && heads[j][1] === h[1]) willDie[i] = true;
+    }
+  }
+  for (let i = 0; i < n; i++) {
+    const s = g.snakes[i];
+    if (!s.alive) continue;
+    if (willDie[i]) { s.alive = false; continue; }
+    s.body.unshift(heads[i]);
+    if (s.grow > 0) s.grow--; else s.body.pop();
+    const h = heads[i];
+    if (g.food && h[0] === g.food[0] && h[1] === g.food[1]) {
+      s.grow += 1;
+      s.score += 10;
+      g.eaten++;
+      g.food = freeCell();
+      GK.sound('eat');
+      if (mode === 'solo' && g.eaten % 5 === 0) g.speed = Math.min(16, g.speed + 1);
+      if (!g.bonus && g.rand() < 0.22) { g.bonus = freeCell(); g.bonusTtl = 40; }
+    }
+    if (g.bonus && h[0] === g.bonus[0] && h[1] === g.bonus[1]) {
+      s.grow += 3;
+      s.score += 50;
+      g.bonus = null;
+      GK.sound('good');
+    }
+  }
+  if (g.bonus && --g.bonusTtl <= 0) g.bonus = null;
+  if (willDie.some(Boolean)) GK.sound('lose');
+}
+
+// ── KI (Breitensuche zum Futter, sonst größter freier Bereich) ─────────────
+function blockedGrid() {
+  const grid = new Uint8Array(W * H);
+  for (const s of game.snakes) if (s.alive) for (let k = 0; k < s.body.length - 1; k++) grid[s.body[k][1] * W + s.body[k][0]] = 1;
+  return grid;
+}
+function floodSize(grid, sx, sy, limit) {
+  if (sx < 0 || sy < 0 || sx >= W || sy >= H || grid[sy * W + sx]) return 0;
+  const seen = new Uint8Array(W * H);
+  const stack = [sy * W + sx];
+  seen[stack[0]] = 1;
+  let n = 0;
+  while (stack.length && n < limit) {
+    const c = stack.pop();
+    n++;
+    const x = c % W, y = (c / W) | 0;
+    const nb = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]];
+    for (const [nx, ny] of nb) {
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const id = ny * W + nx;
+      if (!seen[id] && !grid[id]) { seen[id] = 1; stack.push(id); }
+    }
+  }
+  return n;
+}
+function aiMove(s) {
+  const grid = blockedGrid();
+  const [hx, hy] = s.body[0];
+  const opts = Object.keys(DIRS).filter(d => d !== OPP[s.dir]);
+  const sloppy = difficulty === 'leicht' ? 0.18 : difficulty === 'mittel' ? 0.05 : 0;
+  // Gegnerköpfe meiden (mögliche nächste Felder)
+  for (const o of game.snakes) {
+    if (o === s || !o.alive) continue;
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const x = o.body[0][0] + dx, y = o.body[0][1] + dy;
+      if (x >= 0 && y >= 0 && x < W && y < H && difficulty !== 'leicht') grid[y * W + x] = 2;
+    }
+  }
+  const safe = opts.map(d => {
+    const nx = hx + DIRS[d][0], ny = hy + DIRS[d][1];
+    return { d, nx, ny, space: floodSize(grid, nx, ny, s.body.length * 3 + 20) };
+  }).filter(o => o.space > 0);
+  if (!safe.length) return s.dir;
+  if (game.rand() < sloppy) return game.rand.pick(safe).d;
+  // BFS zum Futter
+  const targets = [game.food, game.bonus].filter(Boolean);
+  const prev = new Int32Array(W * H).fill(-1);
+  const start = hy * W + hx;
+  const q = [start];
+  prev[start] = start;
+  let found = -1;
+  for (let qi = 0; qi < q.length && found < 0; qi++) {
+    const c = q[qi];
+    const x = c % W, y = (c / W) | 0;
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const id = ny * W + nx;
+      if (prev[id] !== -1 || grid[id]) continue;
+      prev[id] = c;
+      if (targets.some(t => t[0] === nx && t[1] === ny)) { found = id; break; }
+      q.push(id);
+    }
+  }
+  if (found >= 0) {
+    let c = found;
+    while (prev[c] !== start) c = prev[c];
+    const nx = c % W, ny = (c / W) | 0;
+    const pick = safe.find(o => o.nx === nx && o.ny === ny);
+    if (pick && pick.space >= Math.min(s.body.length + 2, 40)) return pick.d;
+  }
+  safe.sort((a, b) => b.space - a.space);
+  return safe[0].d;
+}
+
+// ── Ablauf ──────────────────────────────────────────────────────────────────
+function stopTicker() { clearTimeout(tickTimer); running = false; }
+function startTicker() {
+  running = true;
+  lastTick = performance.now();
+  const tick = () => {
+    if (!running) return;
+    step();
+    afterStep();
+    render();
+    if (running) tickTimer = setTimeout(tick, 1000 / game.speed);
+  };
+  tickTimer = setTimeout(tick, 1000 / game.speed);
+}
+
+function afterStep() {
+  const g = game;
+  if (mode === 'lan' && lan && lan.isHost) lan.send({ t: 's', s: snapshot() });
+  const alive = g.snakes.filter(s => s.alive);
+  if (g.snakes.length === 1) {
+    if (!alive.length) { stopTicker(); soloOver(); }
+    updateScores();
+    return;
+  }
+  const timeUp = performance.now() - g.roundStart > ROUND_TIME;
+  if (alive.length <= 1 || timeUp) {
+    let winner = alive.length === 1 ? g.snakes.indexOf(alive[0]) : -1;
+    if (timeUp && alive.length > 1) {
+      const lens = g.snakes.map(s => s.body.length);
+      winner = lens[0] === lens[1] ? -1 : (lens[0] > lens[1] ? 0 : 1);
+    }
+    if (winner >= 0) g.snakes[winner].wins++;
+    stopTicker();
+    roundOver(winner);
+  }
+  updateScores();
+}
+
+function updateScores() {
+  const g = game;
+  if (!g) return;
+  if (g.snakes.length === 1) {
+    const best = GK.scores.best('snake') || 0;
+    GK.setScores([{ label: 'Punkte', value: g.snakes[0].score }, { label: 'Länge', value: g.snakes[0].body.length }, { label: 'Rekord', value: Math.max(best, g.snakes[0].score) }]);
+  } else {
+    const left = Math.max(0, ROUND_TIME - (performance.now() - g.roundStart));
+    GK.setScores(g.snakes.map(s => ({ label: s.name, value: s.wins + ' · ' + s.body.length, color: s.color })).concat([{ label: 'Zeit', value: GK.fmtTime(left) }]));
+  }
+}
+
+async function soloOver() {
+  const s = game.snakes[0];
+  GK.sound('lose');
+  GK.vibrate(120);
+  const card = GK.overlay({ title: 'Game Over', big: s.score, text: 'Länge ' + s.body.length, spinner: false,
+    buttons: [{ label: 'Nochmal', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }] });
+  const res = await GK.scores.submit('snake', s.score, { detail: 'Länge ' + s.body.length });
+  if (!GK.overlayOpen) return;
+  if (res.isBest && s.score > 0) card.querySelector('p').textContent = '🎉 Neuer Rekord! · Länge ' + s.body.length;
+  const v = GK.scores.view(res.list, res.rank);
+  if (v) card.insertBefore(v, card.querySelector('.gk-actions'));
+}
+
+function roundOver(winner) {
+  const g = game;
+  const champ = g.snakes.find(s => s.wins >= ROUNDS_TO_WIN);
+  const msg = winner < 0 ? 'Unentschieden!' : g.snakes[winner].name + ' gewinnt die Runde';
+  const rows = g.snakes.map(s => ({ name: s.name, color: s.color, score: s.wins + ' Siege', win: champ === s }));
+  if (mode === 'lan' && lan && lan.isHost) lan.send({ t: 'round', w: winner, champ: champ ? g.snakes.indexOf(champ) : -1, s: snapshot() });
+  showRoundResult(msg, champ, rows);
+}
+
+function showRoundResult(msg, champ, rows) {
+  GK.sound(champ ? 'win' : 'score');
+  if (champ) {
+    const opts = { title: '🏆 ' + champ.name + ' gewinnt!', text: 'Spiel entschieden (' + ROUNDS_TO_WIN + ' Siege).', content: GK.resultList(rows) };
+    if (mode === 'lan') return GKNet.endScreen(lan, opts);
+    GK.overlay(Object.assign(opts, { buttons: [{ label: 'Neues Spiel', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }] }));
+    return;
+  }
+  const host = mode !== 'lan' || lan.isHost;
+  GK.overlay({
+    title: msg, content: GK.resultList(rows),
+    buttons: host ? [{ label: 'Nächste Runde', primary: true, onClick: () => nextRound() }] : [],
+    text: host ? '' : 'Warte auf den Host…',
+  });
+}
+
+function nextRound() {
+  GK.hideOverlay();
+  startRound();
+  countdown(() => startTicker());
+}
+
+function countdown(cb) {
+  let n = 3;
+  const tickc = () => {
+    if (n === 0) { GK.hideOverlay(); GK.sound('start'); cb(); return; }
+    GK.overlay({ title: 'Runde ' + game.round, big: n, text: mode === 'local' ? 'Spieler 1: WASD · Spieler 2: Pfeile' : '' });
+    GK.sound('tick');
+    n--;
+    setTimeout(tickc, 650);
+  };
+  render();
+  if (mode === 'lan' && lan && lan.isHost) lan.send({ t: 'cd', s: snapshot() });
+  tickc();
+}
+
+function begin() {
+  stopTicker();
+  GK.hideOverlay();
+  const P = GK.localPlayers();
+  const prof = GK.profile();
+  if (mode === 'solo') game = newGame([{ name: prof.name || 'Du', color: '#22d3ee' }]);
+  else if (mode === 'ai') game = newGame([{ name: prof.name || 'Du', color: '#22d3ee' }, { name: 'KI (' + difficulty + ')', color: '#f472b6', isAi: true }]);
+  else if (mode === 'local') game = newGame(P);
+  else game = newGame(lan.players.slice(0, 2).map((p, i) => ({ name: p.name, color: i === 0 ? '#22d3ee' : '#f472b6' })));
+  startRound();
+  updateScores();
+  if (mode === 'solo') { render(); GK.sound('start'); startTicker(); }
+  else countdown(() => startTicker());
+}
+
+function showStart() {
+  stopTicker();
+  if (mode === 'lan') return;
+  const content = mode === 'ai' ? GK.options('Schwierigkeit', [{ label: 'Leicht', value: 'leicht' }, { label: 'Mittel', value: 'mittel' }, { label: 'Schwer', value: 'schwer' }], difficulty, v => { difficulty = v; GK.store.set('snake_ai', v); }) : null;
+  const texts = {
+    solo: 'Friss das Futter, wachse und weiche Wänden und dir selbst aus. Goldenes Futter bringt Bonuspunkte.',
+    ai: 'Du gegen die KI-Schlange. Wer zuerst ' + ROUNDS_TO_WIN + ' Runden gewinnt, siegt.',
+    local: 'Zwei Schlangen, ein Feld. Wer zuerst ' + ROUNDS_TO_WIN + ' Runden gewinnt, siegt. Nach 2 Minuten gewinnt die längere Schlange.',
+  };
+  GK.overlay({ title: 'Snake', text: texts[mode], content, buttons: [{ label: 'Los geht\'s', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }], help: helpText() });
+}
+
+// ── LAN ─────────────────────────────────────────────────────────────────────
+function snapshot() {
+  return {
+    sn: game.snakes.map(s => ({ b: s.body, a: s.alive, w: s.wins, c: s.color, n: s.name })),
+    f: game.food, bo: game.bonus, r: game.round, t: Math.round(ROUND_TIME - (performance.now() - game.roundStart)),
+  };
+}
+function applySnapshot(s) {
+  if (!game) game = newGame([]);
+  game.snakes = s.sn.map(x => ({ body: x.b, alive: x.a, wins: x.w, color: x.c, name: x.n, score: 0, queue: [] }));
+  game.food = s.f;
+  game.bonus = s.bo;
+  game.round = s.r;
+  game.roundStart = performance.now() - (ROUND_TIME - s.t);
+}
+
+function setupLan() {
+  lan = GKNet.game();
+  lan.on('start', () => {
+    if (lan.isHost) begin();
+    else { stopTicker(); GK.overlay({ title: 'Gleich geht\'s los', spinner: true, text: 'Der Host startet die Runde…' }); }
+  });
+  lan.on('msg', (d, from) => {
+    if (lan.isHost) {
+      if (d.t === 'dir') {
+        const idx = lan.players.findIndex(p => p.id === from);
+        queueDir(idx, d.d);
+      }
+      return;
+    }
+    if (d.t === 's') {
+      applySnapshot(d.s);
+      running = true;
+      if (GK.overlayOpen && !GK.overlayEl.querySelector('.big')) GK.hideOverlay();
+      render();
+      updateScores();
+    } else if (d.t === 'cd') {
+      applySnapshot(d.s);
+      let n = 3;
+      const tickc = () => {
+        if (n === 0) { GK.hideOverlay(); GK.sound('start'); running = true; return; }
+        GK.overlay({ title: 'Runde ' + game.round, big: n, text: 'Du steuerst die ' + (lan.index === 0 ? 'blaue' : 'pinke') + ' Schlange.' });
+        GK.sound('tick');
+        n--;
+        setTimeout(tickc, 650);
+      };
+      render();
+      tickc();
+    } else if (d.t === 'round') {
+      applySnapshot(d.s);
+      running = false;
+      render();
+      updateScores();
+      const champ = d.champ >= 0 ? game.snakes[d.champ] : null;
+      const rows = game.snakes.map(s => ({ name: s.name, color: s.color, score: s.wins + ' Siege', win: champ === s }));
+      showRoundResult(d.w < 0 ? 'Unentschieden!' : game.snakes[d.w].name + ' gewinnt die Runde', champ, rows);
+    }
+  });
+  lan.on('left', () => { stopTicker(); });
+}
+
+// ── Darstellung ─────────────────────────────────────────────────────────────
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+}
+function render() {
+  const g = game;
+  ctx.fillStyle = '#060912';
+  ctx.fillRect(0, 0, W * CELL, H * CELL);
+  ctx.fillStyle = 'rgba(255,255,255,.025)';
+  for (let y = 0; y < H; y++) for (let x = (y & 1); x < W; x += 2) ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+  if (!g) return;
+  const t = performance.now();
+  if (g.food) {
+    const pulse = 1 + Math.sin(t / 180) * 0.08;
+    ctx.fillStyle = '#f43f5e';
+    ctx.shadowColor = '#f43f5e';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(g.food[0] * CELL + CELL / 2, g.food[1] * CELL + CELL / 2, CELL * 0.34 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  if (g.bonus) {
+    ctx.fillStyle = '#facc15';
+    ctx.shadowColor = '#facc15';
+    ctx.shadowBlur = 16;
+    const cx = g.bonus[0] * CELL + CELL / 2, cy = g.bonus[1] * CELL + CELL / 2;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? CELL * 0.18 : CELL * 0.42;
+      const a = -Math.PI / 2 + i * Math.PI / 5;
+      ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+    }
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  for (const s of g.snakes) {
+    const len = s.body.length;
+    for (let k = len - 1; k >= 0; k--) {
+      const [x, y] = s.body[k];
+      ctx.globalAlpha = s.alive ? 1 - (k / len) * 0.45 : 0.3;
+      ctx.fillStyle = s.color;
+      const pad = k === 0 ? 1 : 2;
+      roundRect(x * CELL + pad, y * CELL + pad, CELL - pad * 2, CELL - pad * 2, k === 0 ? 7 : 5);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // Augen
+    if (len) {
+      const [hx, hy] = s.body[0];
+      const d = s.body[1] ? [hx - s.body[1][0], hy - s.body[1][1]] : [1, 0];
+      const cx = hx * CELL + CELL / 2, cy = hy * CELL + CELL / 2;
+      const px = -d[1], py = d[0];
+      ctx.fillStyle = '#06080f';
+      for (const sgn of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(cx + d[0] * 4 + px * 5 * sgn, cy + d[1] * 4 + py * 5 * sgn, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+}
+
+// ── Start ───────────────────────────────────────────────────────────────────
+render();
+if (mode === 'lan') setupLan();
+else showStart();
+</script>
+</body>
+</html>

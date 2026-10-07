@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tic Tac Toe</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+<style>
+.wrap{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%}
+.status{font-weight:800;font-size:1.05rem;min-height:1.4em;text-align:center}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(78vmin,420px);aspect-ratio:1}
+.cell{border-radius:18px;border:1px solid var(--gk-line);background:rgba(255,255,255,.035);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-family:var(--gk-display);font-weight:800;font-size:clamp(2.2rem,12vmin,5rem);transition:background .15s,transform .1s}
+.cell:hover:not(:disabled){background:rgba(34,211,238,.09)}
+.cell:disabled{cursor:default}
+.cell.x{color:#22d3ee;text-shadow:0 0 22px rgba(34,211,238,.5)}
+.cell.o{color:#f472b6;text-shadow:0 0 22px rgba(244,114,182,.5)}
+.cell.win{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.6);animation:pop .4s ease}
+.cell.last{box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+.cell span{animation:pop .18s ease}
+@keyframes pop{from{transform:scale(.6);opacity:.3}to{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script src="/games/shared/turns.js"></script>
+<script>
+'use strict';
+const LINES = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+const MARKS = ['X', 'O'];
+let board = Array(9).fill(-1);
+let cells = [];
+let statusEl;
+
+function winner(b) {
+  for (const l of LINES) if (b[l[0]] >= 0 && b[l[0]] === b[l[1]] && b[l[1]] === b[l[2]]) return l;
+  return null;
+}
+function minimax(b, player, me, depth) {
+  const w = winner(b);
+  if (w) return b[w[0]] === me ? 10 - depth : depth - 10;
+  if (!b.includes(-1)) return 0;
+  let best = player === me ? -Infinity : Infinity;
+  for (let i = 0; i < 9; i++) {
+    if (b[i] !== -1) continue;
+    b[i] = player;
+    const v = minimax(b, 1 - player, me, depth + 1);
+    b[i] = -1;
+    best = player === me ? Math.max(best, v) : Math.min(best, v);
+  }
+  return best;
+}
+
+const T = TurnGame({
+  id: 'ttt', title: 'Tic Tac Toe', colors: ['#22d3ee', '#f472b6'],
+  intro: 'Bringe drei deiner Zeichen in eine Reihe – waagerecht, senkrecht oder diagonal.',
+  reset() { board = Array(9).fill(-1); },
+  apply(i, p) {
+    if (board[i] !== -1) return null;
+    board[i] = p;
+    const w = winner(board);
+    return { win: w, draw: !w && !board.includes(-1) };
+  },
+  aiMove(p, diff) {
+    const free = board.map((v, i) => v === -1 ? i : -1).filter(i => i >= 0);
+    const mistake = diff === 'leicht' ? 0.6 : diff === 'mittel' ? 0.22 : 0;
+    if (Math.random() < mistake) return free[Math.floor(Math.random() * free.length)];
+    let best = -Infinity, moves = [];
+    for (const i of free) {
+      board[i] = p;
+      const v = minimax(board, 1 - p, p, 0);
+      board[i] = -1;
+      if (v > best) { best = v; moves = [i]; } else if (v === best) moves.push(i);
+    }
+    return moves[Math.floor(Math.random() * moves.length)];
+  },
+  render(st, status) {
+    statusEl.textContent = status;
+    statusEl.style.color = st.over ? '' : st.colors[st.turn];
+    const can = T && T.canInput();
+    board.forEach((v, i) => {
+      const c = cells[i];
+      const mark = v >= 0 ? MARKS[v] : '';
+      if (c.dataset.v !== String(v)) { c.innerHTML = mark ? '<span>' + mark + '</span>' : ''; c.dataset.v = v; }
+      c.className = 'cell' + (v === 0 ? ' x' : v === 1 ? ' o' : '') + (st.winCells && st.winCells.includes(i) ? ' win' : '') + (st.lastMove === i ? ' last' : '');
+      c.disabled = v !== -1 || !can;
+      c.setAttribute('aria-label', 'Feld ' + (i + 1) + (mark ? ': ' + mark : ' frei'));
+    });
+  },
+});
+
+statusEl = GK.el('div', { class: 'status', 'aria-live': 'polite' });
+const boardEl = GK.el('div', { class: 'board', role: 'grid' });
+for (let i = 0; i < 9; i++) {
+  const c = GK.el('button', { class: 'cell', type: 'button', 'data-v': '-1' });
+  c.addEventListener('click', () => T.input(i));
+  cells.push(c);
+  boardEl.appendChild(c);
+}
+GK.stage.appendChild(GK.el('div', { class: 'wrap' }, statusEl, boardEl));
+// Tastatur: 1–9 wie Ziffernblock
+GK.onKey(e => {
+  const m = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+  if (!m) return false;
+  const n = +m[1];
+  const idx = e.code.startsWith('Numpad') ? [6, 7, 8, 3, 4, 5, 0, 1, 2][n - 1] : n - 1;
+  T.input(idx);
+  return true;
+});
+</script>
+</body>
+</html>

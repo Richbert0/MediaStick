@@ -307,14 +307,27 @@ function uploadFile(item){
 <script>
 /* Metadaten laden/speichern */
 function loadMeta(){try{_meta=JSON.parse(localStorage.getItem('mc_file_meta')||'{}');}catch{_meta={};}}
-function saveMeta(){localStorage.setItem('mc_file_meta',JSON.stringify(_meta));}
+async function syncMeta(){
+  // Metadaten liegen portabel beim Server (MediaCenter-Daten/api/store/filemeta.json)
+  var r=await MC.api('/api/store/filemeta');
+  if(r.success&&r.data){
+    var local=_meta;_meta=Object.assign({},local,r.data);
+    if(Object.keys(local).some(function(k){return !r.data[k];}))saveMeta();
+    try{localStorage.setItem('mc_file_meta',JSON.stringify(_meta));}catch{}
+  }
+}
+function saveMeta(){
+  try{localStorage.setItem('mc_file_meta',JSON.stringify(_meta));}catch{}
+  MC.api('/api/store/filemeta',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({data:_meta})});
+}
 
 async function loadAll(refresh){
   loadMeta();
+  await syncMeta();
   if(refresh)await fetch('/api/library?r='+Date.now()).catch(()=>{});
   var lib=await MC.loadLibrary();
   _allData.movies=lib.movies||[];
-  _allData.series=Object.values(lib.series||{}).flat();
+  _allData.series=Object.values(lib.series||{}).flatMap(function(seasons){return Object.values(seasons||{}).flat();});
   _allData.music=lib.music||[];
   _allData.images=lib.images||[];
   // Counts
@@ -325,7 +338,7 @@ async function loadAll(refresh){
   document.getElementById('cnt-music').textContent=_allData.music.length;
   document.getElementById('cnt-images').textContent=_allData.images.length;
   // Trash
-  try{var tr=await MC.api('/api/trash');_trashData=tr.files||[];document.getElementById('cnt-trash').textContent=_trashData.length;}catch{_trashData=[];}
+  try{var tr=await MC.api('/api/trash');_trashData=tr.items||[];document.getElementById('cnt-trash').textContent=_trashData.length;}catch{_trashData=[];}
   renderFiles();
 }
 
@@ -339,7 +352,7 @@ function getList(){
   var q=(document.getElementById('file-srch').value||'').toLowerCase();
   var list;
   if(curCat==='all') list=[..._allData.movies,..._allData.series,..._allData.music,..._allData.images];
-  else if(curCat==='trash') list=_trashData.map(f=>({name:f.name||f,path:f.path||'',_trash:true,_raw:f}));
+  else if(curCat==='trash') list=_trashData.map(f=>({name:f.name,path:f.origPath||'',key:f.key,size:f.size,_trash:true}));
   else list=_allData[curCat]||[];
   if(q)list=list.filter(f=>(f.name||'').toLowerCase().includes(q));
   return list;
@@ -365,8 +378,8 @@ function renderFiles(){
       :'<div class="fi-thumb">'+ico+'</div>';
     var meta=(f.size?MC.fmtSize(f.size):'')+((m.desc)?' · '+m.desc.substring(0,30):'');
     var btns=f._trash
-      ?'<button class="fi-btn" onclick="restoreFile(\''+MC.esc(f.path||f._raw)+'\')">♻️ Wiederherstellen</button>'
-       +'<button class="fi-btn danger" onclick="deleteFile(\''+MC.esc(f.path||f._raw)+'\',true)">🗑️ Löschen</button>'
+      ?'<button class="fi-btn" onclick="restoreFile(\''+MC.esc(f.key)+'\')">♻️ Wiederherstellen</button>'
+       +'<button class="fi-btn danger" onclick="deleteFile(\''+MC.esc(f.key)+'\',true)">🗑️ Endgültig löschen</button>'
       :'<button class="fi-btn" onclick="openEdit(\''+MC.esc(f.path)+'\',\''+MC.esc(f.name)+'\',\''+curCat+'\')">✏️ Bearbeiten</button>'
        +'<button class="fi-btn danger" onclick="deleteFile(\''+MC.esc(f.path)+'\',false)">🗑️ Löschen</button>';
     return '<div class="fi-row">'+thumbHtml
@@ -376,16 +389,17 @@ function renderFiles(){
   }).join('');
 }
 
-async function deleteFile(path,permanent){
-  var msg=permanent?'Dauerhaft löschen? Nicht wiederherstellbar!':'In den Papierkorb verschieben?';
+async function deleteFile(pathOrKey,permanent){
+  var msg=permanent?'Endgültig löschen? Das kann nicht rückgängig gemacht werden!':'In den Papierkorb verschieben?';
   if(!confirm(msg))return;
-  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:path,permanent:permanent||false})});
+  var body=permanent?{action:'delete_perm',key:pathOrKey}:{action:'move',path:pathOrKey,type:curCat};
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(r.success){MC.toast(permanent?'🗑️ Gelöscht':'🗑️ In Papierkorb','ok');loadAll();}
   else MC.toast('❌ '+r.error,'err');
 }
 
-async function restoreFile(path){
-  var r=await MC.api('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:path})});
+async function restoreFile(key){
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'restore',key:key})});
   if(r.success){MC.toast('✅ Wiederhergestellt','ok');loadAll();}
   else MC.toast('❌ '+r.error,'err');
 }
@@ -445,24 +459,16 @@ loadAll();
   }
   if(urlEl)urlEl.textContent=uploadUrl;
   window._uploadUrl=uploadUrl;
-  // 3) QR rendern
-  function doQR(){
-    if(!qrWrap)return;
-    qrWrap.innerHTML='';
-    if(typeof QRCode!=='undefined'){
-      try{new QRCode(qrWrap,{text:uploadUrl,width:104,height:104,
-        colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});return;}catch(e){}
-    }
+  // 3) QR lokal vom Server erzeugen (funktioniert auch ohne Internet)
+  if(qrWrap){
     var img=document.createElement('img');
-    img.src='https://api.qrserver.com/v1/create-qr-code/?size=104x104&margin=4&data='+encodeURIComponent(uploadUrl);
-    img.style.cssText='width:104px;height:104px;display:block;border-radius:4px';
-    img.onerror=function(){qrWrap.innerHTML='<div style="font-size:.55rem;color:#888;text-align:center;padding:10px">QR offline<br>URL kopieren ↑</div>';};
+    img.alt='QR-Code';
+    img.src='/api/qrcode?size=208&url='+encodeURIComponent(uploadUrl);
+    img.style.cssText='width:104px;height:104px;display:block;border-radius:4px;background:#fff';
+    img.onerror=function(){qrWrap.innerHTML='<div style="font-size:.55rem;color:#888;text-align:center;padding:10px">QR nicht verfügbar<br>URL kopieren ↑</div>';};
+    qrWrap.innerHTML='';
     qrWrap.appendChild(img);
   }
-  var sc=document.createElement('script');
-  sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  sc.onload=doQR;sc.onerror=doQR;
-  document.head.appendChild(sc);
 })();
 function copyUrl(){
   var url=window._uploadUrl||location.href;

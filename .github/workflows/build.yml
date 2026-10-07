@@ -1,0 +1,109 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm test
+
+  build:
+    name: Build (${{ matrix.name }})
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Windows portable
+            script: build:win
+            artifact: dist/*.exe
+            exe: dist/win-unpacked/MediaCenter.exe
+          - os: ubuntu-latest
+            name: Linux AppImage
+            script: build:linux
+            artifact: dist/*.AppImage
+            exe: dist/linux-unpacked/mediacenter
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Paket bauen
+        run: npm run ${{ matrix.script }} -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Smoke-Test (Server-Modus der gepackten App)
+        shell: bash
+        run: |
+          export MEDIACENTER_DATA_DIR="$RUNNER_TEMP/mc-data"
+          export MEDIACENTER_PORT=18080
+          "${{ matrix.exe }}" --server --no-sandbox > "$RUNNER_TEMP/server.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:18080/api/info; then echo; break; fi
+            sleep 1
+          done
+          curl -fsS -o /dev/null http://127.0.0.1:18080/SPIELE.html
+          curl -fsS -o /dev/null http://127.0.0.1:18080/games/snake.html
+          cat "$RUNNER_TEMP/server.log" || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaCenter-${{ runner.os }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: GitHub-Release
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Release erstellen oder aktualisieren
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then TAG="${GITHUB_REF#refs/tags/}"; fi
+          ls -la release
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG existiert – Dateien werden aktualisiert."
+            gh release upload "$TAG" release/* --clobber
+          else
+            gh release create "$TAG" release/* \
+              --target "$GITHUB_SHA" \
+              --title "MediaCenter $TAG" \
+              --notes-file .github/RELEASE_NOTES.md
+          fi

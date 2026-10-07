@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Memory</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+<style>
+.wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;height:100%;justify-content:center}
+.status{font-weight:800;font-size:1rem;min-height:1.4em;text-align:center}
+.board{display:grid;gap:var(--gap);width:var(--bw);height:var(--bh)}
+.card{perspective:700px;border:0;background:none;padding:0;cursor:pointer;border-radius:12px}
+.card:disabled{cursor:default}
+.inner{position:relative;width:100%;height:100%;transition:transform .32s ease;transform-style:preserve-3d}
+.card.up .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:12px;display:flex;align-items:center;justify-content:center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.back{background:linear-gradient(135deg,#123a4a,#1f6f8a);border:1px solid rgba(34,211,238,.3);box-shadow:inset 0 0 0 4px rgba(6,8,15,.25)}
+.back::after{content:'';width:34%;height:34%;border-radius:50%;border:3px solid rgba(255,255,255,.18)}
+.front{background:#f1f5ff;transform:rotateY(180deg);font-size:calc(var(--cs)*.5);box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.card.done .front{background:#d9f7ea;opacity:.55}
+.card.done.p0 .front{box-shadow:0 0 0 3px #22d3ee inset}
+.card.done.p1 .front{box-shadow:0 0 0 3px #f472b6 inset}
+.card:focus-visible{outline:3px solid var(--gk-amber);outline-offset:2px}
+.card:hover:not(:disabled) .back{filter:brightness(1.15)}
+</style>
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script>
+'use strict';
+const SYMBOLS = ['🍎', '🍌', '🍇', '🍓', '🍒', '🍍', '🥝', '🍉', '🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐙', '🦋', '🚀', '⚽', '🎸', '🎈', '🌈', '⭐', '🌙', '🔥', '🍕', '🎲', '🧩', '🎧', '🚲', '🌵', '🍄', '🐢'];
+const SIZES = { klein: [4, 4], mittel: [6, 4], gross: [6, 6] };
+let size = GK.store.get('memory_size', 'mittel');
+let difficulty = GK.store.get('memory_ai', 'mittel');
+let st = null;
+let lan = null;
+let cardEls = [];
+let statusEl, boardEl;
+let timer = 0;
+
+GK.init({
+  id: 'memory', title: 'Memory', modes: ['solo', 'ai', 'local', 'lan'],
+  onPause: () => { if (st && st.mode === 'solo') { st.pausedAt = performance.now(); clearInterval(timer); } },
+  onResume: () => { if (st && st.pausedAt) { st.t0 += performance.now() - st.pausedAt; st.pausedAt = 0; tickTimer(); } },
+  onRestart: () => showStart(), isRunning: () => st && !st.over,
+  help: 'Klicke/tippe zwei Karten an. Tastatur: Pfeiltasten + ' + GK.kbd('Enter'),
+});
+const mode = GK.mode;
+
+statusEl = GK.el('div', { class: 'status', 'aria-live': 'polite' });
+boardEl = GK.el('div', { class: 'board' });
+GK.stage.appendChild(GK.el('div', { class: 'wrap' }, statusEl, boardEl));
+
+function layout() {
+  if (!st) return;
+  const [cols, rows] = st.dims;
+  const r = GK.stage.getBoundingClientRect();
+  const gap = Math.max(6, Math.min(12, r.width / 90));
+  const cs = Math.floor(Math.min((r.width - 20 - gap * (cols - 1)) / cols, (r.height - 60 - gap * (rows - 1)) / rows, 130));
+  boardEl.style.setProperty('--gap', gap + 'px');
+  boardEl.style.setProperty('--cs', cs + 'px');
+  boardEl.style.setProperty('--bw', (cs * cols + gap * (cols - 1)) + 'px');
+  boardEl.style.setProperty('--bh', (cs * rows + gap * (rows - 1)) + 'px');
+  boardEl.style.gridTemplateColumns = 'repeat(' + cols + ',' + cs + 'px)';
+  boardEl.style.gridTemplateRows = 'repeat(' + rows + ',' + cs + 'px)';
+}
+new ResizeObserver(layout).observe(GK.stage);
+
+function newState(seed, players, sizeKey) {
+  const dims = SIZES[sizeKey];
+  const pairs = dims[0] * dims[1] / 2;
+  const rand = GK.rng(seed);
+  const syms = rand.shuffle(SYMBOLS.slice()).slice(0, pairs);
+  const deck = rand.shuffle(syms.concat(syms));
+  return {
+    mode, dims, deck, up: [], done: new Array(deck.length).fill(-1), seen: new Map(),
+    players, scores: players.map(() => 0), turn: 0, moves: 0, flips: 0, busy: false, over: false,
+    t0: performance.now(), pausedAt: 0, size: sizeKey,
+  };
+}
+
+function build() {
+  boardEl.replaceChildren();
+  cardEls = st.deck.map((sym, i) => {
+    const b = GK.el('button', { class: 'card', type: 'button', 'aria-label': 'Karte ' + (i + 1) },
+      GK.el('div', { class: 'inner' }, GK.el('div', { class: 'face back' }), GK.el('div', { class: 'face front', text: sym })));
+    b.addEventListener('click', () => userFlip(i));
+    boardEl.appendChild(b);
+    return b;
+  });
+  layout();
+  refresh();
+}
+
+function myTurn() {
+  if (mode === 'solo' || mode === 'local') return true;
+  if (mode === 'ai') return st.turn === 0;
+  return st.turn === (lan.isHost ? 0 : 1);
+}
+
+function refresh() {
+  const can = st && !st.busy && !st.over && myTurn();
+  cardEls.forEach((el, i) => {
+    const up = st.up.includes(i) || st.done[i] >= 0;
+    el.classList.toggle('up', up);
+    el.classList.toggle('done', st.done[i] >= 0);
+    el.classList.toggle('p0', st.done[i] === 0 && st.players.length > 1);
+    el.classList.toggle('p1', st.done[i] === 1);
+    el.disabled = !can || up;
+    el.setAttribute('aria-label', up ? 'Karte ' + (i + 1) + ': ' + st.deck[i] : 'Karte ' + (i + 1) + ' verdeckt');
+  });
+  if (st.players.length === 1) {
+    statusEl.textContent = (st.scores[0]) + ' / ' + st.deck.length / 2 + ' Paare';
+    statusEl.style.color = '';
+  } else if (!st.over) {
+    const p = st.players[st.turn];
+    statusEl.textContent = mode === 'local' ? p.name + ' ist dran' : myTurn() ? 'Du bist dran' : p.name + ' ist dran…';
+    statusEl.style.color = p.color;
+  }
+  scores();
+}
+
+function scores() {
+  if (st.players.length === 1) {
+    const ms = (st.pausedAt || performance.now()) - st.t0;
+    GK.setScores([{ label: 'Zeit', value: GK.fmtTime(ms) }, { label: 'Züge', value: st.moves }, { label: 'Paare', value: st.scores[0] + '/' + st.deck.length / 2 }]);
+  } else {
+    GK.setScores(st.players.map((p, i) => ({ label: p.name, value: st.scores[i], color: p.color, turn: !st.over && st.turn === i })));
+  }
+}
+function tickTimer() { clearInterval(timer); timer = setInterval(() => { if (st && !st.over) scores(); }, 500); }
+
+function userFlip(i) {
+  if (!st || st.busy || st.over || !myTurn()) return;
+  if (mode === 'lan') lan.send({ t: 'f', i, n: st.flips });
+  flip(i);
+}
+
+function flip(i) {
+  if (st.up.includes(i) || st.done[i] >= 0 || st.up.length >= 2) return;
+  st.flips++;
+  st.up.push(i);
+  remember(i);
+  GK.sound('move');
+  if (st.up.length === 2) {
+    st.moves++;
+    const [a, b] = st.up;
+    st.busy = true;
+    if (st.deck[a] === st.deck[b]) {
+      setTimeout(() => {
+        st.done[a] = st.done[b] = st.turn;
+        st.scores[st.turn]++;
+        st.up = [];
+        st.busy = false;
+        GK.sound('good');
+        if (st.done.every(d => d >= 0)) return finish();
+        refresh();
+        if (mode === 'ai' && st.turn === 1) aiTurn();
+      }, 420);
+    } else {
+      setTimeout(() => {
+        st.up = [];
+        st.busy = false;
+        if (st.players.length > 1) st.turn = (st.turn + 1) % st.players.length;
+        refresh();
+        if (mode === 'ai' && st.turn === 1) aiTurn();
+      }, 950);
+    }
+  }
+  refresh();
+}
+
+// ── KI mit unvollkommenem Gedächtnis ────────────────────────────────────────
+function remember(i) {
+  const keep = { leicht: 0.35, mittel: 0.7, schwer: 0.97 }[difficulty];
+  if (Math.random() < keep) st.seen.set(i, st.deck[i]);
+}
+function aiTurn() {
+  if (st.over) return;
+  refresh();
+  const hidden = () => st.deck.map((_, i) => i).filter(i => st.done[i] < 0 && !st.up.includes(i));
+  const pickUnknown = (exclude) => {
+    const all = hidden().filter(i => i !== exclude);
+    const unknown = all.filter(i => !st.seen.has(i));
+    const pool = unknown.length ? unknown : all;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+  const knownPair = () => {
+    const bySym = new Map();
+    for (const [i, s] of st.seen) {
+      if (st.done[i] >= 0) continue;
+      if (bySym.has(s)) return [bySym.get(s), i];
+      bySym.set(s, i);
+    }
+    return null;
+  };
+  const game = st;
+  setTimeout(() => {
+    if (st !== game || st.over) return;
+    const pair = knownPair();
+    const first = pair ? pair[0] : pickUnknown(-1);
+    flip(first);
+    setTimeout(() => {
+      if (st !== game || st.over || st.up.length !== 1) return;
+      let second = pair ? pair[1] : null;
+      if (second == null) {
+        for (const [i, s] of st.seen) if (i !== first && st.done[i] < 0 && s === st.deck[first]) { second = i; break; }
+      }
+      if (second == null) second = pickUnknown(first);
+      flip(second);
+    }, 700);
+  }, 650);
+}
+
+async function finish() {
+  st.over = true;
+  clearInterval(timer);
+  refresh();
+  if (st.players.length === 1) {
+    const secs = Math.round((performance.now() - st.t0) / 1000);
+    GK.sound('win');
+    const card = GK.overlay({ title: 'Geschafft!', big: GK.fmtTime(secs * 1000), text: st.moves + ' Züge · ' + st.deck.length / 2 + ' Paare',
+      buttons: [{ label: 'Nochmal', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }] });
+    const key = 'memory' + (st.size === 'mittel' ? '' : '_' + st.size);
+    const res = await GK.scores.submit(key, secs, { lowerIsBetter: true, detail: st.moves + ' Züge' });
+    if (res.isBest) card.querySelector('p').textContent = '🎉 Neue Bestzeit! · ' + st.moves + ' Züge';
+    const v = GK.scores.view(res.list, res.rank, s => GK.fmtTime(s * 1000));
+    if (v && GK.overlayOpen) card.insertBefore(v, card.querySelector('.gk-actions'));
+    return;
+  }
+  const max = Math.max(...st.scores);
+  const winners = st.scores.map((s, i) => s === max ? i : -1).filter(i => i >= 0);
+  const draw = winners.length > 1;
+  const youWin = mode === 'local' || winners.includes(mode === 'lan' ? (lan.isHost ? 0 : 1) : 0);
+  GK.sound(draw ? 'score' : youWin ? 'win' : 'lose');
+  const rows = st.players.map((p, i) => ({ name: p.name, color: p.color, score: st.scores[i] + ' Paare', win: !draw && winners.includes(i) }));
+  const opts = { title: draw ? 'Unentschieden!' : '🏆 ' + st.players[winners[0]].name + ' gewinnt!', content: GK.resultList(rows) };
+  if (mode === 'lan') return GKNet.endScreen(lan, opts);
+  GK.overlay(Object.assign(opts, { buttons: [{ label: 'Nochmal', primary: true, onClick: () => begin() }, { label: 'Zurück', onClick: () => GK.back() }] }));
+}
+
+function begin() {
+  GK.hideOverlay();
+  const prof = GK.profile();
+  const P = GK.localPlayers();
+  let players;
+  if (mode === 'solo') players = [{ name: prof.name || 'Du', color: '#22d3ee' }];
+  else if (mode === 'ai') players = [{ name: prof.name || 'Du', color: '#22d3ee' }, { name: 'KI (' + difficulty + ')', color: '#f472b6' }];
+  else players = P;
+  st = newState((Math.random() * 1e9) >>> 0, players, size);
+  build();
+  tickTimer();
+  GK.sound('start');
+}
+
+function showStart() {
+  if (mode === 'lan') return;
+  clearInterval(timer);
+  const box = GK.el('div');
+  box.appendChild(GK.options('Spielfeld', [{ label: '8 Paare', value: 'klein' }, { label: '12 Paare', value: 'mittel' }, { label: '18 Paare', value: 'gross' }], size, v => { size = v; GK.store.set('memory_size', v); }));
+  if (mode === 'ai') box.appendChild(GK.options('KI-Gedächtnis', [{ label: 'Vergesslich', value: 'leicht' }, { label: 'Normal', value: 'mittel' }, { label: 'Elefant', value: 'schwer' }], difficulty, v => { difficulty = v; GK.store.set('memory_ai', v); }));
+  const texts = {
+    solo: 'Finde alle Paare so schnell wie möglich.',
+    ai: 'Abwechselnd Karten aufdecken. Wer ein Paar findet, ist nochmal dran.',
+    local: 'Zwei Spieler decken abwechselnd auf. Wer ein Paar findet, ist nochmal dran.',
+  };
+  GK.overlay({ title: 'Memory', text: texts[mode], content: box, buttons: [{ label: 'Spielen', primary: true, onClick: begin }, { label: 'Zurück', onClick: () => GK.back() }], help: GK.cfg.help });
+}
+
+// Tastatursteuerung über Fokus
+GK.onKey(e => {
+  if (GK.overlayOpen || !cardEls.length) return false;
+  const cols = st.dims[0];
+  let idx = cardEls.indexOf(document.activeElement);
+  const map = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols };
+  if (map[e.code] != null) {
+    idx = idx < 0 ? 0 : Math.max(0, Math.min(cardEls.length - 1, idx + map[e.code]));
+    cardEls[idx].focus();
+    return true;
+  }
+  return false;
+});
+
+if (mode === 'lan') {
+  lan = GKNet.game();
+  lan.on('start', room => {
+    const players = room.players.slice(0, 2).map((p, i) => ({ name: p.name, color: i === 0 ? '#22d3ee' : '#f472b6' }));
+    st = newState(room.seed, players, 'mittel');
+    build();
+    GK.sound('start');
+  });
+  lan.on('msg', d => {
+    if (d.t === 'f' && st && !myTurn()) flip(d.i);
+  });
+} else {
+  showStart();
+}
+</script>
+</body>
+</html>

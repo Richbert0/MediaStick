@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vier gewinnt</title>
+<link rel="stylesheet" href="/games/shared/kit.css">
+<style>
+.wrap{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;height:100%;justify-content:center}
+.status{font-weight:800;font-size:1.05rem;min-height:1.4em;text-align:center}
+.board{--s:min(11vmin,74px);display:grid;grid-template-columns:repeat(7,var(--s));gap:calc(var(--s)*.12);padding:calc(var(--s)*.18);
+  background:linear-gradient(160deg,#1d3a8a,#13256a);border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.12)}
+.col{display:grid;grid-template-rows:repeat(6,var(--s));gap:calc(var(--s)*.12);border-radius:12px;cursor:pointer;padding:0;border:0;background:none}
+.col:hover:not(:disabled),.col.kb{background:rgba(255,255,255,.08)}
+.col:disabled{cursor:default}
+.hole{width:var(--s);height:var(--s);border-radius:50%;background:#070b18;box-shadow:inset 0 4px 8px rgba(0,0,0,.6)}
+.hole.p0{background:radial-gradient(circle at 35% 30%,#7ff3ff,#22d3ee 45%,#0e7490);box-shadow:0 0 14px rgba(34,211,238,.35)}
+.hole.p1{background:radial-gradient(circle at 35% 30%,#ffd0e8,#f472b6 45%,#9d174d);box-shadow:0 0 14px rgba(244,114,182,.35)}
+.hole.new{animation:drop .32s cubic-bezier(.4,0,.6,1.4)}
+.hole.win{outline:3px solid #fbbf24;outline-offset:-3px;animation:glow 1s ease-in-out infinite alternate}
+@keyframes drop{from{transform:translateY(calc(var(--d)*-1))}to{transform:none}}
+@keyframes glow{from{filter:brightness(1)}to{filter:brightness(1.35)}}
+</style>
+</head>
+<body>
+<script src="/games/shared/kit.js"></script>
+<script src="/games/shared/net.js"></script>
+<script src="/games/shared/turns.js"></script>
+<script>
+'use strict';
+const C = 7, R = 6;
+let grid = new Int8Array(C * R).fill(-1); // index = c*R + r, r=0 unten
+let heights = new Int8Array(C);
+let statusEl, cols = [], holes = [];
+let kbCol = 3;
+
+function at(c, r) { return grid[c * R + r]; }
+function lineAt(c, r) {
+  const p = at(c, r);
+  for (const [dc, dr] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+    const cells = [[c, r]];
+    for (const s of [1, -1]) {
+      let cc = c + dc * s, rr = r + dr * s;
+      while (cc >= 0 && cc < C && rr >= 0 && rr < R && at(cc, rr) === p) { cells.push([cc, rr]); cc += dc * s; rr += dr * s; }
+    }
+    if (cells.length >= 4) return cells.map(([a, b]) => a * R + b);
+  }
+  return null;
+}
+
+// ── KI: Negamax mit Alpha-Beta ──────────────────────────────────────────────
+const ORDER = [3, 2, 4, 1, 5, 0, 6];
+function scoreWindow(a, b, c, d, p) {
+  let mine = 0, opp = 0, empty = 0;
+  for (const v of [a, b, c, d]) { if (v === p) mine++; else if (v === -1) empty++; else opp++; }
+  if (mine === 4) return 1000;
+  if (mine === 3 && empty === 1) return 6;
+  if (mine === 2 && empty === 2) return 2;
+  if (opp === 3 && empty === 1) return -8;
+  if (opp === 2 && empty === 2) return -1;
+  return 0;
+}
+function evaluate(p) {
+  let s = 0;
+  for (let r = 0; r < R; r++) if (at(3, r) === p) s += 3; else if (at(3, r) === 1 - p) s -= 3;
+  for (let c = 0; c < C; c++) for (let r = 0; r < R; r++) {
+    if (c + 3 < C) s += scoreWindow(at(c, r), at(c + 1, r), at(c + 2, r), at(c + 3, r), p);
+    if (r + 3 < R) s += scoreWindow(at(c, r), at(c, r + 1), at(c, r + 2), at(c, r + 3), p);
+    if (c + 3 < C && r + 3 < R) s += scoreWindow(at(c, r), at(c + 1, r + 1), at(c + 2, r + 2), at(c + 3, r + 3), p);
+    if (c + 3 < C && r - 3 >= 0) s += scoreWindow(at(c, r), at(c + 1, r - 1), at(c + 2, r - 2), at(c + 3, r - 3), p);
+  }
+  return s;
+}
+function negamax(p, depth, alpha, beta, moves) {
+  if (moves === C * R) return 0;
+  if (depth === 0) return evaluate(p);
+  for (const c of ORDER) {
+    if (heights[c] >= R) continue;
+    const r = heights[c];
+    grid[c * R + r] = p;
+    const w = lineAt(c, r);
+    grid[c * R + r] = -1;
+    if (w) return 100000 + depth;
+  }
+  let best = -Infinity;
+  for (const c of ORDER) {
+    if (heights[c] >= R) continue;
+    const r = heights[c]++;
+    grid[c * R + r] = p;
+    const v = -negamax(1 - p, depth - 1, -beta, -alpha, moves + 1);
+    grid[c * R + r] = -1;
+    heights[c]--;
+    if (v > best) best = v;
+    if (v > alpha) alpha = v;
+    if (alpha >= beta) break;
+  }
+  return best;
+}
+function bestMove(p, depth) {
+  const moves = heights.reduce((a, b) => a + b, 0);
+  let best = -Infinity, choice = [];
+  for (const c of ORDER) {
+    if (heights[c] >= R) continue;
+    const r = heights[c]++;
+    grid[c * R + r] = p;
+    const v = lineAt(c, r) ? 1e6 : -negamax(1 - p, depth - 1, -Infinity, Infinity, moves + 1);
+    grid[c * R + r] = -1;
+    heights[c]--;
+    if (v > best) { best = v; choice = [c]; } else if (v === best) choice.push(c);
+  }
+  return choice[Math.floor(Math.random() * choice.length)];
+}
+
+const T = TurnGame({
+  id: 'connect4', title: 'Vier gewinnt', colors: ['#22d3ee', '#f472b6'],
+  intro: 'Wirf abwechselnd Steine ein. Wer zuerst vier in einer Reihe hat – waagerecht, senkrecht oder diagonal – gewinnt.',
+  reset() { grid.fill(-1); heights.fill(0); holes.forEach(h => { h.className = 'hole'; }); },
+  apply(c, p) {
+    if (c < 0 || c >= C || heights[c] >= R) return null;
+    const r = heights[c]++;
+    grid[c * R + r] = p;
+    const h = holes[c * R + r];
+    h.style.setProperty('--d', ((R - r) * 1.12) + 'em');
+    h.className = 'hole p' + p + ' new';
+    const w = lineAt(c, r);
+    return { win: w, draw: !w && heights.every(x => x >= R) };
+  },
+  aiMove(p, diff) {
+    const free = ORDER.filter(c => heights[c] < R);
+    if (diff === 'leicht' && Math.random() < 0.45) return free[Math.floor(Math.random() * free.length)];
+    return bestMove(p, diff === 'leicht' ? 2 : diff === 'mittel' ? 4 : 7);
+  },
+  render(st, status) {
+    statusEl.textContent = status;
+    statusEl.style.color = st.over ? '' : st.colors[st.turn];
+    const can = T && T.canInput();
+    cols.forEach((col, c) => { col.disabled = !can || heights[c] >= R; col.classList.toggle('kb', can && c === kbCol && !GK.isTouch); });
+    if (st.winCells) st.winCells.forEach(i => holes[i].classList.add('win'));
+  },
+});
+
+statusEl = GK.el('div', { class: 'status', 'aria-live': 'polite' });
+const boardEl = GK.el('div', { class: 'board' });
+for (let c = 0; c < C; c++) {
+  const col = GK.el('button', { class: 'col', type: 'button', 'aria-label': 'Spalte ' + (c + 1) });
+  for (let r = R - 1; r >= 0; r--) {
+    const h = GK.el('div', { class: 'hole' });
+    holes[c * R + r] = h;
+    col.appendChild(h);
+  }
+  col.addEventListener('click', () => T.input(c));
+  col.addEventListener('mouseenter', () => { kbCol = c; });
+  cols.push(col);
+  boardEl.appendChild(col);
+}
+GK.stage.appendChild(GK.el('div', { class: 'wrap' }, statusEl, boardEl));
+GK.onKey(e => {
+  const m = /^(?:Digit|Numpad)([1-7])$/.exec(e.code);
+  if (m) { T.input(+m[1] - 1); return true; }
+  if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+    kbCol = (kbCol + (e.code === 'ArrowLeft' ? -1 : 1) + C) % C;
+    cols.forEach((col, c) => col.classList.toggle('kb', c === kbCol));
+    return true;
+  }
+  if (e.code === 'ArrowDown' || e.code === 'Enter' || e.code === 'Space') { if (!GK.overlayOpen) { T.input(kbCol); return true; } }
+  return false;
+});
+</script>
+</body>
+</html>
