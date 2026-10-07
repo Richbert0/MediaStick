@@ -29,6 +29,11 @@ test.after(async () => {
 test('Episodenerkennung', () => {
   assert.deepStrictEqual(U.detectEpisode('Breaking.Bad.S01E02.mkv'), [1, 2]);
   assert.deepStrictEqual(U.detectEpisode('show 3x07.mp4'), [3, 7]);
+  for (const f of ['Dark S1F1.mkv', 'Dark.S01F01.mkv', 'Dark_S1E1.mp4', 'Dark S01E01.mkv']) {
+    assert.deepStrictEqual(U.detectEpisode(f), [1, 1], f);
+    assert.strictEqual(U.seriesNameFromFile(f), 'Dark', f);
+  }
+  assert.deepStrictEqual(U.detectEpisode('Dark S2F10 Ende.mkv'), [2, 10]);
   assert.strictEqual(U.detectEpisode('Inception.mp4'), null);
   assert.strictEqual(U.seriesNameFromFile('Breaking.Bad.S01E02.720p.mkv'), 'Breaking Bad');
   assert.strictEqual(U.episodeTitle('Lost.S01E01.Pilot.mkv', 1, 1), 'S01E01 – Pilot');

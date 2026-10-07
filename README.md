@@ -52,7 +52,7 @@ Entweder **im Upload-Bereich** der App Dateien hineinziehen (die App sortiert au
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.2.1-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.3.0-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
     │   ├── 📁 Movies      ← Filme  (mp4, mkv, webm, …)
@@ -64,7 +64,7 @@ Entweder **im Upload-Bereich** der App Dateien hineinziehen (die App sortiert au
     └── 📁 .profil         ← Einstellungen & Spielstände der App
 ```
 
-Serien werden am Dateinamen erkannt: `Breaking.Bad.S01E02.mkv`, `Serie 1x05.mp4`, `Folge 3.mp4` oder über Ordner wie `Staffel 2`.
+Serien werden am Dateinamen erkannt: `S1E1`, `S01E01`, `S1F1`, `S01F01` (F = Folge), z. B. `Dark S01F03.mkv` oder `Breaking.Bad.S01E02.mkv`, außerdem `Serie 1x05.mp4`, `Folge 3.mp4` oder Ordner wie `Staffel 2`.
 Unter **⚙️ Einstellungen → Speicherort** öffnet der Button **„Medienordner öffnen“** den Ordner direkt im Datei-Explorer.
 
 #### Eigene Ordner einbinden
@@ -78,7 +78,7 @@ Medien müssen nicht auf den Stick kopiert werden. Unter **⚙️ Einstellungen 
 ### 3. Andere Geräte verbinden (LAN)
 
 1. MediaCenter auf einem PC starten.
-2. Auf dem Handy/Tablet/Laptop im **selben WLAN** die Adresse öffnen, die in der App angezeigt wird (z. B. `http://192.168.0.10:8080`) – oder einfach den **QR-Code** im Upload-Bereich bzw. in der LAN-Lobby scannen.
+2. Auf dem Handy/Tablet/Laptop im **selben WLAN** die Adresse öffnen, die in der App angezeigt wird (z. B. `http://192.168.0.10:8080`) – oder einfach den **QR-Code** im Upload-Bereich bzw. in der LAN-Lobby scannen. Der QR-Code zeigt automatisch auf die Netzwerkkarte, über die der PC im Heimnetz hängt (virtuelle Adapter wie Hyper-V, VirtualBox oder VPN werden übergangen). Hat der PC mehrere Netzwerke, lässt sich die Adresse unter dem QR-Code umschalten.
 3. Fertig: Medien ansehen, Fotos hochladen, chatten oder in der **Spielhalle → LAN-Lobby** gemeinsam spielen.
 
 > Beim ersten Start fragt Windows evtl. nach einer Firewall-Freigabe – für LAN-Funktionen bitte für **private Netzwerke** erlauben.
@@ -88,8 +88,8 @@ Medien müssen nicht auf den Stick kopiert werden. Unter **⚙️ Einstellungen 
 Für einen Heim-PC oder Mini-Server ohne Bildschirm:
 
 ```bash
-MediaCenter-3.2.1-portable.exe --server          # Windows
-./MediaCenter-3.2.1-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
+MediaCenter-3.3.0-portable.exe --server          # Windows
+./MediaCenter-3.3.0-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
 ```
 
 Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
@@ -102,9 +102,9 @@ Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DI
 
 | Bereich | Highlights |
 |---|---|
-| 🎬 **Filme** | Player mit Fortsetzen an der letzten Stelle, Suche & Sortierung, eigene Vorschaubilder (Datei oder Standbild aus dem Film) |
-| 📺 **Serien** | Automatische Gruppierung nach Serie → Staffel → Episode, Episodentitel aus dem Dateinamen |
-| 🎵 **Musik** | Hintergrund-Player, der beim Seitenwechsel weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet · **Visualizer** (Spektrum, Welle, Kreis-Spektrum im Vinyl-Vollbild) · Playlists aus Ordnern |
+| 🎬 **Filme** | Echtes Vollbild, Steuerleiste blendet sich bei Inaktivität aus, Fortsetzen an der letzten Stelle, Fortschrittsbalken, Suche & Sortierung · **Vorschaubild von jeder beliebigen Stelle** im Video (Regler, ±1 s/10 s) oder eigenes Bild; fehlende Vorschaubilder werden automatisch erzeugt |
+| 📺 **Serien** | Streaming-Optik mit Titelbild, „Weiterschauen“-Reihe und Fortschritt je Folge · nächste Folge startet automatisch nach Countdown, am Staffelende fragt die App, ob es mit der **nächsten Staffel** weitergeht · Erkennung von `S1E1`, `S01E01`, `S1F1`, `S01F01` |
+| 🎵 **Musik** | Hintergrund-Player, der beim Seitenwechsel weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet · **Visualizer** (Spektrum, Welle, Kreis-Spektrum im Vinyl-Vollbild) · Playlists aus Ordnern · auf dem Handy: Visualizer, darunter große Steuertasten, darunter Titel, Zeit und Lautstärke |
 | ⚙️ **Einstellungen** | Mehrere eigene Medienordner mit automatischer Einsortierung, Speicherort, LAN-Adresse |
 | 🖼️ **Fotos** | Galerie mit Vollbild-Ansicht, Titel und Beschreibungen |
 | ☁️ **Upload** | Drag & Drop, auch vom Handy per QR-Code; große Videos werden direkt auf den Stick gestreamt; Papierkorb mit Wiederherstellen |
@@ -190,7 +190,7 @@ Dauerhaft verschwindet die Meldung mit der kostenlosen Code-Signatur der SignPat
 <details>
 <summary><b>Andere Geräte finden den Server nicht</b></summary>
 
-Alle Geräte müssen im selben Netzwerk sein (kein Gast-WLAN). Prüfe die Firewall-Freigabe für MediaCenter und nutze die in der App angezeigte Adresse bzw. den QR-Code. Läuft Port 8080 schon, nimmt die App automatisch den nächsten freien Port.
+Alle Geräte müssen im selben Netzwerk sein (kein Gast-WLAN). Prüfe die Firewall-Freigabe für MediaCenter (Windows: *Zugriff zulassen* für private Netzwerke) und nutze die in der App angezeigte Adresse bzw. den QR-Code. Hat der PC mehrere Netzwerkkarten, unter dem QR-Code eine andere Adresse antippen. Läuft Port 8080 schon, nimmt die App automatisch den nächsten freien Port.
 </details>
 
 <details>

@@ -231,12 +231,23 @@ function createMediaServer(options = {}) {
     return serveFile(req, res, target.full, { cache: 'media', download: url.searchParams.has('download') });
   }
 
-  function apiQrUrl(req, res) {
-    const ips = U.lanAddresses();
+  /**
+   * Adresse, unter der andere Geräte den Server erreichen.
+   * 1. Wurde die Seite bereits über eine LAN-Adresse geöffnet, ist genau diese erreichbar.
+   * 2. Sonst die Netzwerkkarte der Standardroute (echtes WLAN/LAN), virtuelle Adapter zuletzt.
+   */
+  async function apiQrUrl(req, res) {
+    const ips = await U.rankedLanAddresses();
+    const hostHdr = String(req.headers.host || '').replace(/:\d+$/, '');
+    const viaLan = hostHdr && !/^(localhost|127\.|\[?::1\]?$)/.test(hostHdr) && ips.some(a => a.address === hostHdr);
+    if (viaLan) {
+      const i = ips.findIndex(a => a.address === hostHdr);
+      ips.unshift(ips.splice(i, 1)[0]);
+    }
     const ip = ips.length ? ips[0].address : '127.0.0.1';
     sendJson(res, {
-      success: true, url: `http://${ip}:${currentPort}/`, ip, port: currentPort,
-      urls: ips.map(a => ({ name: a.name, url: `http://${a.address}:${currentPort}/`, virtual: a.virtual })),
+      success: true, url: `http://${ip}:${currentPort}/`, ip, port: currentPort, offline: !ips.length,
+      urls: ips.map(a => ({ name: a.name, ip: a.address, url: `http://${a.address}:${currentPort}/`, virtual: a.virtual, primary: !!a.primary })),
     });
   }
 
@@ -254,8 +265,8 @@ function createMediaServer(options = {}) {
     }
   }
 
-  function apiInfo(req, res) {
-    const ips = U.lanAddresses();
+  async function apiInfo(req, res) {
+    const ips = await U.rankedLanAddresses();
     sendJson(res, {
       success: true, version: VERSION, port: currentPort, platform: process.platform,
       lan: ips.map(a => `http://${a.address}:${currentPort}/`),
@@ -290,9 +301,17 @@ function createMediaServer(options = {}) {
     const mediaRel = fieldNames.map(n => fields[n]).find(Boolean);
     const file = files.find(f => f.field === 'thumbnail');
     if (!mediaRel || !file) { await cleanup(); return sendError(res, 'Daten fehlen'); }
-    const media = await resolveMedia(mediaRel.trim());
-    if (!media) { await cleanup(); return sendError(res, 'Ungültiger Pfad', 403); }
-    const rel = media.web;
+    let rel;
+    const key = mediaRel.trim();
+    if (key.startsWith('series:')) {
+      // Cover einer ganzen Serie
+      rel = 'series:' + key.slice(7).replace(/[\u0000-\u001f]/g, '').trim().slice(0, 200);
+      if (rel === 'series:') { await cleanup(); return sendError(res, 'Serie fehlt'); }
+    } else {
+      const media = await resolveMedia(key);
+      if (!media) { await cleanup(); return sendError(res, 'Ungültiger Pfad', 403); }
+      rel = media.web;
+    }
     let ext = path.extname(file.filename || '').toLowerCase();
     if (/png/.test(file.contentType)) ext = '.png';
     else if (/webp/.test(file.contentType)) ext = '.webp';

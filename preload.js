@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electron', {
   maximize: () => ipcRenderer.send('window-maximize'),
   close: () => ipcRenderer.send('window-close'),
   toggleFullscreen: () => ipcRenderer.send('window-fullscreen'),
+  setFullscreen: (on) => ipcRenderer.send('window-set-fullscreen', !!on),
   reloadWindow: () => ipcRenderer.send('window-reload'),
 
   // System

@@ -14,6 +14,13 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. D
 > `sudo apt install libfuse2` (Ubuntu 24.04 und neuer: `sudo apt install libfuse2t64`).
 > Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
+### Neu in 3.3.0
+- **Videoplayer neu:** echtes Vollbild über den ganzen Bildschirm, Steuerleiste verschwindet bei Inaktivität und erscheint bei Mausbewegung/Tippen wieder. Nach dem Filmende bzw. Schließen ist die Oberfläche sofort wieder bedienbar.
+- **Vorschaubilder:** beliebige Stelle im Video auswählen (Regler, ±1 s/±10 s, Zufall) oder eigenes Bild – keine schwarzen Bilder mehr; fehlende Vorschaubilder werden automatisch erzeugt.
+- **Serien im Streaming-Stil:** Titelbild, „Weiterschauen“, Fortschritt pro Folge, automatische nächste Folge und Abfrage „Mit Staffel X weiterschauen?“ am Staffelende. Erkennung von `S1F1`, `S01F01`, `S1E1`, `S01E01`.
+- **QR-Code führt zum richtigen PC:** bevorzugt die echte Netzwerkkarte (statt Hyper-V/VirtualBox/VPN), Adresse bei mehreren Netzwerken umschaltbar.
+- **Smartphone:** Musik-Steuerung unten (Visualizer → Tasten → Infos), Spielhalle scrollt zuverlässig, LAN-Anmeldung und alle Spiele im Vollflächen-Modus spielbar.
+
 ### Neu in 3.2.1
 - **Open Source (MIT-Lizenz)** und Vorbereitung der kostenlosen Windows-Code-Signatur über die SignPath Foundation.
 - Hinweise zu **libfuse2** für Linux in README und Release-Text.

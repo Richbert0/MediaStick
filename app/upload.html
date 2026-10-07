@@ -129,6 +129,8 @@
             Scanne den QR-Code oder gib die URL im Browser ein.<br>
             <strong>Gleiches WLAN erforderlich</strong> · Upload direkt vom Smartphone möglich.
           </div>
+          <div id="info-addr-list"></div>
+          <div class="mca-tip" id="info-tip"></div>
         </div>
         <div class="info-bar-qr">
           <div class="info-qr-wrap" id="qr-wrap">
@@ -235,6 +237,8 @@
 </div>
 
 <script src="/js/app.js"></script>
+<script src="/js/lanaddr.js"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){var t=document.getElementById("info-tip");if(t)t.textContent=MCAddr.TIP;});</script>
 <script>
 var queue=[],uploading=false,curCat='all';
 var _allData={movies:[],series:[],music:[],images:[]};
@@ -443,32 +447,25 @@ try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
 loadAll();
 
 /* ─── Info Bar: echte LAN-IP + QR-Code ────────────────── */
-(async function(){
+function showUploadUrl(a){
   var urlEl=document.getElementById('info-url-text');
   var qrWrap=document.getElementById('qr-wrap');
-  var uploadUrl='';
-  // 1) Echte LAN-IP vom Server-Endpunkt holen
-  try{
-    var r=await fetch('/api/qrcode-url',{cache:'no-store'});
-    var d=await r.json();
-    if(d.success&&d.url) uploadUrl=d.url.replace(/\/?$/,'')+'/upload.html';
-  }catch(e){}
-  // 2) Fallback: Browser-URL
-  if(!uploadUrl){
-    uploadUrl='http://'+location.hostname+':'+(location.port||'8080')+'/upload.html';
-  }
-  if(urlEl)urlEl.textContent=uploadUrl;
-  window._uploadUrl=uploadUrl;
-  // 3) QR lokal vom Server erzeugen (funktioniert auch ohne Internet)
+  window._uploadUrl=a.full;
+  if(urlEl)urlEl.textContent=a.full;
   if(qrWrap){
     var img=document.createElement('img');
     img.alt='QR-Code';
-    img.src='/api/qrcode?size=208&url='+encodeURIComponent(uploadUrl);
+    img.src='/api/qrcode?size=208&url='+encodeURIComponent(a.full);
     img.style.cssText='width:104px;height:104px;display:block;border-radius:4px;background:#fff';
     img.onerror=function(){qrWrap.innerHTML='<div style="font-size:.55rem;color:#888;text-align:center;padding:10px">QR nicht verfügbar<br>URL kopieren ↑</div>';};
     qrWrap.innerHTML='';
     qrWrap.appendChild(img);
   }
+}
+(async function(){
+  var r=await MCAddr.load('upload.html');
+  showUploadUrl(r.current);
+  MCAddr.chips(document.getElementById('info-addr-list'),r.list,r.current,function(a){showUploadUrl(a);});
 })();
 function copyUrl(){
   var url=window._uploadUrl||location.href;

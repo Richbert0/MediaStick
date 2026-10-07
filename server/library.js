@@ -200,7 +200,7 @@ class Library {
       if (!allEps.has(sname)) allEps.set(sname, []);
       allEps.get(sname).push({
         name, display: U.episodeTitle(name, season, episode), path: f.web, size: f.size,
-        season, episode, thumbnail: thumbFor(f.web),
+        season, episode, mtime: Math.round(f.mtime), thumbnail: thumbFor(f.web),
       });
     }
     for (const sname of [...allEps.keys()].sort(collator.compare)) {
