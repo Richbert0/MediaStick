@@ -7,7 +7,16 @@
 | 🪟 Windows 10/11 (64 Bit) | `MediaCenter-*-portable.exe` – Doppelklick |
 | 🐧 Linux (x64) | `MediaCenter-*-x86_64.AppImage` – `chmod +x` und starten |
 
-Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`** – dort liegen Medien, Einstellungen, Spielstände und Bestenlisten.
+Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. Dort liegen Medien, Einstellungen, Spielstände und Bestenlisten.
+
+> [!IMPORTANT]
+> **Linux: AppImage startet nicht?** Aktuelle Distributionen (Ubuntu 22.04+, Linux Mint 21+, Debian 12) brauchen einmalig **libfuse2**:
+> `sudo apt install libfuse2` (Ubuntu 24.04 und neuer: `sudo apt install libfuse2t64`).
+> Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
+
+### Neu in 3.2.1
+- **Open Source (MIT-Lizenz)** und Vorbereitung der kostenlosen Windows-Code-Signatur über die SignPath Foundation.
+- Hinweise zu **libfuse2** für Linux in README und Release-Text.
 
 ### Neu in 3.2.0
 - **Musik-Visualizer:** Spektrum-Balken oder Wellenform über dem Player, Kreis-Spektrum rund um die Platte im Vinyl-Vollbild (Umschalten mit 〰).
@@ -26,4 +35,6 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`** �
 - **Server-Modus ohne Fenster:** `MediaCenter --server` (läuft unter Linux auch ohne grafische Oberfläche).
 - Viele Fehlerkorrekturen: Papierkorb im Upload-Bereich, Serienzählung, Aktualisieren der Mediathek, Windows-Icon, Offline-Schriftarten und QR-Codes.
 
-**Hinweis Windows:** Bei „Der Computer wurde durch Windows geschützt“ einmalig auf *Weitere Informationen → Trotzdem ausführen* klicken. Vom USB-Stick (exFAT/FAT32) gestartet erscheint die Meldung nicht. Hintergrund und dauerhafte Lösung: `docs/SIGNIEREN.md`.
+**Hinweis Windows:** Erscheint „Der Computer wurde durch Windows geschützt“, einmalig auf *Weitere Informationen → Trotzdem ausführen* klicken. Vom USB-Stick (exFAT/FAT32) gestartet erscheint die Meldung nicht. Signierte Versionen werden über die kostenlose Code-Signatur der SignPath Foundation bereitgestellt, sobald diese freigeschaltet ist (`docs/SIGNIEREN.md`).
+
+Kostenlose Code-Signatur bereitgestellt von SignPath.io, Zertifikat von der SignPath Foundation.
