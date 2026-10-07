@@ -59,10 +59,6 @@
       const music = (library.music || []).length;
       const photos = (library.images || []).length;
 
-      setText('desktop-stat-movies', String(movies));
-      setText('desktop-stat-series', String(episodes));
-      setText('desktop-stat-music', String(music));
-      setText('desktop-stat-photos', String(photos));
       setText('desktop-library-pill', `${movies + episodes + music + photos} Medien bereit`);
     } catch {
       setText('desktop-library-pill', 'Mediathek wird geladen');
@@ -84,14 +80,6 @@
     });
   }
 
-  function wireQuickLaunches() {
-    document.querySelectorAll('[data-desk-target]').forEach((button) => {
-      button.addEventListener('click', () => {
-        window.loadPage(button.getAttribute('data-desk-target') || '', button.getAttribute('data-desk-label') || '');
-      });
-    });
-  }
-
   function wrapLoadPage() {
     const original = window.loadPage;
     if (typeof original !== 'function') return;
@@ -110,7 +98,6 @@
   async function hydrateDesktopMeta() {
     document.body.classList.add('desktop-app');
     $('desktop-chrome')?.removeAttribute('hidden');
-    $('desktop-home-panel')?.removeAttribute('hidden');
 
     if (window.innerWidth >= 1280) {
       $('sidebar')?.classList.add('open');
@@ -130,8 +117,6 @@
       if (port) {
         state.port = port;
         setServerReady(true, `Lokal auf Port ${port}`);
-        const data = await electron.getDataDir?.().catch(() => null);
-        setText('desktop-footnote-port', `Server aktiv auf Port ${port}` + (data ? ` · Daten: ${data.path}` : ''));
       } else {
         setServerReady(false, 'Lokaler Server wird vorbereitet');
       }
@@ -147,17 +132,11 @@
     }
   }
 
-  function wireDataButton() {
-    $('desktop-open-data')?.addEventListener('click', () => electron.openDataDir?.('media'));
-  }
-
   async function init() {
     await hydrateDesktopMeta();
     initDesktopHomeCopy();
     wrapLoadPage();
     wireWindowButtons();
-    wireQuickLaunches();
-    wireDataButton();
     updateLibraryStats();
   }
 

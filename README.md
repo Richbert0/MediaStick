@@ -44,7 +44,7 @@ Entweder **im Upload-Bereich** der App Dateien hineinziehen (die App sortiert au
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.1.0-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.2.0-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
     │   ├── 📁 Movies      ← Filme  (mp4, mkv, webm, …)
@@ -57,7 +57,15 @@ Entweder **im Upload-Bereich** der App Dateien hineinziehen (die App sortiert au
 ```
 
 Serien werden am Dateinamen erkannt: `Breaking.Bad.S01E02.mkv`, `Serie 1x05.mp4`, `Folge 3.mp4` oder über Ordner wie `Staffel 2`.
-In der Desktop-App öffnet der Button **„Medienordner öffnen“** den Ordner direkt im Datei-Explorer.
+Unter **⚙️ Einstellungen → Speicherort** öffnet der Button **„Medienordner öffnen“** den Ordner direkt im Datei-Explorer.
+
+#### Eigene Ordner einbinden
+
+Medien müssen nicht auf den Stick kopiert werden. Unter **⚙️ Einstellungen → Eigene Medienordner** kannst du **beliebig viele Ordner** hinzufügen, z. B. `D:\Videos`, eine externe Festplatte oder einen Ordner auf dem Stick. Mit **„Durchsuchen…“** wählst du sie bequem aus, auch mehrere auf einmal.
+
+- **Automatisch einsortieren:** Videos → Filme, Videos mit `S01E02` / `1x02` / Ordner „Staffel 1“ → Serien, Audio → Musik (Unterordner werden Playlists), Bilder → Fotos.
+- Oder pro Ordner eine feste Kategorie wählen („Nur Musik“ usw.), Ordner kurz deaktivieren oder entfernen. Die Dateien bleiben dabei immer, wo sie sind.
+- Ordner auf demselben Stick werden **relativ** gespeichert und funktionieren auch bei anderem Laufwerksbuchstaben. Nicht angeschlossene Laufwerke werden übersprungen.
 
 ### 3. Andere Geräte verbinden (LAN)
 
@@ -72,8 +80,8 @@ In der Desktop-App öffnet der Button **„Medienordner öffnen“** den Ordner 
 Für einen Heim-PC oder Mini-Server ohne Bildschirm:
 
 ```bash
-MediaCenter-3.1.0-portable.exe --server          # Windows
-./MediaCenter-3.1.0-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
+MediaCenter-3.2.0-portable.exe --server          # Windows
+./MediaCenter-3.2.0-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
 ```
 
 Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
@@ -88,10 +96,15 @@ Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DI
 |---|---|
 | 🎬 **Filme** | Player mit Fortsetzen an der letzten Stelle, Suche & Sortierung, eigene Vorschaubilder (Datei oder Standbild aus dem Film) |
 | 📺 **Serien** | Automatische Gruppierung nach Serie → Staffel → Episode, Episodentitel aus dem Dateinamen |
-| 🎵 **Musik** | Hintergrund-Player, der beim Seitenwechsel weiterspielt, Playlists aus Ordnern, Schnellsteuerung in der Leiste |
+| 🎵 **Musik** | Hintergrund-Player, der beim Seitenwechsel weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet · **Visualizer** (Spektrum, Welle, Kreis-Spektrum im Vinyl-Vollbild) · Playlists aus Ordnern |
+| ⚙️ **Einstellungen** | Mehrere eigene Medienordner mit automatischer Einsortierung, Speicherort, LAN-Adresse |
 | 🖼️ **Fotos** | Galerie mit Vollbild-Ansicht, Titel und Beschreibungen |
 | ☁️ **Upload** | Drag & Drop, auch vom Handy per QR-Code; große Videos werden direkt auf den Stick gestreamt; Papierkorb mit Wiederherstellen |
 | 💬 **LAN-Chat** | Chat und Sprachchat für alle Geräte im Netz |
+
+<img src="docs/screenshots/musik-visualizer.png" alt="Musik mit Visualizer" width="49%"> <img src="docs/screenshots/musik-vinyl.png" alt="Vinyl-Vollbild mit Kreis-Spektrum" width="49%">
+
+<img src="docs/screenshots/einstellungen.png" alt="Einstellungen: eigene Medienordner" width="820">
 
 Videos werden mit **HTTP-Range-Streaming** ausgeliefert – Vorspulen funktioniert auch bei großen Dateien sofort.
 
@@ -150,7 +163,13 @@ Videos werden mit **HTTP-Range-Streaming** ausgeliefert – Vorspulen funktionie
 <details>
 <summary><b>Windows zeigt „Der Computer wurde durch Windows geschützt“</b></summary>
 
-Die EXE ist nicht kostenpflichtig signiert. Klicke auf **Weitere Informationen → Trotzdem ausführen**.
+Die EXE ist (noch) nicht digital signiert, deshalb kennt Windows den Herausgeber nicht. Lösungen:
+
+- Einmalig **Weitere Informationen → Trotzdem ausführen** klicken.
+- Oder: Rechtsklick auf die EXE → *Eigenschaften* → Haken bei **„Zulassen“**.
+- **Vom USB-Stick (exFAT/FAT32) gestartet erscheint die Warnung nicht**, weil dort die Download-Markierung verloren geht.
+
+Dauerhaft verschwindet die Meldung mit einer Code-Signatur. Die Build-Pipeline ist dafür vorbereitet: **[Anleitung](docs/SIGNIEREN.md)**. Beim AppImage unter Linux gibt es keine solche Warnung.
 </details>
 
 <details>

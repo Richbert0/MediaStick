@@ -76,6 +76,8 @@ body.kiosk .ctrl-bar{padding:5px 10px;}
 .mp-card-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:linear-gradient(145deg,rgba(34,211,238,.04),rgba(8,145,178,.02));border:1px solid rgba(34,211,238,.1);border-radius:13px;cursor:pointer;transition:all .2s;text-decoration:none;color:var(--gold);font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
 .mp-card-item:hover{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;border-color:transparent;box-shadow:0 6px 20px var(--glow);transform:translateY(-2px) scale(1.03);}
 .mp-card-item .mci-icon{font-size:1.45rem;}
+.mp-card-item.mp-wide{grid-column:1/-1;flex-direction:row;justify-content:center;gap:10px;padding:11px 8px;}
+.mp-card-item.mp-wide .mci-icon{font-size:1.15rem;}
 @media(max-width:400px){.mp-grid{gap:7px;}.mp-card-item{padding:10px 6px;font-size:.68rem;}.mp-card-item .mci-icon{font-size:1.2rem;}}
 #page-container{flex:1;display:none;flex-direction:column;overflow:hidden;background:var(--bg);}
 #page-container.active{display:flex;}
@@ -267,6 +269,7 @@ body.kiosk .ctrl-bar{display:flex!important;}
     <button class="nav-item" id="nav-fotos"  onclick="loadPage('FOTOS.html','🖼️ Fotos')"   ><span class="nav-icon">🖼️</span><span class="nav-label">Fotos</span></button>
     <button class="nav-item" id="nav-spiele" onclick="loadPage('SPIELE.html','🎮 Spiele')" ><span class="nav-icon">🎮</span><span class="nav-label">Spiele</span></button>
     <button class="nav-item" id="nav-upload" onclick="loadPage('upload.html','☁️ Upload')" ><span class="nav-icon">☁️</span><span class="nav-label">Upload</span></button>
+    <button class="nav-item" id="nav-settings" onclick="loadPage('EINSTELLUNGEN.html','⚙️ Einstellungen')" ><span class="nav-icon">⚙️</span><span class="nav-label">Einstellungen</span></button>
 
     <!-- Spacer schiebt Remote nach unten -->
     <div class="sidebar-rmt-spacer"></div>
@@ -371,51 +374,11 @@ body.kiosk .ctrl-bar{display:flex!important;}
             <button class="mp-card-item" id="home-upload-btn" onclick="loadPage('upload.html','☁️ Upload')">
               <span class="mci-icon">☁️</span>Upload
             </button>
+            <button class="mp-card-item mp-wide" onclick="loadPage('EINSTELLUNGEN.html','⚙️ Einstellungen')">
+              <span class="mci-icon">⚙️</span>Einstellungen
+            </button>
           </div>
           <div class="mp-sub" id="home-sub">Kategorie wählen oder Sidebar nutzen</div>
-        </div>
-        <div class="desktop-home-panel" id="desktop-home-panel" hidden>
-          <div class="desktop-panel-head">
-            <div>
-              <div class="desktop-panel-eyebrow">Native Desktop Hub</div>
-              <div class="desktop-panel-title">Alles bleibt in einer Anwendung.</div>
-            </div>
-            <span class="desktop-pill warn">App UI</span>
-          </div>
-          <div class="desktop-panel-copy">
-            Deine Build-Ausgabe startet als eigenstaendige Desktop-App mit lokaler Serveranbindung,
-            eigener Fenstersteuerung und einer auf den Desktop abgestimmten Oberflaeche.
-          </div>
-          <div class="desktop-stat-grid">
-            <div class="desktop-stat-card">
-              <div class="desktop-stat-label">Filme</div>
-              <div class="desktop-stat-value" id="desktop-stat-movies">-</div>
-              <div class="desktop-stat-meta">Direkt in der App startbereit</div>
-            </div>
-            <div class="desktop-stat-card">
-              <div class="desktop-stat-label">Serienfolgen</div>
-              <div class="desktop-stat-value" id="desktop-stat-series">-</div>
-              <div class="desktop-stat-meta">Sauber im Desktop-Flow eingebettet</div>
-            </div>
-            <div class="desktop-stat-card">
-              <div class="desktop-stat-label">Musik</div>
-              <div class="desktop-stat-value" id="desktop-stat-music">-</div>
-              <div class="desktop-stat-meta">Mit persistentem Hintergrundplayer</div>
-            </div>
-            <div class="desktop-stat-card">
-              <div class="desktop-stat-label">Fotos</div>
-              <div class="desktop-stat-value" id="desktop-stat-photos">-</div>
-              <div class="desktop-stat-meta">Galerie ohne Browser-Umweg</div>
-            </div>
-          </div>
-          <div class="desktop-quick-row">
-            <button class="desktop-quick-btn" data-desk-target="FILME.html" data-desk-label="Filme">Filme oeffnen</button>
-            <button class="desktop-quick-btn" data-desk-target="MUSIK.html" data-desk-label="Musik">Musik starten</button>
-            <button class="desktop-quick-btn" data-desk-target="SPIELE.html" data-desk-label="Spiele">Spiele zeigen</button>
-            <button class="desktop-quick-btn" data-desk-target="upload.html" data-desk-label="Upload">Uploadbereich</button>
-            <button class="desktop-quick-btn" id="desktop-open-data" type="button">Medienordner öffnen</button>
-          </div>
-          <div class="desktop-footnote" id="desktop-footnote-port">Server wird lokal verbunden</div>
         </div>
       </div>
 
@@ -600,8 +563,12 @@ function _broadcastVolume(v){
 }
 
 /* ─── Media Mutex – nur ein Medium gleichzeitig ──────────── */
+/* Musik läuft beim Seitenwechsel weiter – sie stoppt nur, wenn ein Film oder eine Serie startet */
+function _pauseMusic(){
+  try{document.getElementById('musik-bg-frame')?.contentWindow?.postMessage({type:'media-pause-all'},'*');}catch{}
+}
 function _pauseAllMedia(){
-  ['musik-bg-frame','page-frame','fs-frame'].forEach(id=>{
+  ['page-frame','fs-frame'].forEach(id=>{
     try{document.getElementById(id)?.contentWindow?.postMessage({type:'media-pause-all'},'*');}catch{}
   });
 }
@@ -645,12 +612,12 @@ document.getElementById('qa-bar')?.classList.add('collapsed');
 const PAGE_LABELS={
   '':'🏠 Home','FILME.html':'🎬 Filme','SERIEN.html':'📺 Serien',
   'MUSIK.html':'🎵 Musik','FOTOS.html':'🖼️ Fotos',
-  'SPIELE.html':'🎮 Spiele','SPIELE.html#lan':'🎮 Spiele – Lobby','upload.html':'📤 Upload',
+  'SPIELE.html':'🎮 Spiele','SPIELE.html#lan':'🎮 Spiele – Lobby','upload.html':'📤 Upload','EINSTELLUNGEN.html':'⚙️ Einstellungen',
 };
 const NAV_MAP={
   '':'nav-home','FILME.html':'nav-filme','SERIEN.html':'nav-serien',
   'MUSIK.html':'nav-musik','FOTOS.html':'nav-fotos',
-  'SPIELE.html':'nav-spiele','SPIELE.html#lan':'nav-spiele','upload.html':'nav-upload',
+  'SPIELE.html':'nav-spiele','SPIELE.html#lan':'nav-spiele','upload.html':'nav-upload','EINSTELLUNGEN.html':'nav-settings',
 };
 let currentSrc='';
 let currentLabel='';
@@ -789,6 +756,7 @@ window.addEventListener('message',e=>{
   if(!d||typeof d!=='object') return;
   if(d.type==='openPage')   loadPage(d.url,d.label);
   if(d.type==='openGame')   loadPage(d.url||'SPIELE.html#lan','🎮 Spiele');
+  if(d.type==='videoPlaying') _pauseMusic();
   if(d.type==='fullscreen') toggleFullscreen();
   if(d.type==='navigate') loadPage(d.page||'',d.label||'');
   if(d.type==='radio-status'){

@@ -113,6 +113,12 @@ body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);
 .vp-btn:hover{background:rgba(255,215,0,.15);color:var(--gold);border-color:rgba(255,215,0,.4)}
 .vp-play{width:58px;height:58px;font-size:1.3rem;background:rgba(255,215,0,.12);border:2px solid rgba(255,215,0,.4);color:var(--gold)}
 .vp-play.on{background:rgba(255,215,0,.22);border-color:var(--gold);box-shadow:0 0 18px rgba(255,215,0,.35)}
+/* Visualizer */
+#viz-bar{display:block;width:100%;height:84px;flex-shrink:0;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(6,10,20,.65));pointer-events:none}
+@media(max-height:620px){#viz-bar{height:52px}}
+#viz-btn.on{color:var(--gold);background:rgba(34,211,238,.1)}
+#vp-viz{position:absolute;left:50%;top:50%;width:150%;height:150%;transform:translate(-50%,-50%);pointer-events:none;z-index:-1}
+.vp-disc-wrap{isolation:isolate;margin:clamp(30px,8vh,70px) 0 clamp(36px,9vh,76px)}
 </style>
 </head>
 <body>
@@ -137,6 +143,8 @@ body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);
     <div class="track-list" id="tlist"></div>
   </div>
 </div>
+<!-- Visualizer -->
+<canvas id="viz-bar" aria-hidden="true"></canvas>
 <!-- Player -->
 <div class="player-bar">
   <div class="pb-info">
@@ -151,6 +159,7 @@ body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);
       <button class="pb-btn" onclick="nextT()" title="Weiter">⏭</button>
       <button class="pb-btn" id="rpt-btn" onclick="toggleRepeat()" title="Wiederholen">🔁</button>
       <button class="pb-btn" id="shf-btn" onclick="toggleShuffle()" title="Zufällig">🔀</button>
+      <button class="pb-btn" id="viz-btn" type="button" title="Visualizer" aria-label="Visualizer umschalten">〰</button>
       <button class="pb-fullscreen-btn" onclick="openVinyl()" title="Vinyl-Player">⛶</button>
     </div>
   </div>
@@ -171,6 +180,7 @@ body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);
 <div id="vinyl-overlay">
   <button class="vp-close" onclick="closeVinyl()" title="Schließen">✕</button>
   <div class="vp-disc-wrap">
+    <canvas id="vp-viz" aria-hidden="true"></canvas>
     <div class="vp-disc" id="vp-disc">
       <svg class="vp-disc-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -231,6 +241,7 @@ body{background:linear-gradient(135deg,var(--bg) 0%,#1a1a2e 50%,var(--bg) 100%);
 <div id="loader"><div class="mc-spinner"></div></div>
 <audio id="aud"></audio>
 <script src="/js/app.js"></script>
+<script src="/js/visualizer.js" defer></script>
 <script>
 var tracks=[],playlists={},curPl='__all',curList=[],curIdx=-1,repeat=false,shuffle=false;
 var sdrag=false,aud=document.getElementById('aud');
