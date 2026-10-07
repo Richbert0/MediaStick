@@ -177,6 +177,7 @@ function createMainWindow() {
       webviewTag: false,
       spellcheck: false,
       backgroundThrottling: false, // Musik & LAN-Spiele laufen im Hintergrund weiter
+      autoplayPolicy: 'no-user-gesture-required', // Musik/Visualizer starten ohne Extra-Klick
     },
   });
   if (ws.maximized) mainWindow.maximize();

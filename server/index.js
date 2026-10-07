@@ -19,6 +19,7 @@ const U = require('./util');
 const { Library } = require('./library');
 const { parseMultipart, readJsonBody, httpError } = require('./multipart');
 const { Hub } = require('./hub');
+const { Settings, CATEGORIES } = require('./settings');
 
 let QRCode = null;
 try { QRCode = require('qrcode'); } catch { /* optional */ }
@@ -44,7 +45,8 @@ function createMediaServer(options = {}) {
   const log = options.log || (() => {});
   const maxUpload = options.maxUploadBytes || 64 * 1024 ** 3;
 
-  const library = new Library(dataDir);
+  const settings = new Settings(dataDir);
+  const library = new Library(dataDir, { settings });
   const hub = new Hub({ log });
   const gzipCache = new Map(); // file → {mtime, size, buf}
 
@@ -195,12 +197,20 @@ function createMediaServer(options = {}) {
   }
 
   // ── API ───────────────────────────────────────────────────────────────────
-  function mediaPath(rel) {
+  /**
+   * Web-Pfad → Datei. Unterstützt "media/…" (Datenordner) und "ext/<id>/…" (eigene Ordner).
+   * Rückgabe {full, web, root} oder null.
+   */
+  async function resolveMedia(rel) {
     if (!rel) return null;
     let clean = String(rel).replace(/\\/g, '/').replace(/^\/+/, '');
+    if (clean.startsWith('ext/')) {
+      const r = await settings.resolveWebPath(clean);
+      return r ? { full: r.full, web: clean, root: r.root } : null;
+    }
     if (!clean.startsWith('media/')) clean = 'media/' + clean;
     const full = U.safeJoin(dataDir, clean);
-    return full && U.isInside(full, mediaDir) ? full : null;
+    return full && U.isInside(full, mediaDir) ? { full, web: relData(full), root: mediaDir } : null;
   }
 
   const relData = full => U.toWebPath(path.relative(dataDir, full));
@@ -216,9 +226,9 @@ function createMediaServer(options = {}) {
   }
 
   async function apiMedia(req, res, url) {
-    const file = mediaPath(url.searchParams.get('file'));
-    if (!file) return sendError(res, 'Ungültiger Pfad', 403);
-    return serveFile(req, res, file, { cache: 'media', download: url.searchParams.has('download') });
+    const target = await resolveMedia(url.searchParams.get('file'));
+    if (!target) return sendError(res, 'Ungültiger Pfad', 403);
+    return serveFile(req, res, target.full, { cache: 'media', download: url.searchParams.has('download') });
   }
 
   function apiQrUrl(req, res) {
@@ -272,7 +282,6 @@ function createMediaServer(options = {}) {
   }
 
   async function saveThumbnail(req, res, fieldNames) {
-    let target = null;
     const { fields, files } = await parseMultipart(req, {
       maxFileSize: 20 * 1024 * 1024,
       fileTarget: async () => path.join(thumbDir, '.incoming'),
@@ -281,9 +290,9 @@ function createMediaServer(options = {}) {
     const mediaRel = fieldNames.map(n => fields[n]).find(Boolean);
     const file = files.find(f => f.field === 'thumbnail');
     if (!mediaRel || !file) { await cleanup(); return sendError(res, 'Daten fehlen'); }
-    const full = mediaPath(mediaRel.trim());
-    if (!full) { await cleanup(); return sendError(res, 'Ungültiger Pfad', 403); }
-    const rel = relData(full);
+    const media = await resolveMedia(mediaRel.trim());
+    if (!media) { await cleanup(); return sendError(res, 'Ungültiger Pfad', 403); }
+    const rel = media.web;
     let ext = path.extname(file.filename || '').toLowerCase();
     if (/png/.test(file.contentType)) ext = '.png';
     else if (/webp/.test(file.contentType)) ext = '.webp';
@@ -294,7 +303,7 @@ function createMediaServer(options = {}) {
       if (old) await fsp.unlink(old).catch(() => {});
     }
     const name = U.md5(rel) + ext;
-    target = path.join(thumbDir, name);
+    const target = path.join(thumbDir, name);
     await fsp.rename(file.path, target);
     thumbs[rel] = 'api/thumbnails/' + name;
     await U.writeJson(metaFile('thumbnails.json'), thumbs);
@@ -330,8 +339,9 @@ function createMediaServer(options = {}) {
     }
   }
 
-  async function trashOne(full, type, extra) {
-    const rel = relData(full);
+  async function trashOne(target, type, extra) {
+    const full = target.full;
+    const rel = target.web;
     const name = path.basename(full);
     const key = U.md5(rel + Date.now() + Math.random());
     const dest = path.join(trashDir, key + '_' + name);
@@ -361,13 +371,13 @@ function createMediaServer(options = {}) {
     const meta = await loadTrash();
 
     if (action === 'move') {
-      const full = mediaPath(data.path || data.file);
-      if (!full || U.isInside(full, trashDir)) return sendError(res, 'Ungültiger Pfad');
-      if (!fs.existsSync(full) || !fs.statSync(full).isFile()) return sendError(res, 'Datei nicht gefunden', 404);
-      const item = await trashOne(full, data.type);
+      const target = await resolveMedia(data.path || data.file);
+      if (!target || U.isInside(target.full, trashDir)) return sendError(res, 'Ungültiger Pfad');
+      if (!fs.existsSync(target.full) || !fs.statSync(target.full).isFile()) return sendError(res, 'Datei nicht gefunden', 404);
+      const item = await trashOne(target, data.type);
       meta[item.key] = item;
       await saveTrash(meta);
-      await removeEmptyParents(path.dirname(full), mediaDir);
+      await removeEmptyParents(path.dirname(target.full), target.root);
       library.invalidate();
       return sendJson(res, { success: true, key: item.key });
     }
@@ -376,18 +386,19 @@ function createMediaServer(options = {}) {
       const item = meta[data.key];
       if (!item) return sendError(res, 'Nicht im Papierkorb', 404);
       const src = U.safeJoin(dataDir, item.trashFile);
-      const orig = mediaPath(item.origPath);
-      if (!src || !orig || !fs.existsSync(src)) {
+      const orig = await resolveMedia(item.origPath);
+      if (!src || !fs.existsSync(src)) {
         delete meta[data.key];
         await saveTrash(meta);
         return sendError(res, 'Datei nicht gefunden', 404);
       }
-      const dest = await U.uniquePath(orig);
+      if (!orig) return sendError(res, 'Der ursprüngliche Ordner ist nicht mehr verfügbar (Laufwerk getrennt oder Ordner entfernt).', 409);
+      const dest = await U.uniquePath(orig.full);
       await moveFile(src, dest);
       delete meta[data.key];
       await saveTrash(meta);
       library.invalidate();
-      return sendJson(res, { success: true, path: relData(dest) });
+      return sendJson(res, { success: true, path: path.posix.join(path.posix.dirname(orig.web), path.basename(dest)) });
     }
 
     if (action === 'delete_perm') {
@@ -421,7 +432,6 @@ function createMediaServer(options = {}) {
 
     if (action === 'move_series') {
       const sname = String(data.series || '').trim();
-      const seriesRoot = path.join(mediaDir, 'Series');
       if (!sname) return sendError(res, 'Serie fehlt');
       // Episoden aus der Bibliothek ermitteln (funktioniert auch für lose Dateien)
       const { data: lib } = await library.get(true);
@@ -431,18 +441,18 @@ function createMediaServer(options = {}) {
       const dirs = new Set();
       for (const eps of Object.values(seasons)) {
         for (const ep of eps) {
-          const full = mediaPath(ep.path);
-          if (!full || !U.isInside(full, seriesRoot)) continue;
+          const target = await resolveMedia(ep.path);
+          if (!target) continue;
           try {
-            const item = await trashOne(full, 'series', { seriesName: sname });
+            const item = await trashOne(target, 'series', { seriesName: sname });
             meta[item.key] = item;
-            dirs.add(path.dirname(full));
+            dirs.add(path.dirname(target.full) + '\0' + target.root);
             moved++;
           } catch { /* weiter */ }
         }
       }
       await saveTrash(meta);
-      for (const d of dirs) await removeEmptyParents(d, seriesRoot);
+      for (const d of dirs) { const [dir, root] = d.split('\0'); await removeEmptyParents(dir, root); }
       library.invalidate();
       return sendJson(res, { success: true, moved, series: sname });
     }
@@ -452,14 +462,15 @@ function createMediaServer(options = {}) {
 
   async function apiDelete(req, res) {
     const data = await readJsonBody(req);
-    const full = mediaPath(data.file || data.path);
-    if (!full) return sendError(res, 'Ungültiger Pfad', 403);
+    const target = await resolveMedia(data.file || data.path);
+    if (!target) return sendError(res, 'Ungültiger Pfad', 403);
+    const full = target.full;
     try {
       await fsp.unlink(full);
     } catch (e) {
       return sendError(res, e.code === 'ENOENT' ? 'Nicht gefunden' : e.message, e.code === 'ENOENT' ? 404 : 500);
     }
-    const rel = relData(full);
+    const rel = target.web;
     const thumbs = await U.readJson(metaFile('thumbnails.json'), {});
     if (thumbs[rel]) {
       const t = U.safeJoin(dataDir, thumbs[rel]);
@@ -467,7 +478,7 @@ function createMediaServer(options = {}) {
       delete thumbs[rel];
       await U.writeJson(metaFile('thumbnails.json'), thumbs);
     }
-    await removeEmptyParents(path.dirname(full), mediaDir);
+    await removeEmptyParents(path.dirname(full), target.root);
     library.invalidate();
     sendJson(res, { success: true, deleted: rel });
   }
@@ -546,6 +557,51 @@ function createMediaServer(options = {}) {
     sendJson(res, { success: true });
   }
 
+  // Einstellungen: eigene Medienordner
+  function isLocalRequest(req) {
+    const a = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+    return a === '127.0.0.1' || a === '::1';
+  }
+
+  async function apiSettingsGet(req, res) {
+    const folders = await settings.publicList();
+    const stats = library.extStats || {};
+    sendJson(res, {
+      success: true,
+      canEdit: isLocalRequest(req),
+      categories: CATEGORIES,
+      dataDir: isLocalRequest(req) ? dataDir : undefined,
+      folders: folders.map(f => Object.assign(f, { counts: stats[f.id] || null })),
+    });
+  }
+
+  async function apiSettingsFolders(req, res) {
+    if (!isLocalRequest(req)) return sendError(res, 'Ordner können nur direkt am MediaCenter-PC geändert werden.', 403);
+    const d = await readJsonBody(req);
+    let result = null;
+    if (d.action === 'add') {
+      const paths = Array.isArray(d.paths) ? d.paths : [d.path];
+      const added = [];
+      const errors = [];
+      for (const p of paths) {
+        try { added.push(await settings.add({ path: p, category: d.category, name: paths.length > 1 ? '' : d.name })); }
+        catch (e) { errors.push(e.message); }
+      }
+      if (!added.length) return sendError(res, errors.join(' '), 400);
+      result = { added, errors };
+    } else if (d.action === 'update') {
+      result = { folder: await settings.update(String(d.id || ''), d) };
+    } else if (d.action === 'remove') {
+      await settings.remove(String(d.id || ''));
+      result = {};
+    } else {
+      return sendError(res, 'Unbekannte Aktion');
+    }
+    library.invalidate();
+    await library.get(true).catch(() => {});
+    sendJson(res, Object.assign({ success: true }, result));
+  }
+
   // Allgemeiner portabler Key-Value-Speicher (Einstellungen, Bestenlisten, Datei-Metadaten)
   async function apiStore(req, res, ns) {
     if (!STORE_NS.test(ns)) return sendError(res, 'Ungültiger Namensraum');
@@ -595,6 +651,7 @@ function createMediaServer(options = {}) {
     '/api/qrcode-url': apiQrUrl, '/api/qrcode-url.php': apiQrUrl,
     '/api/qrcode': apiQr, '/api/qrcode.php': apiQr,
     '/api/info': apiInfo,
+    '/api/settings': apiSettingsGet,
     '/api/thumbnail': apiThumbList, '/api/thumbnail.php': apiThumbList,
     '/api/trash': apiTrashGet, '/api/trash.php': apiTrashGet,
     '/api/music_meta': (q, s) => apiMetaGet(s, 'music_meta.json'),
@@ -610,6 +667,7 @@ function createMediaServer(options = {}) {
     '/api/movie/thumbnail': (q, s) => saveThumbnail(q, s, ['video_path', 'movie', 'media_path']),
     '/api/delete': apiDelete, '/api/delete.php': apiDelete,
     '/api/image-meta': apiImageMetaPost,
+    '/api/settings/folders': apiSettingsFolders,
     '/api/music_meta': apiMusicMetaPost, '/api/music_meta.php': apiMusicMetaPost, '/api/music-meta': apiMusicMetaPost,
   };
 

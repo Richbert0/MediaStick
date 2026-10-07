@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Einstellungen – MediaCenter</title>
+<link rel="stylesheet" href="/css/main.css">
+<style>
+[hidden]{display:none!important}
+body{background:linear-gradient(160deg,var(--bg) 0%,#0b1020 60%,var(--bg) 100%);min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding:22px 20px 40px;display:grid;gap:16px}
+h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:.02em;color:var(--amber)}
+.lead{color:var(--sub);font-size:.86rem;margin-top:-8px}
+.panel{background:linear-gradient(160deg,rgba(14,17,32,.95),rgba(6,8,16,.95));border:1px solid rgba(34,211,238,.12);border-radius:16px;padding:18px}
+.panel h2{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.panel .desc{color:var(--sub);font-size:.82rem;line-height:1.6;margin-bottom:14px}
+.cats{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px}
+.cats span{font-size:.72rem;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(226,232,248,.75)}
+.folders{display:grid;gap:8px}
+.folder{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
+.folder.off{opacity:.55}
+.folder.missing{border-color:rgba(244,63,94,.35)}
+.folder .ico{font-size:1.6rem}
+.folder .nm{font-weight:800;font-size:.92rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.folder .pth{font-family:ui-monospace,Consolas,monospace;font-size:.74rem;color:var(--sub);word-break:break-all;margin-top:2px}
+.folder .cnt{font-size:.72rem;color:rgba(226,232,248,.6);margin-top:5px}
+.folder .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.folder select,.addrow select{background:rgba(14,17,32,.9);color:var(--txt);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 10px;font:inherit;font-size:.8rem}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:var(--sub);cursor:pointer;user-select:none}
+.toggle input{accent-color:#22d3ee;width:16px;height:16px}
+.addrow{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin-top:14px}
+.empty{color:var(--sub);font-size:.84rem;padding:14px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:12px}
+.note{font-size:.78rem;color:var(--sub);margin-top:10px;line-height:1.6}
+.note b{color:var(--txt)}
+.warn{padding:10px 12px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);color:#fcd34d;font-size:.8rem;margin-bottom:12px}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:.84rem}
+.kv dt{color:var(--sub)}
+.kv dd{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+@media(max-width:700px){.addrow{grid-template-columns:1fr}.folder{grid-template-columns:auto 1fr}.folder .act{grid-column:1/-1;justify-content:flex-start}.kv{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚙️ Einstellungen</h1>
+  <p class="lead">Lege fest, aus welchen Ordnern MediaCenter zusätzlich Inhalte einliest.</p>
+
+  <section class="panel" aria-labelledby="h-folders">
+    <h2 id="h-folders">📁 Eigene Medienordner</h2>
+    <p class="desc">
+      Füge beliebig viele Ordner hinzu – z.&nbsp;B. deinen Video-Ordner, eine externe Festplatte oder einen Ordner auf dem Stick.
+      Die Dateien bleiben, wo sie sind, und erscheinen automatisch in der richtigen Kategorie.
+    </p>
+    <div class="cats">
+      <span>🎬 Videos → Filme</span><span>📺 Videos mit S01E02 / 1x02 / „Staffel 1“ → Serien</span><span>🎵 Audio → Musik (Unterordner = Playlist)</span><span>🖼️ Bilder → Fotos</span>
+    </div>
+    <div id="readonly" class="warn" hidden>Ordner können nur direkt am MediaCenter-PC geändert werden. Von diesem Gerät aus ist die Liste schreibgeschützt.</div>
+    <div class="folders" id="folders"><div class="empty">Lade…</div></div>
+    <div class="addrow" id="addrow">
+      <input class="mc-input" id="new-path" placeholder="Ordnerpfad, z. B. D:\Videos oder /home/name/Musik" autocomplete="off" spellcheck="false" aria-label="Ordnerpfad">
+      <button class="btn" id="browse" type="button" hidden>📂 Durchsuchen…</button>
+      <select id="new-cat" aria-label="Kategorie">
+        <option value="auto">Automatisch einsortieren</option>
+        <option value="movies">Nur Filme</option>
+        <option value="series">Nur Serien</option>
+        <option value="music">Nur Musik</option>
+        <option value="images">Nur Fotos</option>
+      </select>
+      <button class="btn" id="add" type="button">➕ Hinzufügen</button>
+    </div>
+    <p class="note">
+      <b>Tipp:</b> Ordner auf demselben USB-Stick werden relativ gespeichert und funktionieren auch, wenn der Stick an einem anderen PC einen anderen Laufwerksbuchstaben bekommt.
+      Ist ein Ordner gerade nicht erreichbar (z.&nbsp;B. Festplatte abgesteckt), wird er übersprungen und später automatisch wieder eingelesen.
+      Löschen in MediaCenter verschiebt Dateien in den Papierkorb und kann rückgängig gemacht werden; „Entfernen“ hier löscht keine Dateien.
+    </p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-store">
+    <h2 id="h-store">💾 Speicherort &amp; Netzwerk</h2>
+    <dl class="kv" id="info"><dt>Version</dt><dd>–</dd></dl>
+    <div class="row">
+      <button class="btn" id="open-data" type="button" hidden>📂 Medienordner öffnen</button>
+      <button class="btn btn-ghost" id="rescan" type="button">🔄 Mediathek neu einlesen</button>
+    </div>
+  </section>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+'use strict';
+const E = window.electron || (function () { try { return window.parent && window.parent.electron; } catch { return null; } })();
+const CAT_LABEL = { auto: 'Automatisch', movies: 'Nur Filme', series: 'Nur Serien', music: 'Nur Musik', images: 'Nur Fotos' };
+const $ = id => document.getElementById(id);
+const esc = MC.esc;
+let state = { folders: [], canEdit: false };
+
+async function load() {
+  const d = await MC.api('/api/settings', { cache: 'no-store' });
+  if (!d.success) { $('folders').innerHTML = '<div class="empty">Einstellungen konnten nicht geladen werden.</div>'; return; }
+  state = d;
+  $('readonly').hidden = d.canEdit;
+  $('addrow').style.display = d.canEdit ? '' : 'none';
+  $('browse').hidden = !(E && E.showOpen && d.canEdit);
+  render();
+  info(d);
+}
+
+function counts(c) {
+  if (!c) return 'Noch nicht eingelesen';
+  const parts = [];
+  if (c.movies) parts.push('🎬 ' + c.movies + ' Filme');
+  if (c.series) parts.push('📺 ' + c.series + ' Folgen');
+  if (c.music) parts.push('🎵 ' + c.music + ' Songs');
+  if (c.images) parts.push('🖼️ ' + c.images + ' Fotos');
+  return (parts.join(' · ') || 'Keine passenden Medien gefunden') + (c.truncated ? ' · (Limit erreicht – bitte Unterordner wählen)' : '');
+}
+
+function render() {
+  const list = state.folders;
+  if (!list.length) {
+    $('folders').innerHTML = '<div class="empty">Noch keine eigenen Ordner. Inhalte im Ordner <b>MediaCenter-Daten/media</b> werden immer eingelesen.</div>';
+    return;
+  }
+  $('folders').innerHTML = list.map(f => {
+    const opts = Object.keys(CAT_LABEL).map(k => '<option value="' + k + '"' + (k === f.category ? ' selected' : '') + '>' + CAT_LABEL[k] + '</option>').join('');
+    const badges = (f.exists ? '' : '<span class="mc-badge mc-badge-red">nicht erreichbar</span>') + (f.portable ? '<span class="mc-badge mc-badge-gold">auf dem Stick</span>' : '');
+    const dis = state.canEdit ? '' : ' disabled';
+    return '<div class="folder' + (f.enabled ? '' : ' off') + (f.exists ? '' : ' missing') + '" data-id="' + esc(f.id) + '">'
+      + '<span class="ico">' + (f.exists ? '📁' : '⚠️') + '</span>'
+      + '<div><div class="nm">' + esc(f.name) + badges + '</div><div class="pth">' + esc(f.path) + '</div><div class="cnt">' + esc(f.enabled ? counts(f.counts) : 'Deaktiviert') + '</div></div>'
+      + '<div class="act"><select data-act="cat" aria-label="Kategorie"' + dis + '>' + opts + '</select>'
+      + '<label class="toggle"><input type="checkbox" data-act="on"' + (f.enabled ? ' checked' : '') + dis + '>aktiv</label>'
+      + (state.canEdit ? '<button class="btn btn-sm btn-danger" data-act="del" type="button">Entfernen</button>' : '') + '</div></div>';
+  }).join('');
+}
+
+async function info(d) {
+  const i = await MC.api('/api/info', { cache: 'no-store' });
+  const rows = [['Version', i.version || '–']];
+  if (d.dataDir) rows.push(['Datenordner', d.dataDir]);
+  if (i.lan && i.lan.length) rows.push(['Im LAN erreichbar', i.lan.join('  ·  ')]);
+  $('info').innerHTML = rows.map(([k, v]) => '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>').join('');
+  $('open-data').hidden = !(E && E.openDataDir);
+}
+
+async function send(body) {
+  const r = await MC.api('/api/settings/folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.success) MC.toast('❌ ' + (r.error || 'Fehler'), 'err', 4500);
+  return r;
+}
+
+async function add(paths) {
+  paths = paths.map(p => p.trim()).filter(Boolean);
+  if (!paths.length) { MC.toast('Bitte einen Ordner angeben', 'err'); return; }
+  $('add').disabled = true;
+  MC.toast('Ordner wird eingelesen…', 'ok', 1500);
+  const r = await send({ action: 'add', paths, category: $('new-cat').value });
+  $('add').disabled = false;
+  if (r.success) {
+    $('new-path').value = '';
+    MC.toast('✅ ' + r.added.length + ' Ordner hinzugefügt', 'ok');
+    if (r.errors && r.errors.length) MC.toast('⚠️ ' + r.errors.join(' '), 'err', 5000);
+    load();
+  }
+}
+
+$('add').onclick = () => add([$('new-path').value]);
+$('new-path').addEventListener('keydown', e => { if (e.key === 'Enter') add([$('new-path').value]); });
+$('browse').onclick = async () => {
+  const r = await E.showOpen({ title: 'Medienordner auswählen', properties: ['openDirectory', 'multiSelections'] });
+  if (r && !r.canceled && r.filePaths && r.filePaths.length) add(r.filePaths);
+};
+$('folders').addEventListener('change', async e => {
+  const row = e.target.closest('.folder');
+  if (!row) return;
+  const id = row.dataset.id;
+  if (e.target.dataset.act === 'cat') { const r = await send({ action: 'update', id, category: e.target.value }); if (r.success) { MC.toast('✅ Kategorie geändert', 'ok'); load(); } }
+  if (e.target.dataset.act === 'on') { const r = await send({ action: 'update', id, enabled: e.target.checked }); if (r.success) load(); }
+});
+$('folders').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act="del"]');
+  if (!b) return;
+  const row = b.closest('.folder');
+  const f = state.folders.find(x => x.id === row.dataset.id);
+  if (!confirm('„' + (f ? f.name : '') + '“ aus MediaCenter entfernen?\nDie Dateien auf der Festplatte bleiben erhalten.')) return;
+  const r = await send({ action: 'remove', id: row.dataset.id });
+  if (r.success) { MC.toast('Ordner entfernt', 'ok'); load(); }
+});
+$('open-data').onclick = () => E && E.openDataDir('media');
+$('rescan').onclick = async () => {
+  await fetch('/api/library?refresh=1', { cache: 'no-store' });
+  MC.toast('✅ Mediathek neu eingelesen', 'ok');
+  load();
+};
+load();
+</script>
+</body>
+</html>
