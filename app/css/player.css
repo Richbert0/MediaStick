@@ -18,14 +18,14 @@
 .mcp-btn.fill svg{fill:currentColor;stroke:none}
 .mcp-btn.big{width:54px;height:54px}
 .mcp-btn.big svg{width:30px;height:30px}
-.mcp-btn:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
+.mcp-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 .mcp-seek{position:relative;height:22px;display:flex;align-items:center;cursor:pointer;touch-action:none;margin-bottom:6px}
 .mcp-track{position:relative;width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,.22);transition:height .12s}
 .mcp-seek:hover .mcp-track,.mcp-seek.drag .mcp-track{height:7px}
 .mcp-buf,.mcp-fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
 .mcp-buf{background:rgba(255,255,255,.3)}
-.mcp-fill{background:linear-gradient(90deg,#22d3ee,#0891b2)}
-.mcp-knob{position:absolute;top:50%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:#22d3ee;box-shadow:0 0 10px rgba(34,211,238,.6);transform:scale(0);transition:transform .12s}
+.mcp-fill{background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.mcp-knob{position:absolute;top:50%;width:15px;height:15px;margin:-7.5px 0 0 -7.5px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px rgba(var(--acc-rgb),.6);transform:scale(0);transition:transform .12s}
 .mcp-seek:hover .mcp-knob,.mcp-seek.drag .mcp-knob{transform:scale(1)}
 .mcp-tip{position:absolute;bottom:26px;transform:translateX(-50%);padding:3px 8px;border-radius:6px;background:rgba(0,0,0,.85);color:#fff;font-size:.75rem;font-variant-numeric:tabular-nums;pointer-events:none;opacity:0;transition:opacity .12s;white-space:nowrap}
 .mcp-seek:hover .mcp-tip,.mcp-seek.drag .mcp-tip{opacity:1}
@@ -33,7 +33,7 @@
 .mcp-time{font-size:.85rem;color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums;margin:0 8px;white-space:nowrap}
 .mcp-spacer{flex:1}
 .mcp-vol{display:flex;align-items:center}
-.mcp-vol input{width:0;opacity:0;transition:width .2s,opacity .2s;accent-color:#22d3ee;cursor:pointer}
+.mcp-vol input{width:0;opacity:0;transition:width .2s,opacity .2s;accent-color:var(--acc);cursor:pointer}
 .mcp-vol:hover input,.mcp-vol input:focus{width:90px;opacity:1}
 .mcp-next{display:none;align-items:center;gap:8px;padding:8px 14px;border-radius:22px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.18);cursor:pointer;font:inherit;font-weight:700;font-size:.85rem;white-space:nowrap}
 .mcp-next:hover{background:rgba(255,255,255,.22)}
@@ -46,11 +46,11 @@
 .mcp-seekhint.l{left:12%}.mcp-seekhint.r{right:12%}
 .mcp-seekhint.go{animation:mcp-hint .7s ease}
 @keyframes mcp-hint{0%{opacity:1}100%{opacity:0}}
-.mcp-spin{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:#22d3ee;animation:mcp-rot .8s linear infinite;display:none;z-index:2}
+.mcp-spin{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;border:4px solid rgba(255,255,255,.15);border-top-color:var(--acc);animation:mcp-rot .8s linear infinite;display:none;z-index:2}
 .mcp.wait .mcp-spin{display:block}
 @keyframes mcp-rot{to{transform:rotate(360deg)}}
 /* Karten (nächste Folge, nächste Staffel, Fehler) */
-.mcp-card{position:absolute;right:28px;bottom:120px;z-index:5;width:min(380px,calc(100% - 32px));padding:18px;border-radius:16px;background:rgba(10,14,26,.94);border:1px solid rgba(34,211,238,.25);box-shadow:0 20px 60px rgba(0,0,0,.6);color:#fff;display:none}
+.mcp-card{position:absolute;right:28px;bottom:120px;z-index:5;width:min(380px,calc(100% - 32px));padding:18px;border-radius:16px;background:rgba(10,14,26,.94);border:1px solid rgba(var(--acc-rgb),.25);box-shadow:0 20px 60px rgba(0,0,0,.6);color:#fff;display:none}
 .mcp-card.show{display:block;animation:mcp-in .25s ease}
 .mcp-card.center{right:50%;bottom:50%;transform:translate(50%,50%);text-align:center;width:min(440px,calc(100% - 32px))}
 @keyframes mcp-in{from{opacity:0}to{opacity:1}}
@@ -62,7 +62,7 @@
 .mcp-card button.pri{background:#fff;color:#000;border-color:#fff}
 .mcp-card button:hover{filter:brightness(1.15)}
 .mcp-count{height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin-top:12px;overflow:hidden}
-.mcp-count i{display:block;height:100%;background:#22d3ee;width:0}
+.mcp-count i{display:block;height:100%;background:var(--acc);width:0}
 .mcp-toast{position:absolute;left:50%;top:80px;transform:translateX(-50%);padding:8px 16px;border-radius:10px;background:rgba(0,0,0,.8);color:#fff;font-size:.85rem;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;z-index:6}
 .mcp-toast.show{opacity:1}
 @media (max-width:640px){

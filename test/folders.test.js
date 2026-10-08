@@ -99,3 +99,21 @@ test('Ordner deaktivieren und entfernen', async () => {
   // Medien bleiben auf der Platte erhalten
   assert.ok(fs.existsSync(path.join(extDir, 'Dark', 'Staffel 1', 'Dark.S01E02.mkv')));
 });
+
+test('Designfarbe: speichern, prüfen, auf Stick ablegen', async () => {
+  let r = await (await fetch(base + '/api/theme')).json();
+  assert.deepStrictEqual(r.theme, { preset: 'cyan' });
+  r = await post('/api/theme', { theme: { preset: 'violett' } });
+  assert.deepStrictEqual(r.theme, { preset: 'violett' });
+  r = await post('/api/theme', { theme: { custom: '#8B5CF6' } });
+  assert.deepStrictEqual(r.theme, { custom: '#8b5cf6' });
+  // ungültige Werte → Standard
+  r = await post('/api/theme', { theme: { custom: 'red;}body{' } });
+  assert.deepStrictEqual(r.theme, { preset: 'cyan' });
+  r = await post('/api/theme', { theme: { preset: '../../x' } });
+  assert.deepStrictEqual(r.theme, { preset: 'cyan' });
+  await post('/api/theme', { theme: { preset: 'gruen' } });
+  const saved = JSON.parse(fs.readFileSync(path.join(dataDir, 'api', 'settings.json'), 'utf8'));
+  assert.deepStrictEqual(saved.theme, { preset: 'gruen' });
+  assert.ok(Array.isArray(saved.folders), 'Ordner bleiben erhalten');
+});

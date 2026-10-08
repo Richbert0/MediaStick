@@ -621,6 +621,16 @@ function createMediaServer(options = {}) {
     sendJson(res, Object.assign({ success: true }, result));
   }
 
+  async function apiThemeGet(req, res) {
+    sendJson(res, { success: true, theme: await settings.getTheme() });
+  }
+  async function apiThemeSet(req, res) {
+    const d = await readJsonBody(req);
+    const theme = await settings.setTheme(d.theme || d);
+    hub.broadcast({ action: 'theme', theme });
+    sendJson(res, { success: true, theme });
+  }
+
   // Allgemeiner portabler Key-Value-Speicher (Einstellungen, Bestenlisten, Datei-Metadaten)
   async function apiStore(req, res, ns) {
     if (!STORE_NS.test(ns)) return sendError(res, 'Ungültiger Namensraum');
@@ -671,6 +681,7 @@ function createMediaServer(options = {}) {
     '/api/qrcode': apiQr, '/api/qrcode.php': apiQr,
     '/api/info': apiInfo,
     '/api/settings': apiSettingsGet,
+    '/api/theme': apiThemeGet,
     '/api/thumbnail': apiThumbList, '/api/thumbnail.php': apiThumbList,
     '/api/trash': apiTrashGet, '/api/trash.php': apiTrashGet,
     '/api/music_meta': (q, s) => apiMetaGet(s, 'music_meta.json'),
@@ -687,6 +698,7 @@ function createMediaServer(options = {}) {
     '/api/delete': apiDelete, '/api/delete.php': apiDelete,
     '/api/image-meta': apiImageMetaPost,
     '/api/settings/folders': apiSettingsFolders,
+    '/api/theme': apiThemeSet,
     '/api/music_meta': apiMusicMetaPost, '/api/music_meta.php': apiMusicMetaPost, '/api/music-meta': apiMusicMetaPost,
   };
 

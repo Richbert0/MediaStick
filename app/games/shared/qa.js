@@ -29,7 +29,7 @@
   .qa-cols .qa-ans{grid-template-columns:1fr}
   .qa-btn{position:relative;padding:15px 14px 15px 44px;border-radius:14px;border:1px solid var(--gk-line2);background:rgba(255,255,255,.04);cursor:pointer;
     font-size:clamp(.92rem,2.2vw,1.12rem);font-weight:700;text-align:left;transition:background .12s,border-color .12s,transform .08s;min-height:56px}
-  .qa-btn:hover:not(:disabled){border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.1)}
+  .qa-btn:hover:not(:disabled){border-color:rgba(var(--acc-rgb),.5);background:rgba(var(--acc-rgb),.1)}
   .qa-btn:active:not(:disabled){transform:scale(.98)}
   .qa-btn:disabled{cursor:default}
   .qa-btn .k{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:6px;border:1px solid var(--gk-line2);

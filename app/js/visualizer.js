@@ -97,11 +97,22 @@
     return out;
   }
 
+  // Farben aus der gewählten Designfarbe (theme.js)
+  function themeColor(name, fb) {
+    try { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fb; } catch { return fb; }
+  }
+  function hueOf(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 190;
+    const n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn; if (!d) return 0;
+    const h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return h * 60;
+  }
   function gradient(ctx, h) {
     const g = ctx.createLinearGradient(0, h, 0, 0);
-    g.addColorStop(0, '#0891b2');
-    g.addColorStop(0.55, '#22d3ee');
-    g.addColorStop(1, '#f59e0b');
+    g.addColorStop(0, themeColor('--acc2', '#0891b2'));
+    g.addColorStop(0.55, themeColor('--acc', '#22d3ee'));
+    g.addColorStop(1, themeColor('--hl', '#f59e0b'));
     return g;
   }
 
@@ -135,8 +146,7 @@
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, w, h);
     ctx.lineWidth = 2.2 * dpr;
-    ctx.strokeStyle = '#22d3ee';
-    ctx.shadowColor = '#22d3ee';
+    ctx.strokeStyle = ctx.shadowColor = themeColor('--acc', '#22d3ee');
     ctx.shadowBlur = 12 * dpr;
     ctx.beginPath();
     if (analyser && !aud.paused) {
@@ -168,6 +178,9 @@
     const len = Math.min(w, h) * 0.15;
     const n = 96;
     const vals = bands(n / 2);
+    const hA = hueOf(themeColor('--acc', '#22d3ee')), hB = hueOf(themeColor('--hl', '#f59e0b'));
+    let span = hB - hA; if (span < -180) span += 360; if (span > 180) span -= 360;
+    const sat = /^#(cbd5e1)$/i.test(themeColor('--acc', '')) ? 25 : 88;
     ctx.lineCap = 'round';
     ctx.lineWidth = Math.max(2, (2 * Math.PI * r0 / n) * 0.55);
     for (let i = 0; i < n; i++) {
@@ -177,8 +190,8 @@
       const l = 3 * dpr + v * len;
       const x1 = cx + Math.cos(a) * r0, y1 = cy + Math.sin(a) * r0;
       const x2 = cx + Math.cos(a) * (r0 + l), y2 = cy + Math.sin(a) * (r0 + l);
-      // Farbverlauf passend zur App: Cyan → Violett → Pink → Amber
-      ctx.strokeStyle = 'hsla(' + ((190 + v * 208) % 360) + ',88%,' + (55 + v * 8) + '%,' + (0.45 + v * 0.55) + ')';
+      // Farbverlauf passend zur Designfarbe: Akzent → Highlight
+      ctx.strokeStyle = 'hsla(' + ((hA + v * span + 360) % 360) + ',' + sat + '%,' + (55 + v * 8) + '%,' + (0.45 + v * 0.55) + ')';
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);

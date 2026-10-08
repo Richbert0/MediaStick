@@ -14,6 +14,12 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. D
 > `sudo apt install libfuse2` (Ubuntu 24.04 und neuer: `sudo apt install libfuse2t64`).
 > Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
+### Neu in 3.4.0
+- **Designfarbe wählbar:** Unter ⚙️ Einstellungen gibt es 9 abgestimmte Paletten oder eine eigene Farbe. Die Farbe gilt sofort für alle Bereiche, die Spiele und alle verbundenen Geräte.
+- **Vollbild & Kiosk überarbeitet:** Vollbild schaltet die ganze App bildschirmfüllend, ohne die Seite neu zu laden. Kiosk zeigt nur den Inhalt, die Leisten erscheinen am Bildschirmrand bzw. über „⋯“. Beide Modi bleiben beim Seitenwechsel und beim „Neu laden“ erhalten. Esc schließt zuerst offene Fenster und beendet erst danach den Modus. Video-Vollbild und Spiele beenden den Kiosk-Modus nicht mehr.
+- **Chat:** Das Fenster lässt sich frei verschieben (Maus & Touch) und am PC in der Größe ändern, Position und Größe werden gespeichert. Die Bildschirmtastatur springt nicht mehr ungefragt auf, am Handy öffnet sich die Handy-Tastatur erst beim Antippen des Eingabefelds.
+- Musiksymbole in Designfarbe, README neu strukturiert.
+
 ### Neu in 3.3.0
 - **Videoplayer neu:** echtes Vollbild über den ganzen Bildschirm, Steuerleiste verschwindet bei Inaktivität und erscheint bei Mausbewegung/Tippen wieder. Nach dem Filmende bzw. Schließen ist die Oberfläche sofort wieder bedienbar.
 - **Vorschaubilder:** beliebige Stelle im Video auswählen (Regler, ±1 s/±10 s, Zufall) oder eigenes Bild – keine schwarzen Bilder mehr; fehlende Vorschaubilder werden automatisch erzeugt.

@@ -3,13 +3,14 @@
 # 🎬 MediaCenter
 
 **Dein portables Medien- und Spielecenter für den USB-Stick.**
-Filme, Serien, Musik, Fotos und 11 Spiele – als einzelne Datei für Windows und Linux, ohne Installation und ohne Internet.
+Filme, Serien, Musik, Fotos und 11 Spiele in einer einzigen Datei für Windows und Linux. Du brauchst keine Installation und kein Internet.
 
 [![Build & Release](https://github.com/Richbert0/MediaStick/actions/workflows/build.yml/badge.svg)](https://github.com/Richbert0/MediaStick/actions/workflows/build.yml)
 [![Neueste Version](https://img.shields.io/github/v/release/Richbert0/MediaStick?label=Download&color=22d3ee)](https://github.com/Richbert0/MediaStick/releases/latest)
 ![Plattformen](https://img.shields.io/badge/Windows%20%7C%20Linux-portabel-f59e0b)
+![Lizenz](https://img.shields.io/badge/Lizenz-MIT-10b981)
 
-<img src="docs/screenshots/spielhalle.png" alt="Spielhalle von MediaCenter" width="820">
+<img src="docs/screenshots/spielhalle.png" alt="MediaCenter: Spielhalle mit Navigation, Steuerleiste und Spielekarten" width="820">
 
 </div>
 
@@ -17,82 +18,79 @@ Filme, Serien, Musik, Fotos und 11 Spiele – als einzelne Datei für Windows un
 
 ## Was ist MediaCenter?
 
-MediaCenter verwandelt einen USB-Stick (oder einen beliebigen Ordner) in eine eigene kleine Mediathek mit Spielhalle:
+MediaCenter macht aus einem USB-Stick oder einem beliebigen Ordner eine eigene Mediathek mit Spielhalle. Gedacht ist es für den Fernseher im Wohnzimmer, den Laptop unterwegs oder einen alten PC als Heimserver.
 
-- **Eine Datei starten, fertig.** Die App bringt alles mit – keinen Python-, Node.js- oder Browser-Download, keine Installation, keine Admin-Rechte.
-- **Alles bleibt auf dem Stick.** Medien, Einstellungen, Spielstände und Bestenlisten liegen im Ordner `MediaCenter-Daten` direkt neben der App. Stick an einen anderen PC stecken – alles ist noch da.
-- **Fürs ganze Heimnetz.** Die App ist gleichzeitig ein kleiner Server: Handys, Tablets und andere PCs im selben WLAN können über den Browser mitschauen, Dateien hochladen, chatten und gegeneinander spielen.
+| | |
+|---|---|
+| **Eine Datei, keine Installation** | Die App bringt alles mit: keine Laufzeitumgebung, keine Admin-Rechte, keine Einträge in der Registry. |
+| **Alles bleibt auf dem Stick** | Medien, Einstellungen, Designfarbe, Spielstände und Bestenlisten liegen im Ordner `MediaCenter-Daten` neben der App. Steckst du den Stick an einen anderen PC, ist alles noch da. |
+| **Fürs ganze Heimnetz** | Die App ist gleichzeitig ein kleiner Server. Handys, Tablets und andere PCs im selben WLAN öffnen sie einfach im Browser. Dort können sie Medien ansehen, Dateien hochladen, chatten und gegeneinander spielen. |
+| **Offline und privat** | Es gibt keine Konten, keine Telemetrie und keine Verbindung ins Internet. Alles läuft nur zwischen deinen Geräten. |
 
 ---
 
-## 🚀 Verwendung
+## 🚀 Schnellstart
 
-### 1. Herunterladen
+1. Lade die passende Datei aus den **[Releases](https://github.com/Richbert0/MediaStick/releases/latest)** herunter (rechte Spalte auf GitHub):
 
-Lade die passende Datei aus den **[Releases](https://github.com/Richbert0/MediaStick/releases/latest)** (rechte Spalte auf GitHub):
+   | System | Datei | Start |
+   |---|---|---|
+   | **Windows 10/11** (64 Bit) | `MediaCenter-x.y.z-portable.exe` | Doppelklick |
+   | **Linux** (x64) | `MediaCenter-x.y.z-x86_64.AppImage` | `chmod +x MediaCenter-*.AppImage`, dann starten |
 
-| System | Datei | Start |
-|---|---|---|
-| **Windows 10/11** | `MediaCenter-x.y.z-portable.exe` | Doppelklick |
-| **Linux** (x64) | `MediaCenter-x.y.z-x86_64.AppImage` | `chmod +x MediaCenter-*.AppImage` und dann Doppelklick oder `./MediaCenter-*.AppImage` |
-
-> 💡 Tipp: Lege die Datei direkt auf den USB-Stick. Beim ersten Start entsteht daneben der Ordner `MediaCenter-Daten`.
+2. Lege die Datei auf den USB-Stick und starte sie. Daneben entsteht der Ordner `MediaCenter-Daten`.
+3. Füge Medien hinzu: über **☁️ Upload**, per Kopieren in die Ordner unten oder mit **⚙️ Einstellungen → Eigene Medienordner**.
 
 > [!IMPORTANT]
-> **Linux: AppImage startet nicht?** Viele aktuelle Distributionen (Ubuntu 22.04 und neuer, Linux Mint 21+, Debian 12) bringen die nötige Bibliothek **libfuse2** nicht mehr mit. Einmalig installieren:
-> ```bash
-> sudo apt install libfuse2        # Ubuntu 22.04, Mint 21, Debian 12
-> sudo apt install libfuse2t64     # Ubuntu 24.04 und neuer
-> ```
-> Ohne Installation geht es auch: `./MediaCenter-*.AppImage --appimage-extract-and-run`
+> **Linux: Startet das AppImage nicht?** Ubuntu 22.04+, Linux Mint 21+ und Debian 12 brauchen einmalig **libfuse2**:
+> `sudo apt install libfuse2` (ab Ubuntu 24.04: `sudo apt install libfuse2t64`).
+> Ohne Installation geht es so: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
-### 2. Medien hinzufügen
+**Systemvoraussetzungen:** Windows 10/11 x64 oder eine aktuelle Linux-Distribution (x64). Die App selbst braucht etwa 100–120 MB, dazu kommt der Platz für deine Medien. Für die LAN-Funktionen müssen alle Geräte im selben Netzwerk sein.
 
-Entweder **im Upload-Bereich** der App Dateien hineinziehen (die App sortiert automatisch) – oder Dateien direkt in die Ordner kopieren und in der App auf „Aktualisieren“ klicken:
+---
+
+## 📁 Medien organisieren
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.3.0-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.4.0-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
-    │   ├── 📁 Movies      ← Filme  (mp4, mkv, webm, …)
-    │   ├── 📁 Series      ← Serien, z. B. Series/Dark/Staffel 1/Dark.S01E01.mkv
-    │   ├── 📁 Music       ← Musik  (Unterordner = Playlists)
+    │   ├── 📁 Movies      ← Filme
+    │   ├── 📁 Series      ← Serien, z. B. Series/Dark/Staffel 1/Dark S01E01.mkv
+    │   ├── 📁 Music       ← Musik (Unterordner werden zu Playlists)
     │   ├── 📁 Images      ← Fotos
-    │   └── 📁 Trash       ← Papierkorb
-    ├── 📁 api             ← Metadaten, Thumbnails, Bestenlisten
-    └── 📁 .profil         ← Einstellungen & Spielstände der App
+    │   └── 📁 Trash       ← Papierkorb (wiederherstellbar)
+    ├── 📁 api             ← Vorschaubilder, Metadaten, Einstellungen, Bestenlisten
+    └── 📁 .profil         ← Browser-Speicher der App (Fortschritt, Fenstergröße …)
 ```
 
-Serien werden am Dateinamen erkannt: `S1E1`, `S01E01`, `S1F1`, `S01F01` (F = Folge), z. B. `Dark S01F03.mkv` oder `Breaking.Bad.S01E02.mkv`, außerdem `Serie 1x05.mp4`, `Folge 3.mp4` oder Ordner wie `Staffel 2`.
-Unter **⚙️ Einstellungen → Speicherort** öffnet der Button **„Medienordner öffnen“** den Ordner direkt im Datei-Explorer.
+**Serien erkennen.** Folgen werden am Dateinamen erkannt. Groß- und Kleinschreibung spielt keine Rolle, Trennzeichen sind egal.
 
-#### Eigene Ordner einbinden
+| Schreibweise | Beispiel | Ergebnis |
+|---|---|---|
+| `S1E1` / `S01E01` | `Dark.S01E03.mkv` | Staffel 1, Folge 3 |
+| `S1F1` / `S01F01` (F = Folge) | `Dark S02F10.mp4` | Staffel 2, Folge 10 |
+| `1x05` | `Serie 1x05.mp4` | Staffel 1, Folge 5 |
+| Staffelordner | `Dark/Staffel 2/Folge 3.mp4` | Staffel 2, Folge 3 |
 
-Medien müssen nicht auf den Stick kopiert werden. Unter **⚙️ Einstellungen → Eigene Medienordner** kannst du **beliebig viele Ordner** hinzufügen, z. B. `D:\Videos`, eine externe Festplatte oder einen Ordner auf dem Stick. Mit **„Durchsuchen…“** wählst du sie bequem aus, auch mehrere auf einmal.
+Der Serienname kommt aus dem Ordner (`Series/Dark/…`) oder aus dem Dateinamen vor der Folgennummer.
 
-- **Automatisch einsortieren:** Videos → Filme, Videos mit `S01E02` / `1x02` / Ordner „Staffel 1“ → Serien, Audio → Musik (Unterordner werden Playlists), Bilder → Fotos.
-- Oder pro Ordner eine feste Kategorie wählen („Nur Musik“ usw.), Ordner kurz deaktivieren oder entfernen. Die Dateien bleiben dabei immer, wo sie sind.
-- Ordner auf demselben Stick werden **relativ** gespeichert und funktionieren auch bei anderem Laufwerksbuchstaben. Nicht angeschlossene Laufwerke werden übersprungen.
+**Eigene Ordner einbinden.** Unter **⚙️ Einstellungen → Eigene Medienordner** fügst du beliebig viele Ordner hinzu, z. B. `D:\Videos` oder eine externe Festplatte. Die Dateien bleiben, wo sie sind:
+- **Automatisch:** Videos werden zu Filmen, Videos mit Folgennummer oder Staffelordner zu Serien. Audio landet in Musik (Unterordner werden Playlists), Bilder in Fotos.
+- Alternativ legst du pro Ordner eine feste Kategorie fest oder schaltest einen Ordner vorübergehend ab.
+- Ordner auf demselben Stick werden relativ gespeichert. Sie funktionieren also auch, wenn der Stick einen anderen Laufwerksbuchstaben bekommt. Fehlende Laufwerke werden übersprungen.
 
-### 3. Andere Geräte verbinden (LAN)
+**Dateiformate**
 
-1. MediaCenter auf einem PC starten.
-2. Auf dem Handy/Tablet/Laptop im **selben WLAN** die Adresse öffnen, die in der App angezeigt wird (z. B. `http://192.168.0.10:8080`) – oder einfach den **QR-Code** im Upload-Bereich bzw. in der LAN-Lobby scannen. Der QR-Code zeigt automatisch auf die Netzwerkkarte, über die der PC im Heimnetz hängt (virtuelle Adapter wie Hyper-V, VirtualBox oder VPN werden übergangen). Hat der PC mehrere Netzwerke, lässt sich die Adresse unter dem QR-Code umschalten.
-3. Fertig: Medien ansehen, Fotos hochladen, chatten oder in der **Spielhalle → LAN-Lobby** gemeinsam spielen.
+| Art | Erkannt | Hinweis |
+|---|---|---|
+| Video | mp4, m4v, webm, mkv, mov, ogv, avi, wmv, mpg, ts, m2ts, 3gp | Abspielbar sind Videos in **H.264/H.265, VP8/VP9 oder AV1** mit AAC-, MP3-, Opus- oder Vorbis-Ton. Bei anderen Codecs (z. B. alte AVI/WMV) zeigt der Player einen Hinweis. |
+| Audio | mp3, m4a, aac, flac, wav, ogg, opus, wma, aiff, amr | WMA und AMR werden nicht von jedem Gerät abgespielt. |
+| Bild | jpg, png, gif, webp, avif, bmp, svg, tiff, ico | |
 
-> Beim ersten Start fragt Windows evtl. nach einer Firewall-Freigabe – für LAN-Funktionen bitte für **private Netzwerke** erlauben.
-
-### 4. Nur als Server starten (ohne Fenster)
-
-Für einen Heim-PC oder Mini-Server ohne Bildschirm:
-
-```bash
-MediaCenter-3.3.0-portable.exe --server          # Windows
-./MediaCenter-3.3.0-x86_64.AppImage --server     # Linux (funktioniert auch ohne grafische Oberfläche)
-```
-
-Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
+Videos werden per **HTTP-Range-Streaming** ausgeliefert. Vorspulen klappt deshalb auch bei großen Dateien und über das WLAN sofort.
 
 ---
 
@@ -100,53 +98,61 @@ Optionen: `--port 9000` (anderer Port) · Umgebungsvariable `MEDIACENTER_DATA_DI
 
 ### Medien
 
-| Bereich | Highlights |
+| Bereich | Was du damit machen kannst |
 |---|---|
-| 🎬 **Filme** | Echtes Vollbild, Steuerleiste blendet sich bei Inaktivität aus, Fortsetzen an der letzten Stelle, Fortschrittsbalken, Suche & Sortierung · **Vorschaubild von jeder beliebigen Stelle** im Video (Regler, ±1 s/10 s) oder eigenes Bild; fehlende Vorschaubilder werden automatisch erzeugt |
-| 📺 **Serien** | Streaming-Optik mit Titelbild, „Weiterschauen“-Reihe und Fortschritt je Folge · nächste Folge startet automatisch nach Countdown, am Staffelende fragt die App, ob es mit der **nächsten Staffel** weitergeht · Erkennung von `S1E1`, `S01E01`, `S1F1`, `S01F01` |
-| 🎵 **Musik** | Hintergrund-Player, der beim Seitenwechsel weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet · **Visualizer** (Spektrum, Welle, Kreis-Spektrum im Vinyl-Vollbild) · Playlists aus Ordnern · auf dem Handy: Visualizer, darunter große Steuertasten, darunter Titel, Zeit und Lautstärke |
-| ⚙️ **Einstellungen** | Mehrere eigene Medienordner mit automatischer Einsortierung, Speicherort, LAN-Adresse |
-| 🖼️ **Fotos** | Galerie mit Vollbild-Ansicht, Titel und Beschreibungen |
-| ☁️ **Upload** | Drag & Drop, auch vom Handy per QR-Code; große Videos werden direkt auf den Stick gestreamt; Papierkorb mit Wiederherstellen |
-| 💬 **LAN-Chat** | Chat und Sprachchat für alle Geräte im Netz |
+| 🎬 **Filme** | Echtes Vollbild, eine Steuerleiste, die sich bei Inaktivität ausblendet, und Weiterschauen an der letzten Stelle mit Fortschrittsbalken. Dazu Suche und Sortierung. Das **Vorschaubild** wählst du an einer beliebigen Stelle im Video (Regler, ±1 s/±10 s, Zufall) oder lädst ein eigenes Bild hoch. Fehlende Vorschaubilder entstehen automatisch, schwarze Bilder werden verworfen. |
+| 📺 **Serien** | Ansicht im Streaming-Stil mit Titelbild, den Reihen „Weiterschauen“ und „Neu hinzugefügt“ und Fortschritt pro Folge. Die nächste Folge startet nach einem Countdown. **Am Staffelende fragt die App, ob es mit der nächsten Staffel weitergeht.** Einzelne Folgen kannst du als gesehen markieren oder den Fortschritt zurücksetzen. |
+| 🎵 **Musik** | Ein Hintergrund-Player, der beim Wechsel zwischen den Bereichen weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet. Dazu ein **Visualizer** (Spektrum, Welle, Kreis-Spektrum in der Vinyl-Vollbildansicht), Zufall, Wiederholen und Playlists aus Ordnern. Auf dem Handy liegt die Steuerung unten: Visualizer, darunter die Tasten, darunter Titel, Zeit und Lautstärke. |
+| 🖼️ **Fotos** | Galerie mit Vollbildansicht, Titeln und Beschreibungen. |
+| ☁️ **Upload** | Dateien per Drag & Drop hochladen, auch vom Handy per QR-Code. Die App sortiert sie automatisch in die richtige Kategorie. Große Videos werden direkt auf den Stick geschrieben. Gelöschtes landet im Papierkorb und lässt sich wiederherstellen. |
+| 💬 **LAN-Chat** | Text- und Sprachchat für alle Geräte im Netz. Das Fenster lässt sich frei verschieben, auf dem PC auch in der Größe ändern. Position und Größe merkt sich die App. Der 📌-Modus macht es halbtransparent. |
+| ⚙️ **Einstellungen** | Eigene Medienordner, **Designfarbe**, Speicherort und Netzwerkadresse. |
 
-<img src="docs/screenshots/musik-visualizer.png" alt="Musik mit Visualizer" width="49%"> <img src="docs/screenshots/musik-vinyl.png" alt="Vinyl-Vollbild mit Kreis-Spektrum" width="49%">
+### 🎨 Designfarbe
 
-<img src="docs/screenshots/einstellungen.png" alt="Einstellungen: eigene Medienordner" width="820">
+Unter **⚙️ Einstellungen → Designfarbe** stehen neun abgestimmte Paletten zur Auswahl: Cyan, Blau, Violett, Pink, Rot, Orange, Gold, Grün und Silber. Mit **Eigene Farbe** wählst du jede beliebige Farbe. Jede Palette besteht aus einem Akzent, einem passenden Highlight und einem leicht getönten, dunklen Hintergrund. Eigene Farben werden automatisch in einen gut lesbaren Helligkeitsbereich gebracht, damit kein Farbchaos entsteht.
 
-Videos werden mit **HTTP-Range-Streaming** ausgeliefert – Vorspulen funktioniert auch bei großen Dateien sofort.
+Die Farbe wird auf dem Stick gespeichert. Sie gilt sofort für alle Bereiche, für die Spiele und den Visualizer, und auch für alle verbundenen Handys und PCs.
 
-### 🎮 Spielhalle – 11 Spiele, jedes allein **und** zu zweit spielbar
+### 🖥️ Bedienung: Vollbild, Kiosk und Tastenkürzel
 
-<img src="docs/screenshots/tetris-duell.png" alt="Tetris-Duell an einem Gerät" width="49%"> <img src="docs/screenshots/quiz-duell.png" alt="Quiz als Buzzer-Duell" width="49%">
+| Modus | So startest du ihn | Was passiert |
+|---|---|---|
+| **Vollbild** | Knopf **⛶ Vollbild** oder `F11` | Die ganze App füllt den Bildschirm. Navigation und Leisten bleiben sichtbar. |
+| **Kiosk** | Knopf **📺 Kiosk** | Bildschirmfüllend, nur der Inhalt, ideal für Fernseher und Präsentationen. Die Menüleisten erscheinen, wenn die Maus an den oberen, linken oder unteren Rand fährt. Auf Touch-Geräten tippst du dafür auf den kleinen **⋯**-Griff oben. |
+| **Video-Vollbild** | Im Player `F`, Doppelklick oder ⛶ | Das Video füllt den Bildschirm. Danach kehrt die App in den vorherigen Modus zurück. |
+
+**Esc** wirkt immer schrittweise. Erst schließt es das, was gerade offen ist (Video-Vollbild, Player, Serien-Details, Vinyl-Ansicht, Chat), danach beendet es Kiosk bzw. Vollbild. Vollbild und Kiosk bleiben beim Wechsel zwischen den Bereichen und beim „Neu laden“ erhalten.
+
+| Videoplayer | Taste |
+|---|---|
+| Abspielen/Pause | `Leertaste`, `K`, `Enter` |
+| ±10 Sekunden | `←` / `→` (Touch: Doppeltippen links/rechts) |
+| Lautstärke | `↑` / `↓` |
+| Vollbild / Stumm / Nächste Folge | `F` / `M` / `N` |
+
+**Fernbedienung:** In der Seitenleiste ist eine Fernbedienung eingebaut (Ziffern, Steuerkreuz, Medientasten, Lautstärke). Physische Fernbedienungen und Medientasten der Tastatur funktionieren auch. Wird mit dem Steuerkreuz navigiert, erscheint bei Eingabefeldern eine Bildschirmtastatur. Mit Maus, Touch oder echter Tastatur bleibt sie aus.
+
+### 🎮 Spielhalle: 11 Spiele, alle allein **und** zu zweit spielbar
 
 | Spiel | Allein | Gegen KI | 2 Spieler lokal | LAN |
 |---|:---:|:---:|:---:|:---:|
-| 🐍 **Snake** | ✅ mit Bonus-Futter & Tempo | ✅ 3 Stufen | ✅ Duell auf einem Feld | ✅ 2 Spieler |
-| 🧱 **Tetris** | ✅ Halten, Vorschau, Geisterstein | – | ✅ Splitscreen mit Müllreihen | ✅ Duell mit Müllreihen |
-| 🔢 **2048** | ✅ mit Animationen | – | ✅ 3-Minuten-Duell | ✅ 3-Minuten-Duell |
-| 🧨 **Breakout** | ✅ 5 Level, Power-Ups | – | ✅ Splitscreen-Duell | ✅ Duell |
+| 🐍 **Snake** | ✅ Bonus-Futter & Tempo | ✅ 3 Stufen | ✅ Duell | ✅ |
+| 🧱 **Tetris** | ✅ Halten, Vorschau, Geisterstein | – | ✅ Splitscreen mit Müllreihen | ✅ |
+| 🔢 **2048** | ✅ | – | ✅ 3-Minuten-Duell | ✅ |
+| 🧨 **Breakout** | ✅ 5 Level, Power-Ups | – | ✅ Splitscreen | ✅ |
 | 🏓 **Pong** | – | ✅ 3 Stufen | ✅ | ✅ |
-| 🃏 **Memory** | ✅ auf Zeit, 3 Größen | ✅ KI mit Gedächtnis | ✅ abwechselnd | ✅ |
+| 🃏 **Memory** | ✅ auf Zeit, 3 Größen | ✅ KI mit Gedächtnis | ✅ | ✅ |
 | ❌ **Tic Tac Toe** | – | ✅ bis unschlagbar | ✅ | ✅ |
-| 🔴 **Vier gewinnt** | – | ✅ starke KI (Alpha-Beta) | ✅ | ✅ |
+| 🔴 **Vier gewinnt** | – | ✅ Alpha-Beta-KI | ✅ | ✅ |
 | ❓ **Quiz** | ✅ 79 Fragen, 8 Themen | – | ✅ Buzzer-Duell | ✅ bis 8 Spieler |
 | ➗ **Kopfrechnen** | ✅ 60-Sekunden-Rennen | – | ✅ Buzzer-Duell | ✅ bis 8 Spieler |
-| ⌨️ **Tipp-Trainer** | ✅ WPM & Genauigkeit | – | ✅ abwechselnd | ✅ Tipp-Rennen bis 8 Spieler |
+| ⌨️ **Tipp-Trainer** | ✅ WPM & Genauigkeit | – | ✅ | ✅ Tipp-Rennen bis 8 Spieler |
 
-**Für alle Spiele gleich:** einheitliches Design, Pause (`P`/`Esc`), Neustart (`R`), Vollbild (`F`), Ton an/aus, Touch-Steuerung auf Handy & Tablet, Bestenlisten, die für alle Geräte im Netz gemeinsam auf dem Stick gespeichert werden.
+Alle Spiele haben dasselbe Design und dieselbe Bedienung: Pause (`P`/`Esc`), Neustart (`R`), Vollbild (`F`) und Ton an/aus. Auf Handy und Tablet gibt es eine Touch-Steuerung, die Spiele öffnen dort bildschirmfüllend. Die Bestenlisten liegen gemeinsam auf dem Stick und gelten für alle Geräte.
 
-#### So funktioniert LAN-Spielen
-
-<img src="docs/screenshots/lan-anmeldung.png" alt="LAN-Anmeldung" width="49%"> <img src="docs/screenshots/lan-lobby.png" alt="LAN-Lobby mit Raum" width="49%">
-
-1. **Anmelden:** In der Spielhalle auf **LAN-Lobby** – Name, Farbe und Symbol wählen.
-2. **Raum erstellen:** Spiel auswählen. Du erhältst einen **4-stelligen Raumcode**.
-3. **Mitspieler holen:** Andere sehen den Raum sofort in der Lobby, treten per Code bei – oder du lädst sie mit einem Klick ein.
-4. **Bereit & Start:** Sobald alle „Bereit“ sind, startet der Host. Alle Geräte springen gleichzeitig ins Spiel.
-5. **Revanche** mit einem Klick – kurze Verbindungsabbrüche (z. B. WLAN-Wechsel) werden automatisch überbrückt.
-
-#### Steuerung zu zweit an einem Gerät
+<details>
+<summary><b>Steuerung zu zweit an einem Gerät</b></summary>
 
 | Spiel | Spieler 1 | Spieler 2 |
 |---|---|---|
@@ -155,14 +161,33 @@ Videos werden mit **HTTP-Range-Streaming** ausgeliefert – Vorspulen funktionie
 | Pong | `W`/`S` | `↑`/`↓` |
 | Breakout | `A`/`D`, `W` startet den Ball | `←`/`→`, `↑` startet den Ball |
 | Quiz, Kopfrechnen | `1` `2` `3` `4` | `7` `8` `9` `0` |
-| Memory, Tic Tac Toe, Vier gewinnt, Tipp-Trainer | abwechselnd per Maus/Touch/Tastatur | |
+| Memory, Tic Tac Toe, Vier gewinnt, Tipp-Trainer | abwechselnd per Maus, Touch oder Tastatur | |
+</details>
 
 ---
 
-## 🖼️ Weitere Ansichten
+## 📱 Handy, Tablet & LAN
 
-<img src="docs/screenshots/startseite.png" alt="Startseite" width="49%"> <img src="docs/screenshots/snake-ki.png" alt="Snake gegen KI" width="49%">
-<img src="docs/screenshots/vier-gewinnt.png" alt="Vier gewinnt gegen KI" width="49%"> <img src="docs/screenshots/pong-lan.png" alt="Pong im LAN" width="49%">
+1. Starte MediaCenter auf dem PC.
+2. Scanne mit dem Handy den **QR-Code** im Upload-Bereich oder in der LAN-Lobby. Alternativ öffnest du die angezeigte Adresse (z. B. `http://192.168.0.10:8080`) im Browser.
+3. Fertig. Das Handy kann jetzt alles, was der PC kann: Filme und Serien streamen (der Fortschritt wird pro Gerät gespeichert), Musik hören, Fotos hochladen, chatten und spielen.
+
+**LAN-Spiele:** Unter **Spielhalle → LAN-Lobby** meldest du dich an (Name, Farbe, Symbol) und erstellst einen Raum mit einem 4-stelligen Code. Lade Mitspieler ein oder lass sie per Code beitreten. Sobald alle bereit sind, startet das Spiel auf allen Geräten gleichzeitig. Revanche geht mit einem Klick, kurze WLAN-Aussetzer werden überbrückt.
+
+**Netzwerk-Details:** Alles läuft über **einen Port** (Standard 8080, HTTP und WebSocket). Ist der Port belegt, nimmt die App automatisch den nächsten freien. Der QR-Code zeigt auf die Netzwerkkarte, über die der PC wirklich im Heimnetz hängt. Virtuelle Adapter wie Hyper-V, VirtualBox, Docker oder VPN werden übergangen. Hat der PC mehrere Netzwerke, kannst du die Adresse unter dem QR-Code umschalten. Eigene Medienordner lassen sich aus Sicherheitsgründen nur direkt am PC ändern.
+
+> Beim ersten Start fragt Windows nach einer Firewall-Freigabe. Erlaube den Zugriff für **private Netzwerke**, sonst erreichen andere Geräte den PC nicht.
+
+### Nur als Server starten (ohne Fenster)
+
+Das eignet sich für einen Heim-PC oder Mini-Server ohne Bildschirm:
+
+```bash
+MediaCenter-3.4.0-portable.exe --server          # Windows
+./MediaCenter-3.4.0-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
+```
+
+Optionen: `--port 9000` (anderer Port) und die Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
 
 ---
 
@@ -171,32 +196,40 @@ Videos werden mit **HTTP-Range-Streaming** ausgeliefert – Vorspulen funktionie
 <details>
 <summary><b>Windows zeigt „Der Computer wurde durch Windows geschützt“</b></summary>
 
-Die EXE ist (noch) nicht digital signiert, deshalb kennt Windows den Herausgeber nicht. Lösungen:
+Die EXE ist noch nicht digital signiert, deshalb kennt Windows den Herausgeber nicht. So startest du sie trotzdem:
 
-- Einmalig **Weitere Informationen → Trotzdem ausführen** klicken.
-- Oder: Rechtsklick auf die EXE → *Eigenschaften* → Haken bei **„Zulassen“**.
-- **Vom USB-Stick (exFAT/FAT32) gestartet erscheint die Warnung nicht**, weil dort die Download-Markierung verloren geht.
+- Einmalig auf **Weitere Informationen → Trotzdem ausführen** klicken.
+- Oder: Rechtsklick auf die EXE → *Eigenschaften* → Haken bei **„Zulassen“** setzen.
+- Vom USB-Stick (exFAT/FAT32) gestartet erscheint die Warnung nicht, weil dort die Download-Markierung verloren geht.
 
-Dauerhaft verschwindet die Meldung mit der kostenlosen Code-Signatur der SignPath Foundation (siehe [Code-Signatur](#-code-signatur)). Beim AppImage unter Linux gibt es keine solche Warnung.
+Dauerhaft verschwindet die Meldung mit der kostenlosen Code-Signatur der SignPath Foundation (siehe [Code-Signatur](#-code-signatur)). Beim AppImage unter Linux gibt es diese Warnung nicht.
 </details>
 
 <details>
 <summary><b>Das AppImage startet nicht</b></summary>
 
-- Ausführbar machen: `chmod +x MediaCenter-*.AppImage`
-- Fehlt **libfuse2** (Ubuntu 22.04+, Mint 21+, Debian 12): `sudo apt install libfuse2`, unter Ubuntu 24.04 `sudo apt install libfuse2t64`, oder ohne Installation starten mit `./MediaCenter-*.AppImage --appimage-extract-and-run`
+- Mache die Datei ausführbar: `chmod +x MediaCenter-*.AppImage`
+- Fehlt **libfuse2** (Ubuntu 22.04+, Mint 21+, Debian 12), installiere es mit `sudo apt install libfuse2`. Unter Ubuntu 24.04 lautet der Befehl `sudo apt install libfuse2t64`. Ohne Installation startest du mit `./MediaCenter-*.AppImage --appimage-extract-and-run`.
 </details>
 
 <details>
-<summary><b>Andere Geräte finden den Server nicht</b></summary>
+<summary><b>Das Handy erreicht den PC nicht</b></summary>
 
-Alle Geräte müssen im selben Netzwerk sein (kein Gast-WLAN). Prüfe die Firewall-Freigabe für MediaCenter (Windows: *Zugriff zulassen* für private Netzwerke) und nutze die in der App angezeigte Adresse bzw. den QR-Code. Hat der PC mehrere Netzwerkkarten, unter dem QR-Code eine andere Adresse antippen. Läuft Port 8080 schon, nimmt die App automatisch den nächsten freien Port.
+- Handy und PC müssen im **selben WLAN** sein. Ein Gast-WLAN trennt die Geräte oft voneinander.
+- Unter Windows muss die Firewall-Freigabe für **private Netzwerke** erteilt sein. Ist das Netzwerk als „öffentlich“ eingestuft, stelle es auf „privat“ um.
+- Hat der PC mehrere Netzwerkkarten, tippe unter dem QR-Code eine andere Adresse an.
+</details>
+
+<details>
+<summary><b>Ein Video wird nicht abgespielt</b></summary>
+
+Die App spielt alle Formate ab, die Chromium kann (siehe [Dateiformate](#-medien-organisieren)). Alte AVI-, WMV- oder DivX-Dateien kannst du mit einem Programm wie HandBrake nach MP4 (H.264/AAC) umwandeln.
 </details>
 
 <details>
 <summary><b>Der Stick ist schreibgeschützt</b></summary>
 
-Dann speichert MediaCenter die Daten im Benutzerprofil und weist beim Start darauf hin.
+Dann speichert MediaCenter seine Daten im Benutzerprofil und weist beim Start darauf hin.
 </details>
 
 ---
@@ -210,9 +243,7 @@ Kostenlose Code-Signatur bereitgestellt von [SignPath.io](https://about.signpath
 
 - Signiert wird ausschließlich die Windows-Datei `MediaCenter-*-portable.exe`. Sie wird von [GitHub Actions](.github/workflows/build.yml) direkt aus dem Quellcode dieses Repositorys gebaut. Lokal gebaute oder fremde Dateien werden nicht signiert.
 - Jede Release-Signatur muss vorher von einem Approver freigegeben werden.
-- **Rollen:**
-  - Committer und Reviewer: [Richbert0](https://github.com/Richbert0)
-  - Approver: [Richbert0](https://github.com/Richbert0)
+- **Rollen:** Committer und Reviewer: [Richbert0](https://github.com/Richbert0) · Approver: [Richbert0](https://github.com/Richbert0)
 - **Datenschutz:** Dieses Programm überträgt keine Informationen an andere vernetzte Systeme, außer wenn der Benutzer es ausdrücklich veranlasst. Beispiele dafür sind das Freigeben von Medien, der Chat oder Spiele im eigenen lokalen Netzwerk. Es gibt keine Telemetrie und keine Verbindung zu Servern im Internet.
   *This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.*
 
@@ -222,12 +253,12 @@ Einrichtung und Hintergründe: [docs/SIGNIEREN.md](docs/SIGNIEREN.md).
 
 ## 🛠️ Entwicklung
 
-Voraussetzung: [Node.js](https://nodejs.org) 18 oder neuer.
+Voraussetzung ist [Node.js](https://nodejs.org) 18 oder neuer.
 
 ```bash
 npm install          # Abhängigkeiten
-npm start            # Desktop-App im Entwicklungsmodus (Daten unter app/)
-npm run server       # nur Server, Aufruf im Browser: http://localhost:8080
+npm start            # Desktop-App im Entwicklungsmodus
+npm run server       # nur der Server, im Browser: http://localhost:8080
 npm test             # Server- und LAN-Tests
 npm run build:win    # portable Windows-EXE  → dist/
 npm run build:linux  # Linux-AppImage        → dist/
@@ -235,26 +266,28 @@ npm run build:linux  # Linux-AppImage        → dist/
 
 Unter Windows erledigen `start.bat` (Server-Modus) und `BUILD.bat` (Build-Menü) dasselbe per Doppelklick.
 
-**Automatische Builds:** Jeder Push und Pull Request wird per [GitHub Actions](.github/workflows/build.yml) getestet und auf Windows und Linux gebaut (inkl. Start-Test der fertigen App). Pushes auf `main` und Tags `v*` veröffentlichen die Dateien automatisch als **Release**.
+**Automatische Builds:** Jeder Push und jeder Pull Request wird per [GitHub Actions](.github/workflows/build.yml) getestet und auf Windows und Linux gebaut, inklusive Start-Test der fertigen App. Pushes auf `main` veröffentlichen die Dateien automatisch als **Release**.
 
 ### Aufbau
 
 ```
-├── electron-main.js        Desktop-Hauptprozess (Fenster, portabler Datenordner, --server)
-├── preload.js              sichere Brücke zwischen Seite und Desktop
-├── server/                 eingebetteter Server (Node.js)
-│   ├── index.js            HTTP: Mediathek, Streaming, Upload, Papierkorb, Bestenlisten
-│   ├── hub.js              WebSocket: Chat, Lobby, Spielräume
-│   ├── library.js          Medien-Scan (Filme/Serien/Musik/Fotos)
-│   ├── multipart.js        streamender Upload-Parser
+├── electron-main.js        Desktop-Hauptprozess (Fenster, Vollbild, portabler Datenordner, --server)
+├── preload.js              sichere Brücke zwischen Oberfläche und Desktop
+├── server/                 eingebetteter Server (Node.js, ein Port für HTTP + WebSocket)
+│   ├── index.js            Mediathek-API, Range-Streaming, Upload, Papierkorb, Design, QR-Code
+│   ├── hub.js              WebSocket: Chat, Sprachchat-Signalisierung, Lobby, Spielräume
+│   ├── library.js          Medien-Scan inkl. eigener Ordner und Serienerkennung
+│   ├── settings.js         eigene Medienordner und Designfarbe
+│   ├── util.js             Dateinamen-Erkennung, LAN-Adressen, Hilfsfunktionen
 │   └── cli.js              Start ohne Fenster
-├── app/                    Oberfläche (HTML/CSS/JS)
-│   ├── index.html          Hauptfenster mit Navigation
-│   ├── FILME.html · SERIEN.html · MUSIK.html · FOTOS.html · upload.html
-│   ├── SPIELE.html         Spielhalle + LAN-Lobby
-│   └── games/              11 Spiele + gemeinsames Game-Kit (shared/)
-├── test/                   automatische Tests
+├── app/                    Oberfläche (HTML/CSS/JS ohne Build-Schritt)
+│   ├── index.html          Hauptfenster: Navigation, Vollbild/Kiosk, Fernbedienung
+│   ├── FILME · SERIEN · MUSIK · FOTOS · upload · SPIELE · EINSTELLUNGEN (.html)
+│   ├── js/                 Player, Vorschaubild-Editor, Visualizer, Designfarbe, LAN-Adresse
+│   ├── components/chat.js  LAN-Chat
+│   └── games/              11 Spiele und gemeinsames Game-Kit (shared/)
+├── test/                   automatische Tests (node --test)
 └── .github/workflows/      CI: Tests, Builds, Releases
 ```
 
-**Lizenz:** [MIT](LICENSE). Alle Abhängigkeiten der fertigen App sind Open Source und gebündelt: Node.js-Laufzeit (über Electron), WebSocket (`ws`) und QR-Code-Erzeugung (`qrcode`); die Schriftarten Syne und Outfit liegen lokal unter `app/fonts` (SIL Open Font License).
+**Lizenz:** [MIT](LICENSE). Alle Abhängigkeiten der fertigen App sind Open Source und gebündelt: Electron (Chromium + Node.js), `ws` (WebSocket) und `qrcode`. Die Schriftarten Syne und Outfit liegen lokal unter `app/fonts` (SIL Open Font License).
