@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MediaCenter">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22D3EE"/><stop offset=".55" stop-color="#0891B2"/><stop offset="1" stop-color="#1E3A8A"/></linearGradient>
+<linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7f3"/></linearGradient>
+<filter id="emb" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#04122b" flood-opacity=".45"/></filter>
+</defs>
+<rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
+<rect x="16" y="16" width="480" height="480" rx="108" fill="url(#gl)"/>
+<g transform="translate(36 36) scale(.86)" style="color:#fff" filter="url(#emb)"><path d="M105.8 195.3 A162 162 0 0 1 190.1 108.0" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><path d="M321.9 108.0 A162 162 0 0 1 406.2 195.3" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><path d="M406.2 316.7 A162 162 0 0 1 321.9 404.0" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><path d="M190.1 404.0 A162 162 0 0 1 105.8 316.7" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><g fill="currentColor"><circle cx="232" cy="128" r="21"/><circle cx="292" cy="114" r="21"/>
+<path d="M243 128V64l66-16v66h-16V68l-34 8v52z"/><path d="M243 62l66-16v22l-66 16z"/></g><g fill="currentColor"><path fill-rule="evenodd" d="M58 236h86a12 12 0 0 1 12 12v52a12 12 0 0 1-12 12H58a12 12 0 0 1-12-12v-52a12 12 0 0 1 12-12zM92 256v34l26-17z"/>
+<path d="M48 214l12-2-4 18-10 2zM70 210l20-4-10 21-18 3zM100 205l20-4-10 21-18 3zM130 200l18-3 3 16-28 5z" /></g><g><rect x="368" y="214" width="96" height="70" rx="13" fill="none" stroke="currentColor" stroke-width="14"/><rect x="378" y="296" width="76" height="12" rx="6" fill="currentColor"/></g><g><rect x="208" y="374" width="96" height="78" rx="13" fill="none" stroke="currentColor" stroke-width="14"/><path d="M219 444l26-30 16 18 12-12 22 24z" fill="currentColor"/><circle cx="284" cy="398" r="9" fill="currentColor"/></g><path d="M218 196v120l100-60z" fill="currentColor" stroke="currentColor" stroke-width="22" stroke-linejoin="round"/></g>
+</svg>

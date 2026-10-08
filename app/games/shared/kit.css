@@ -1,7 +1,7 @@
 /* MediaCenter Game-Kit – einheitliches Erscheinungsbild aller Spiele */
 @import url('/fonts/fonts.css');
 :root{
-  --bg:#06080F;--card:#0E1120;--hover:#161928;--bg-rgb:6,8,15;--card-rgb:14,17,32;--bg2:#1a1a2e;--bg2s:#0b1020;
+  --bg:#06080F;--card:#0E1120;--hover:#161928;--txt:#E6ECFA;--sub:#5B6882;--txt-rgb:226,232,248;--sub2:#AEB8CF;--bg-rgb:6,8,15;--card-rgb:14,17,32;--bg2:#1a1a2e;--bg2s:#0b1020;
   --acc:#22D3EE;--acc2:#0891B2;--acc-rgb:34,211,238;--acc2-rgb:8,145,178;--hl:#F59E0B;--hl2:#D97706;--hl-rgb:245,158,11;
   --gk-bg:var(--bg);
   --gk-bg2:var(--bg2s);
@@ -11,7 +11,7 @@
   --gk-accent:var(--acc);
   --gk-accent2:var(--acc2);
   --gk-amber:var(--hl);
-  --gk-txt:#e6ecfa;
+  --gk-txt:var(--txt,#e6ecfa);
   --gk-sub:#8391ad;
   --gk-green:#34d399;
   --gk-red:#f43f5e;

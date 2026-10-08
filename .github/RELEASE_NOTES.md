@@ -14,6 +14,16 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. D
 > `sudo apt install libfuse2` (Ubuntu 24.04 und neuer: `sudo apt install libfuse2t64`).
 > Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
+### Neu in 3.5.0
+- **Filme im Streaming-Stil:** Titelbild, „Weiterschauen“, „Neu hinzugefügt“, eigene Kategorien als Reihen und „Alle Filme“ mit Sortierung. Die Kachelgröße ist einstellbar (S–XL).
+- **Eigene Film-Kategorien:** Anlegen, umbenennen, sortieren und löschen unter ⚙️ Einstellungen. Zugewiesen werden sie auf der Filme-Seite.
+- **Bearbeitungsmodus:** Vorschaubild ändern, Kategorien zuweisen und in den Papierkorb verschieben geht erst nach Klick auf das ⚙️-Zahnrad oben rechts. So landet nichts versehentlich im Papierkorb.
+- **Neues App-Logo** als Programm-Icon und in der Oberfläche. In der App folgt es der Designfarbe.
+- **Eine Kopfzeile statt zwei:** Logo, Bereich, Adresse mit Port, Lautstärke, Neu laden, Vollbild, Kiosk und die Fensterknöpfe in einer Zeile.
+- **Designfarbe:** Die Schrift ist jetzt passend zur Palette getönt. Bei „Eigene Farbe“ ist auch die Zweitfarbe wählbar.
+- **Musik am Handy:** Neue Playlists lassen sich auch im Hochformat anlegen (Chip „＋ Neue Playlist“).
+- **Chat:** Lässt sich in der Desktop-App nicht mehr unter die Titelleiste schieben und bleibt so immer greifbar.
+
 ### Neu in 3.4.0
 - **Designfarbe wählbar:** Unter ⚙️ Einstellungen gibt es 9 abgestimmte Paletten oder eine eigene Farbe. Die Farbe gilt sofort für alle Bereiche, die Spiele und alle verbundenen Geräte.
 - **Vollbild & Kiosk überarbeitet:** Vollbild schaltet die ganze App bildschirmfüllend, ohne die Seite neu zu laden. Kiosk zeigt nur den Inhalt, die Leisten erscheinen am Bildschirmrand bzw. über „⋯“. Beide Modi bleiben beim Seitenwechsel und beim „Neu laden“ erhalten. Esc schließt zuerst offene Fenster und beendet erst danach den Modus. Video-Vollbild und Spiele beenden den Kiosk-Modus nicht mehr.

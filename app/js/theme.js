@@ -48,7 +48,15 @@
   }
 
   /** Eigene Farbe → harmonische Palette (Helligkeit/Sättigung werden in lesbare Bereiche gezogen) */
-  function fromCustom(hex) {
+  /** Zweitfarbe in einen gut sichtbaren Bereich ziehen */
+  function normHl(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return null;
+    const [h, s0, l0] = rgbToHsl(rgb);
+    if (s0 < 12) return hslToHex(h, s0, clamp(l0, 70, 88));
+    return hslToHex(h, clamp(s0, 65, 95), clamp(l0, 55, 68));
+  }
+  function fromCustom(hex, hex2) {
     const rgb = hexToRgb(hex);
     if (!rgb) return PRESETS.cyan;
     const [h, s0] = rgbToHsl(rgb);
@@ -58,13 +66,13 @@
     const acc2 = hslToHex(h, grey ? s : clamp(s + 5, 0, 95), grey ? 45 : 44);
     // Highlight: warmes Gold zu kühlen Farben, kühles Hellblau zu warmen Farben
     const warm = h < 70 || h > 300;
-    const hl = grey ? '#F59E0B' : warm ? '#38BDF8' : '#FBBF24';
+    const hl = normHl(hex2) || (grey ? '#F59E0B' : warm ? '#38BDF8' : '#FBBF24');
     return { name: 'Eigene Farbe', acc, acc2, hl, neutral: grey };
   }
 
   function palette(t) {
     t = t || {};
-    if (t.custom) return fromCustom(t.custom);
+    if (t.custom) return fromCustom(t.custom, t.custom2);
     return PRESETS[t.preset] || PRESETS.cyan;
   }
 
@@ -81,6 +89,14 @@
       '--bg': hslToHex(bh, ts, 4), '--card': hslToHex(bh, ts * 0.8, 9), '--hover': hslToHex(bh, ts * 0.7, 13),
       '--bg2': hslToHex(bh, ts * 0.7, 12), '--bg2s': hslToHex(bh, ts * 0.9, 8),
     };
+    // Schrift: fast weiß bzw. gedämpft, ganz leicht in Richtung der Designfarbe getönt
+    const th = p.neutral ? 220 : h;
+    o['--txt'] = hslToHex(th, p.neutral ? 14 : 45, 93);
+    o['--sub'] = hslToHex(th, p.neutral ? 10 : 18, 50);
+    o['--sub2'] = hslToHex(th, p.neutral ? 12 : 26, 74);
+    o['--gk-txt'] = o['--txt'];
+    o['--gk-sub'] = hslToHex(th, p.neutral ? 10 : 20, 62);
+    o['--txt-rgb'] = hexToRgb(o['--txt']).join(',');
     o['--bg-rgb'] = hexToRgb(o['--bg']).join(',');
     o['--card-rgb'] = hexToRgb(o['--card']).join(',');
     return o;

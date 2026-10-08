@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="MediaCenter">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
+<link rel="icon" href="/images/logo.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/css/desktop-shell.css">
 <link rel="stylesheet" href="/css/remote.css">
 <script src="/js/theme.js"></script>
@@ -22,7 +23,7 @@
   --acc:#22D3EE;--acc2:#0891B2;--acc-rgb:34,211,238;--acc2-rgb:8,145,178;--hl:#F59E0B;--hl2:#D97706;--hl-rgb:245,158,11;
   --gold:var(--acc);--gold2:var(--acc2);--glow:rgba(var(--acc-rgb),.22);
   --amber:var(--hl);--amber2:var(--hl2);--amber-glow:rgba(var(--hl-rgb),.18);
-  --txt:#E2E8F8;--sub:#5B6882;--border:rgba(var(--acc-rgb),.12);
+  --txt:#E2E8F8;--sub:#5B6882;--txt-rgb:226,232,248;--sub2:#AEB8CF;--border:rgba(var(--acc-rgb),.12);
   --red:#F43F5E;--green:#10B981;--rad:12px;
   --font-body:'Outfit','Segoe UI Variable Text','Segoe UI',sans-serif;
   --font-display:'Syne','Bahnschrift','Trebuchet MS',sans-serif;
@@ -46,7 +47,24 @@ html,body{height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-f
 .ctrl-bar{flex-shrink:0;display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(var(--acc-rgb),.12);background:linear-gradient(180deg,rgba(10,13,26,.98),rgba(4,6,14,.97));z-index:20;position:relative;}
 .ctrl-bar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--acc-rgb),.2) 30%,rgba(var(--hl-rgb),.14) 60%,transparent);pointer-events:none;}
 .ctrl-logo{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:2.5px;font-family:var(--font-display);background:linear-gradient(135deg,var(--amber),var(--amber2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;flex-shrink:0;}
-.ctrl-spacer{flex:1;}
+.ctrl-spacer{flex:1;min-width:8px;align-self:stretch;}
+.ctrl-brand{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0}
+.ctrl-brand-logo{width:32px;height:32px;flex-shrink:0;filter:drop-shadow(0 3px 10px rgba(var(--acc-rgb),.3))}
+.ctrl-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04);color:var(--sub2,rgba(var(--txt-rgb),.72));font-size:.7rem;line-height:1.2;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ctrl-pill.addr{font-family:ui-monospace,Consolas,monospace;cursor:copy}
+.ctrl-pill.addr::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--hl);flex-shrink:0}
+.ctrl-pill.addr.live::before{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,.7)}
+.desktop-actions{display:flex;align-items:center;gap:4px;margin-left:6px;padding-left:8px;border-left:1px solid rgba(255,255,255,.07)}
+.desktop-actions[hidden]{display:none}
+.desktop-window-btn{width:34px;height:30px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--sub2,rgba(var(--txt-rgb),.75));display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.desktop-window-btn:hover{background:rgba(255,255,255,.09);color:var(--txt)}
+.desktop-window-btn.close:hover{background:rgba(244,63,94,.85);color:#fff}
+.desktop-window-btn svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none}
+/* Desktop-App: die Leiste ist gleichzeitig die Titelleiste (Fenster ziehen) */
+body.desktop-app .ctrl-bar{-webkit-app-region:drag;min-height:48px}
+body.desktop-app .ctrl-bar button,body.desktop-app .ctrl-bar input,body.desktop-app .ctrl-bar .ctrl-vol,body.desktop-app .ctrl-bar .ctrl-brand,body.desktop-app .ctrl-bar .ctrl-pill{-webkit-app-region:no-drag}
+@media(max-width:900px){#desktop-section-pill{display:none}}
+@media(max-width:700px){.ctrl-pill.addr{display:none}}
 .ctrl-vol{display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .ctrl-vol-icon{font-size:.85rem;cursor:pointer;color:rgba(var(--acc-rgb),.5);transition:color .2s;line-height:1;}
 .ctrl-vol-icon:hover{color:var(--gold);}
@@ -58,7 +76,8 @@ html,body{height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-f
 .ctrl-btn .ci{font-size:.9rem;display:inline-block;transition:transform .25s;}
 .ctrl-btn:hover .ci{transform:scale(1.15);}
 .ctrl-btn.active{background:rgba(var(--acc-rgb),.14);border-color:rgba(var(--acc-rgb),.4);color:var(--gold);}
-@media(max-width:560px){.ctrl-btn .btn-label{display:none;}.ctrl-vol-slider{width:55px;}.ctrl-logo{font-size:.6rem;letter-spacing:1px;}}
+@media(max-width:1100px){.ctrl-btn .btn-label{display:none;}}
+@media(max-width:560px){.ctrl-vol-slider{width:55px;}.ctrl-logo{display:none;}}
 @media(max-width:400px){.ctrl-vol-slider{width:42px;}.ctrl-btn{padding:4px 7px;min-height:26px;font-size:.66rem;}.ctrl-bar{gap:5px;}}
 .content-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;border:1px solid rgba(var(--acc-rgb),.04);box-shadow:inset 0 0 60px rgba(0,0,0,.25);}
 .content-area::before{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;box-shadow:inset 0 0 80px rgba(0,0,0,.18);border-radius:2px;}
@@ -68,7 +87,8 @@ html,body{height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-f
 @keyframes scanline-drift{from{background-position:0 0}to{background-position:0 100%}}
 @keyframes tv-breathe{0%{opacity:.7}40%{opacity:1}70%{opacity:.85}100%{opacity:.7}}
 .mp-card{background:linear-gradient(145deg,rgba(14,17,32,.94),rgba(6,8,16,.96));border:1px solid rgba(var(--acc-rgb),.18);border-radius:20px;padding:36px;display:flex;flex-direction:column;align-items:center;gap:18px;box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(var(--acc-rgb),.06);max-width:420px;width:100%;text-align:center;position:relative;z-index:60;}
-.mp-icon{font-size:2.8rem;}
+.mp-icon{font-size:2.8rem;line-height:0}
+.mp-logo{width:96px;height:96px;filter:drop-shadow(0 10px 28px rgba(var(--acc-rgb),.35))}
 .mp-title{font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;font-family:var(--font-display);color:var(--amber);}
 .mp-btn{display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:12px;color:#000;font-size:.9rem;font-weight:800;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:.25s;}
 .mp-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px var(--glow);}
@@ -148,7 +168,7 @@ body.video-fs #page-frame,body.immersive #page-frame{width:100vw!important;heigh
 .qr-track-box{overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(var(--acc-rgb),.07);border-radius:6px;padding:3px 7px;cursor:default;position:relative;}
 .qr-track-box::after{content:'';position:absolute;right:0;top:0;bottom:0;width:18px;background:linear-gradient(90deg,transparent,rgba(6,8,16,.95));pointer-events:none;opacity:0;transition:opacity .2s;}
 .qr-track-box.overflow::after{opacity:1;}
-.qr-track{font-size:.76rem;font-weight:700;color:#E2E8F8;white-space:nowrap;display:inline-block;}
+.qr-track{font-size:.76rem;font-weight:700;color:var(--txt);white-space:nowrap;display:inline-block;}
 .qr-track.scrolling{animation:qr-marquee var(--marquee-dur,9s) linear infinite;}
 @keyframes qr-marquee{0%,12%{transform:translateX(0)}85%,100%{transform:translateX(var(--scroll-dist,-120px))}}
 .qr-prog-wrap{display:flex;flex-direction:column;gap:2px;margin-top:2px;}
@@ -195,8 +215,7 @@ body.video-fs #page-frame,body.immersive #page-frame{width:100vw!important;heigh
 .m-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:#000;font-size:.9rem;font-weight:800;cursor:pointer;transition:.2s;}
 .m-btn:hover{transform:scale(1.02);box-shadow:0 4px 16px var(--glow);}
 /* Vollbild & Kiosk */
-body.app-fs .desktop-chrome{display:none!important}
-body.desktop-app.app-fs .app{height:100vh;height:100dvh}
+body.app-fs .desktop-actions{display:none!important}
 body.kiosk .sidebar,body.kiosk .qa-bar{display:none!important}
 body.kiosk .ctrl-bar{position:fixed;top:0;left:0;right:0;z-index:60;transform:translateY(-110%);transition:transform .25s ease;box-shadow:0 10px 30px rgba(0,0,0,.6)}
 body.kiosk.kiosk-reveal .ctrl-bar{transform:none}
@@ -243,34 +262,7 @@ body.video-fs #kiosk-menu,body.immersive #kiosk-menu{display:none!important}
 </style>
 </head>
 <body>
-
-<div class="desktop-chrome" id="desktop-chrome" hidden>
-  <div class="desktop-drag">
-    <div class="desktop-brand">
-      <div class="desktop-brand-mark"></div>
-      <div class="desktop-brand-copy">
-        <div class="desktop-eyebrow">Desktop Edition</div>
-        <div class="desktop-name">MediaCenter</div>
-      </div>
-    </div>
-    <div class="desktop-pills">
-      <span class="desktop-pill warn" id="desktop-server-pill">Lokaler Server wird vorbereitet</span>
-      <span class="desktop-pill" id="desktop-section-pill">Startseite</span>
-      <span class="desktop-pill" id="desktop-version-pill">v2.1</span>
-    </div>
-  </div>
-  <div class="desktop-actions">
-    <button class="desktop-window-btn" id="desktop-minimize-btn" title="Minimieren" aria-label="Fenster minimieren">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5h10"></path></svg>
-    </button>
-    <button class="desktop-window-btn" id="desktop-maximize-btn" title="Maximieren" aria-label="Fenster maximieren">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="0.6"></rect></svg>
-    </button>
-    <button class="desktop-window-btn close" id="desktop-close-btn" title="Schliessen" aria-label="Fenster schliessen">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-    </button>
-  </div>
-</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="mc-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></linearGradient><symbol id="mc-glyph" viewBox="0 0 512 512"><g filter="drop-shadow(0 4px 6px rgba(0,0,0,.35))"><path d="M105.8 195.3 A162 162 0 0 1 190.1 108.0" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><path d="M321.9 108.0 A162 162 0 0 1 406.2 195.3" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><path d="M406.2 316.7 A162 162 0 0 1 321.9 404.0" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><path d="M190.1 404.0 A162 162 0 0 1 105.8 316.7" fill="none" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><g fill="currentColor"><circle cx="232" cy="128" r="21"/><circle cx="292" cy="114" r="21"/><path d="M243 128V64l66-16v66h-16V68l-34 8v52z"/><path d="M243 62l66-16v22l-66 16z"/></g><g fill="currentColor"><path fill-rule="evenodd" d="M58 236h86a12 12 0 0 1 12 12v52a12 12 0 0 1-12 12H58a12 12 0 0 1-12-12v-52a12 12 0 0 1 12-12zM92 256v34l26-17z"/><path d="M48 214l12-2-4 18-10 2zM70 210l20-4-10 21-18 3zM100 205l20-4-10 21-18 3zM130 200l18-3 3 16-28 5z" /></g><g><rect x="368" y="214" width="96" height="70" rx="13" fill="none" stroke="currentColor" stroke-width="14"/><rect x="378" y="296" width="76" height="12" rx="6" fill="currentColor"/></g><g><rect x="208" y="374" width="96" height="78" rx="13" fill="none" stroke="currentColor" stroke-width="14"/><path d="M219 444l26-30 16 18 12-12 22 24z" fill="currentColor"/><circle cx="284" cy="398" r="9" fill="currentColor"/></g><path d="M218 196v120l100-60z" fill="currentColor" stroke="currentColor" stroke-width="22" stroke-linejoin="round"/></g></symbol></defs></svg>
 
 <div class="app">
 
@@ -341,8 +333,13 @@ body.video-fs #kiosk-menu,body.immersive #kiosk-menu{display:none!important}
   <!-- MAIN -->
   <div class="main">
     <!-- CONTROL BAR -->
-    <div class="ctrl-bar">
-      <span class="ctrl-logo">MediaCenter</span>
+    <div class="ctrl-bar" id="ctrl-bar">
+      <div class="ctrl-brand" onclick="loadPage('')" title="Startseite">
+        <svg class="ctrl-brand-logo" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="lg-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--acc)"/><stop offset="1" style="stop-color:var(--acc2)"/></linearGradient></defs><rect x="16" y="16" width="480" height="480" rx="108" fill="url(#lg-bg)"/><rect x="16" y="16" width="480" height="480" rx="108" fill="url(#mc-gloss)"/><use href="#mc-glyph" transform="translate(36 36) scale(.86)" style="color:#fff"/></svg>
+        <span class="ctrl-logo">MediaCenter</span>
+      </div>
+      <span class="ctrl-pill" id="desktop-section-pill">Startseite</span>
+      <span class="ctrl-pill addr" id="desktop-server-pill" title="Adresse für Handy, Tablet und andere PCs im WLAN">…</span>
       <div class="ctrl-spacer"></div>
       <div class="ctrl-vol" id="ctrl-vol-wrap">
         <span class="ctrl-vol-icon" id="ctrl-vol-icon" onclick="toggleMute()" title="Lautstärke">🔊</span>
@@ -360,6 +357,17 @@ body.video-fs #kiosk-menu,body.immersive #kiosk-menu{display:none!important}
       <button class="ctrl-btn" id="ctrl-kiosk-btn" onclick="toggleKiosk()" title="Kiosk / Normal" style="display:none">
         <span class="ci"></span><span class="btn-label"></span>
       </button>
+      <div class="desktop-actions" id="desktop-actions" hidden>
+          <button class="desktop-window-btn" id="desktop-minimize-btn" title="Minimieren" aria-label="Fenster minimieren">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5h10"></path></svg>
+          </button>
+          <button class="desktop-window-btn" id="desktop-maximize-btn" title="Maximieren" aria-label="Fenster maximieren">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="0.6"></rect></svg>
+          </button>
+          <button class="desktop-window-btn close" id="desktop-close-btn" title="Schliessen" aria-label="Fenster schliessen">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+          </button>
+        </div>
     </div>
 
     <div class="content-area">
@@ -368,7 +376,7 @@ body.video-fs #kiosk-menu,body.immersive #kiosk-menu{display:none!important}
       <div id="home-screen">
         <canvas id="tv-static-canvas"></canvas>
         <div class="mp-card">
-          <div class="mp-icon">🎬</div>
+          <div class="mp-icon"><svg class="mp-logo" viewBox="0 0 512 512" aria-hidden="true"><defs><linearGradient id="lg-bg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--acc)"/><stop offset="1" style="stop-color:var(--acc2)"/></linearGradient></defs><rect x="16" y="16" width="480" height="480" rx="108" fill="url(#lg-bg2)"/><rect x="16" y="16" width="480" height="480" rx="108" fill="url(#mc-gloss)"/><use href="#mc-glyph" transform="translate(36 36) scale(.86)" style="color:#fff"/></svg></div>
           <div class="mp-title">MediaCenter</div>
           <div class="mp-grid">
             <button class="mp-card-item" onclick="loadPage('FILME.html','🎬 Filme')">
@@ -628,6 +636,7 @@ function loadPage(src,label){
   document.body.classList.remove('immersive');
   src=src||'';
   label=label||PAGE_LABELS[src]||('📄 '+src);
+  {const sp=document.getElementById('desktop-section-pill');if(sp)sp.textContent=(src?label:'Startseite').replace(/^[^\p{L}\p{N}]+/u,'').trim()||'Startseite';}
 
   const home=document.getElementById('home-screen');
   const pc=document.getElementById('page-container');
@@ -1289,6 +1298,18 @@ function _restoreMode(m){
     setTimeout(done,10000);
   },400);
 }
+
+/* Adresse (IP:Port) für andere Geräte in der Kopfzeile – Klick kopiert sie */
+(async function(){
+  const el=document.getElementById('desktop-server-pill');if(!el)return;
+  try{
+    const d=await (await fetch('/api/qrcode-url',{cache:'no-store'})).json();
+    const url=(d.url||location.origin+'/').replace(/\/$/,'');
+    el.textContent=url.replace(/^https?:\/\//,'');el.classList.add('live');
+    el.onclick=()=>{try{navigator.clipboard.writeText(url).then(()=>window.MC&&MC.toast&&MC.toast('✅ Adresse kopiert: '+url,'ok',2200));}catch{}};
+    el.title='Adresse für Handy, Tablet und andere PCs im WLAN – klicken zum Kopieren';
+  }catch{el.textContent=location.host;}
+})();
 
 /* Restore state after refresh */
 (function(){
