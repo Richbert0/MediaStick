@@ -6,17 +6,19 @@
 <title>Serien – MediaCenter</title>
 <link rel="stylesheet" href="/css/main.css">
 <link rel="stylesheet" href="/css/player.css">
+<script src="/js/theme.js"></script>
+<script src="/js/esc-bridge.js"></script>
 <style>
 html,body{height:100%}
-body{background:#05070d;overflow:hidden}
+body{background:var(--bg);overflow:hidden}
 .page{height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
 [hidden]{display:none!important}
 
 /* Hero */
 .hero{position:relative;height:min(62vh,560px);min-height:340px;display:flex;align-items:flex-end;overflow:hidden}
 .hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 25%;transform:scale(1.04);transition:opacity .6s ease, background-image .6s}
-.hero-bg.ph{background:radial-gradient(ellipse at 70% 30%,rgba(34,211,238,.35),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(245,158,11,.25),transparent 50%),linear-gradient(135deg,#0b1a2e,#05070d)}
-.hero::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(5,7,13,.95) 0%,rgba(5,7,13,.7) 38%,rgba(5,7,13,0) 70%),linear-gradient(0deg,#05070d 0%,rgba(5,7,13,0) 45%)}
+.hero-bg.ph{background:radial-gradient(ellipse at 70% 30%,rgba(var(--acc-rgb),.35),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(var(--hl-rgb),.25),transparent 50%),linear-gradient(135deg,var(--hover),var(--bg))}
+.hero::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(var(--bg-rgb),.95) 0%,rgba(var(--bg-rgb),.7) 38%,rgba(var(--bg-rgb),0) 70%),linear-gradient(0deg,var(--bg) 0%,rgba(var(--bg-rgb),0) 45%)}
 .hero-content{position:relative;z-index:2;padding:0 4vw 6vh;max-width:min(640px,92vw)}
 .hero-kicker{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--amber);margin-bottom:10px}
 .hero-title{font-family:var(--font-display);font-size:clamp(2rem,5.5vw,4rem);font-weight:800;line-height:1;margin-bottom:12px;text-shadow:0 4px 30px rgba(0,0,0,.6)}
@@ -35,7 +37,7 @@ body{background:#05070d;overflow:hidden}
 .hero-prog i{display:block;height:100%;background:#e50914;background:var(--gold)}
 
 /* Kopfleiste */
-.topbar{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:12px;padding:14px 4vw;background:linear-gradient(180deg,rgba(5,7,13,.85),rgba(5,7,13,0))}
+.topbar{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:12px;padding:14px 4vw;background:linear-gradient(180deg,rgba(var(--bg-rgb),.85),rgba(var(--bg-rgb),0))}
 .topbar h1{font-family:var(--font-display);font-size:1.15rem;font-weight:800;letter-spacing:.06em;color:var(--amber)}
 .topbar .sp{flex:1}
 .srch{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15)}
@@ -75,11 +77,11 @@ body{background:#05070d;overflow:hidden}
 /* Detail */
 .det-bg{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);display:none;overflow-y:auto;padding:4vh 2vw}
 .det-bg.show{display:block}
-.det{position:relative;width:min(980px,100%);margin:0 auto;background:#10141f;border-radius:12px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.7);animation:det-in .25s ease}
+.det{position:relative;width:min(980px,100%);margin:0 auto;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.7);animation:det-in .25s ease}
 @keyframes det-in{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
 .det-head{position:relative;aspect-ratio:16/7;min-height:260px;display:flex;align-items:flex-end;background-size:cover;background-position:center 25%}
-.det-head.ph{background:radial-gradient(ellipse at 70% 30%,rgba(34,211,238,.35),transparent 55%),linear-gradient(135deg,#0b1a2e,#10141f)}
-.det-head::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#10141f 0%,rgba(16,20,31,.55) 45%,rgba(16,20,31,.1) 100%)}
+.det-head.ph{background:radial-gradient(ellipse at 70% 30%,rgba(var(--acc-rgb),.35),transparent 55%),linear-gradient(135deg,var(--hover),var(--card))}
+.det-head::before{content:'';position:absolute;inset:0;background:linear-gradient(0deg,var(--card) 0%,rgba(var(--card-rgb),.55) 45%,rgba(var(--card-rgb),.1) 100%)}
 .det-close{position:absolute;top:14px;right:14px;z-index:3}
 .det-hc{position:relative;z-index:2;padding:0 32px 22px;width:100%}
 .det-title{font-family:var(--font-display);font-size:clamp(1.6rem,4vw,2.8rem);font-weight:800;margin-bottom:12px}
@@ -91,7 +93,7 @@ body{background:#05070d;overflow:hidden}
 .season-sel{background:#242a3a;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:9px 12px;font:inherit;font-weight:700;cursor:pointer}
 .ep{display:grid;grid-template-columns:28px 160px 1fr auto;gap:16px;align-items:center;padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.08);border-radius:8px;cursor:pointer;transition:background .15s}
 .ep:hover,.ep:focus-visible{background:rgba(255,255,255,.06);outline:none}
-.ep.cur{background:rgba(34,211,238,.08)}
+.ep.cur{background:rgba(var(--acc-rgb),.08)}
 .ep .no{font-size:1.4rem;color:rgba(255,255,255,.55);text-align:center;font-weight:700}
 .ep .th{position:relative;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#1d2335;background-size:cover;background-position:center}
 .ep .th .bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:rgba(255,255,255,.25)}

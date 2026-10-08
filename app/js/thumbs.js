@@ -8,7 +8,7 @@
   const CSS = `
   .mct-bg{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:16px}
   .mct-bg.show{display:flex}
-  .mct{width:min(760px,100%);max-height:100%;overflow:auto;background:linear-gradient(160deg,#0e1120,#06080f);border:1px solid rgba(34,211,238,.2);border-radius:18px;padding:18px;color:#e2e8f8;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .mct{width:min(760px,100%);max-height:100%;overflow:auto;background:linear-gradient(160deg,#0e1120,#06080f);border:1px solid rgba(var(--acc-rgb),.2);border-radius:18px;padding:18px;color:#e2e8f8;box-shadow:0 30px 80px rgba(0,0,0,.6)}
   .mct h3{font-size:1rem;font-weight:800;margin-bottom:2px}
   .mct .nm{font-size:.78rem;color:#7d8aa5;margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mct-stage{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}
@@ -17,12 +17,12 @@
   .mct-stage.img img{display:block}
   .mct-stage.img video{visibility:hidden}
   .mct-time{position:absolute;right:10px;bottom:10px;padding:3px 8px;border-radius:6px;background:rgba(0,0,0,.7);font-size:.78rem;font-variant-numeric:tabular-nums}
-  .mct-range{width:100%;margin:12px 0 6px;accent-color:#22d3ee}
+  .mct-range{width:100%;margin:12px 0 6px;accent-color:var(--acc)}
   .mct-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
   .mct-row .sp{flex:1}
-  .mct button{padding:9px 13px;border-radius:10px;border:1px solid rgba(34,211,238,.2);background:rgba(34,211,238,.07);color:#e2e8f8;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
-  .mct button:hover{background:rgba(34,211,238,.16)}
-  .mct button.pri{background:linear-gradient(135deg,#22d3ee,#0891b2);color:#031018;border-color:transparent}
+  .mct button{padding:9px 13px;border-radius:10px;border:1px solid rgba(var(--acc-rgb),.2);background:rgba(var(--acc-rgb),.07);color:#e2e8f8;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+  .mct button:hover{background:rgba(var(--acc-rgb),.16)}
+  .mct button.pri{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#031018;border-color:transparent}
   .mct button:disabled{opacity:.45;pointer-events:none}
   .mct-hint{font-size:.76rem;color:#7d8aa5;margin-top:8px;min-height:1.2em}
   .mct-hint.warn{color:#fbbf24}`;

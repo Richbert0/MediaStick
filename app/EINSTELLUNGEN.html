@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Einstellungen – MediaCenter</title>
 <link rel="stylesheet" href="/css/main.css">
+<script src="/js/theme.js"></script>
+<script src="/js/esc-bridge.js"></script>
 <style>
 [hidden]{display:none!important}
 body{background:linear-gradient(160deg,var(--bg) 0%,#0b1020 60%,var(--bg) 100%);min-height:100vh}
 .wrap{max-width:980px;margin:0 auto;padding:22px 20px 40px;display:grid;gap:16px}
 h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:.02em;color:var(--amber)}
 .lead{color:var(--sub);font-size:.86rem;margin-top:-8px}
-.panel{background:linear-gradient(160deg,rgba(14,17,32,.95),rgba(6,8,16,.95));border:1px solid rgba(34,211,238,.12);border-radius:16px;padding:18px}
+.panel{background:linear-gradient(160deg,rgba(14,17,32,.95),rgba(6,8,16,.95));border:1px solid rgba(var(--acc-rgb),.12);border-radius:16px;padding:18px}
 .panel h2{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .panel .desc{color:var(--sub);font-size:.82rem;line-height:1.6;margin-bottom:14px}
 .cats{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px}
@@ -27,23 +29,38 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .folder .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .folder select,.addrow select{background:rgba(14,17,32,.9);color:var(--txt);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 10px;font:inherit;font-size:.8rem}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:var(--sub);cursor:pointer;user-select:none}
-.toggle input{accent-color:#22d3ee;width:16px;height:16px}
+.toggle input{accent-color:var(--acc);width:16px;height:16px}
 .addrow{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin-top:14px}
 .empty{color:var(--sub);font-size:.84rem;padding:14px;text-align:center;border:1px dashed rgba(255,255,255,.1);border-radius:12px}
 .note{font-size:.78rem;color:var(--sub);margin-top:10px;line-height:1.6}
 .note b{color:var(--txt)}
-.warn{padding:10px 12px;border-radius:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);color:#fcd34d;font-size:.8rem;margin-bottom:12px}
+.warn{padding:10px 12px;border-radius:10px;background:rgba(var(--hl-rgb),.08);border:1px solid rgba(var(--hl-rgb),.25);color:#fcd34d;font-size:.8rem;margin-bottom:12px}
 .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:.84rem}
 .kv dt{color:var(--sub)}
 .kv dd{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+/* Designfarbe */
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.th{position:relative;display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:14px;cursor:pointer;font:inherit;color:var(--txt);text-align:left;
+  background:var(--tb,#0b0f1c);border:1.5px solid rgba(255,255,255,.08);transition:transform .15s,border-color .15s}
+.th:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.2)}
+.th.sel{border-color:var(--ta);box-shadow:0 0 0 3px color-mix(in srgb,var(--ta) 25%,transparent)}
+.th .sw{height:34px;border-radius:9px;background:linear-gradient(135deg,var(--ta) 0 60%,var(--ta2) 60% 82%,var(--th) 82%)}
+.th .nm{font-size:.8rem;font-weight:800}
+.th.sel::after{content:'✓';position:absolute;top:6px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--ta);color:#000;font-size:.72rem;font-weight:900;display:flex;align-items:center;justify-content:center}
+.th.custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.th-preview{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.th-preview .chip{padding:5px 10px;border-radius:999px;font-size:.74rem;font-weight:800;background:rgba(var(--acc-rgb),.12);color:var(--acc);border:1px solid rgba(var(--acc-rgb),.3)}
+.th-preview .chip.hl{background:rgba(var(--hl-rgb),.12);color:var(--hl);border-color:rgba(var(--hl-rgb),.3)}
+.th-preview .bar{flex:1;min-width:120px;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.th-preview .bar i{display:block;width:62%;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc))}
 @media(max-width:700px){.addrow{grid-template-columns:1fr}.folder{grid-template-columns:auto 1fr}.folder .act{grid-column:1/-1;justify-content:flex-start}.kv{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>⚙️ Einstellungen</h1>
-  <p class="lead">Lege fest, aus welchen Ordnern MediaCenter zusätzlich Inhalte einliest.</p>
+  <p class="lead">Eigene Medienordner, Designfarbe und Infos zu Speicherort und Netzwerk.</p>
 
   <section class="panel" aria-labelledby="h-folders">
     <h2 id="h-folders">📁 Eigene Medienordner</h2>
@@ -73,6 +90,17 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
       Ist ein Ordner gerade nicht erreichbar (z.&nbsp;B. Festplatte abgesteckt), wird er übersprungen und später automatisch wieder eingelesen.
       Löschen in MediaCenter verschiebt Dateien in den Papierkorb und kann rückgängig gemacht werden; „Entfernen“ hier löscht keine Dateien.
     </p>
+  </section>
+
+  <section class="panel" aria-labelledby="h-theme">
+    <h2 id="h-theme">🎨 Designfarbe</h2>
+    <p class="note" style="margin:0 0 12px">Wähle eine Farbe für die ganze Oberfläche. Jede Palette ist aufeinander abgestimmt (Akzent, Highlight und leicht getönter Hintergrund). Die Einstellung wird auf dem Stick gespeichert und gilt sofort für alle Bereiche und alle verbundenen Geräte.</p>
+    <div class="themes" id="themes" role="radiogroup" aria-label="Designfarbe"></div>
+    <div class="th-preview" aria-hidden="true">
+      <button class="btn" type="button" tabindex="-1">Beispiel-Button</button>
+      <span class="chip">Akzent</span><span class="chip hl">Highlight</span>
+      <div class="bar"><i></i></div>
+    </div>
   </section>
 
   <section class="panel" aria-labelledby="h-store">
@@ -193,6 +221,38 @@ $('rescan').onclick = async () => {
   load();
 };
 load();
+
+// ── Designfarbe ──────────────────────────────────────────
+(function () {
+  const box = document.getElementById('themes');
+  function render() {
+    const cur = MCTheme.get() || {};
+    const tiles = Object.entries(MCTheme.PRESETS).map(([id, p]) => {
+      const v = MCTheme.vars({ preset: id });
+      const sel = !cur.custom && (cur.preset || 'cyan') === id;
+      return '<button type="button" class="th' + (sel ? ' sel' : '') + '" role="radio" aria-checked="' + sel + '" data-p="' + id + '" style="--ta:' + p.acc + ';--ta2:' + p.acc2 + ';--th:' + p.hl + ';--tb:' + v['--card'] + '"><span class="sw"></span><span class="nm">' + p.name + '</span></button>';
+    });
+    const cp = MCTheme.palette(cur.custom ? cur : { custom: '#8b5cf6' });
+    const cv = MCTheme.vars(cur.custom ? cur : { custom: '#8b5cf6' });
+    tiles.push('<label class="th custom' + (cur.custom ? ' sel' : '') + '" role="radio" aria-checked="' + !!cur.custom + '" style="--ta:' + cp.acc + ';--ta2:' + cp.acc2 + ';--th:' + cp.hl + ';--tb:' + cv['--card'] + '"><span class="sw"></span><span class="nm">🎨 Eigene Farbe</span><input type="color" value="' + (cur.custom || '#8b5cf6') + '" aria-label="Eigene Farbe wählen"></label>');
+    box.innerHTML = tiles.join('');
+  }
+  async function choose(t) {
+    const ok = await MCTheme.set(t);
+    render();
+    if (!ok) MC.toast('Farbe nur auf diesem Gerät gespeichert (Server nicht erreichbar)', 'warn');
+  }
+  box.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) choose({ preset: b.dataset.p }); });
+  let t = 0;
+  box.addEventListener('input', e => {
+    if (e.target.type !== 'color') return;
+    const v = e.target.value;
+    MCTheme.apply({ custom: v }); // Live-Vorschau beim Ziehen
+    clearTimeout(t); t = setTimeout(() => choose({ custom: v }), 350);
+  });
+  window.addEventListener('mc-theme', () => { if (!box.contains(document.activeElement) || document.activeElement.type !== 'color') render(); });
+  render();
+})();
 </script>
 </body>
 </html>

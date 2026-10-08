@@ -26,8 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ─── Aktiven iFrame ermitteln ───────────────────────────── */
 function _rmtActiveFrame() {
-  if (document.getElementById('fs-overlay').classList.contains('active'))
-    return document.getElementById('fs-frame');
   if (document.getElementById('page-container').classList.contains('active'))
     return document.getElementById('page-frame');
   if (document.getElementById('musik-bg-frame').style.display !== 'none')
@@ -75,8 +73,9 @@ function rmtNum(val) {
 
 /* ─── D-Pad ──────────────────────────────────────────────── */
 const _dpadKeys = { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight' };
-function rmtDpad(dir) { _rmtSendKey(_dpadKeys[dir]); }
+function rmtDpad(dir) { if (window._vkbArmRemote) window._vkbArmRemote(); _rmtSendKey(_dpadKeys[dir]); }
 function rmtOk() {
+  if (window._vkbArmRemote) window._vkbArmRemote();
   const frame = _rmtActiveFrame();
   try {
     const el = frame?.contentDocument?.activeElement;
@@ -89,7 +88,7 @@ function rmtOk() {
 function rmtMedia(cmd) {
   // 1) Musik-Frame immer steuern (Hintergrundplayer)
   qaRadioCmd(cmd);
-  // 2) Aktiven iFrame ebenfalls steuern (Video in page-frame / fs-frame)
+  // 2) Aktiven iFrame ebenfalls steuern (Video in page-frame)
   const frame = _rmtActiveFrame();
   if (frame && frame !== document.getElementById('musik-bg-frame')) {
     try {
@@ -138,8 +137,8 @@ document.addEventListener('keydown', e => {
    Wird NUR auf Nicht-Smartphone-Geräten aktiviert.
 ═══════════════════════════════════════════════════════════ */
 const _isMobilePhone = () =>
-  /Android|iPhone|iPod/i.test(navigator.userAgent) &&
-  window.innerWidth <= 600;
+  /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+  (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches);
 
 const VKB = (() => {
   let _target  = null;
@@ -268,10 +267,17 @@ const VKB = (() => {
     _shiftTapTimer = Date.now();
   });
 
-  /* Focus-Listener */
+  /* Focus-Listener: Bildschirmtastatur NUR, wenn mit Fernbedienung/Pfeiltasten navigiert wurde.
+     Maus, Touch oder echtes Tippen → keine Bildschirmtastatur (Handy nutzt die eigene). */
+  let _viaRemote = false;
+  window._vkbArmRemote = () => { _viaRemote = true; };
+  const disarm = () => { _viaRemote = false; };
+  document.addEventListener('pointerdown', ev => { if (!ev.target.closest || !ev.target.closest('#vkb-overlay, .sidebar-rmt')) disarm(); }, true);
+  document.addEventListener('keydown', ev => { if (ev.key && ev.key.length === 1 && !ev.ctrlKey && !ev.altKey) disarm(); }, true);
   document.addEventListener('focusin', ev => {
-    if (_isMobilePhone()) return;
+    if (_isMobilePhone() || !_viaRemote) return;
     const el = ev.target;
+    if (el.closest && el.closest('#mc-overlay')) return; // Chat hat eine eigene Tastatur (⌨️)
     if (el.tagName === 'INPUT' && !['button','submit','reset','file','color','range','checkbox','radio'].includes(el.type||'text')) {
       open(el);
     } else if (el.tagName === 'TEXTAREA') {

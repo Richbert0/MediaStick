@@ -26,7 +26,7 @@ class Settings {
 
   async load() {
     const d = await U.readJson(this.file, {});
-    this.data = { folders: Array.isArray(d.folders) ? d.folders.filter(f => f && f.id && f.path) : [] };
+    this.data = { folders: Array.isArray(d.folders) ? d.folders.filter(f => f && f.id && f.path) : [], theme: sanitizeTheme(d.theme) };
     this.loaded = true;
     return this.data;
   }
@@ -34,6 +34,14 @@ class Settings {
   async ensure() { if (!this.loaded) await this.load(); return this.data; }
 
   save() { return U.writeJson(this.file, this.data); }
+
+  async getTheme() { await this.ensure(); return this.data.theme; }
+  async setTheme(t) {
+    await this.ensure();
+    this.data.theme = sanitizeTheme(t);
+    await this.save();
+    return this.data.theme;
+  }
 
   /** Absoluter Pfad eines gespeicherten Ordners */
   resolve(folder) {
@@ -145,10 +153,18 @@ class Settings {
   }
 }
 
+/** Designfarbe: Voreinstellung (Name) oder eigene Farbe (#rrggbb) */
+function sanitizeTheme(t) {
+  if (!t || typeof t !== 'object') return { preset: 'cyan' };
+  if (typeof t.custom === 'string' && /^#[0-9a-f]{6}$/i.test(t.custom)) return { custom: t.custom.toLowerCase() };
+  if (typeof t.preset === 'string' && /^[a-z]{2,20}$/.test(t.preset)) return { preset: t.preset };
+  return { preset: 'cyan' };
+}
+
 function err(message, status = 400) {
   const e = new Error(message);
   e.status = status;
   return e;
 }
 
-module.exports = { Settings, CATEGORIES };
+module.exports = { Settings, CATEGORIES, sanitizeTheme };
