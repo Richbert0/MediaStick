@@ -26,8 +26,7 @@
     const el = $('desktop-server-pill');
     if (!el) return;
     el.classList.toggle('live', !!isReady);
-    el.classList.toggle('warn', !isReady);
-    el.textContent = label;
+    if (!isReady) el.textContent = label; // die Adresse selbst setzt index.html
   }
 
   function setWindowState(windowState) {
@@ -90,14 +89,12 @@
       return result;
     };
 
-    // Aktuelle Seite aus ctrl-logo oder Fallback setzen
-    const ctrlLogo = document.querySelector('.ctrl-logo');
-    setSection(ctrlLogo?.textContent || 'Startseite');
+    setSection(document.getElementById('desktop-section-pill')?.textContent || 'Startseite');
   }
 
   async function hydrateDesktopMeta() {
     document.body.classList.add('desktop-app');
-    $('desktop-chrome')?.removeAttribute('hidden');
+    $('desktop-actions')?.removeAttribute('hidden');
 
     if (window.innerWidth >= 1280) {
       $('sidebar')?.classList.add('open');
@@ -111,7 +108,7 @@
 
       if (version) {
         state.version = version;
-        setText('desktop-version-pill', `v${version}`);
+        document.querySelector('.ctrl-brand')?.setAttribute('title', `MediaCenter ${version} – zur Startseite`);
       }
 
       if (port) {

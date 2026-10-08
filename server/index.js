@@ -621,6 +621,16 @@ function createMediaServer(options = {}) {
     sendJson(res, Object.assign({ success: true }, result));
   }
 
+  async function apiMovieCatsGet(req, res) {
+    sendJson(res, Object.assign({ success: true }, await settings.movieCategories()));
+  }
+  async function apiMovieCatsPost(req, res) {
+    const d = await readJsonBody(req);
+    const r = await settings.movieCatAction(d);
+    hub.broadcast({ action: 'movie_cats' });
+    sendJson(res, Object.assign({ success: true }, r));
+  }
+
   async function apiThemeGet(req, res) {
     sendJson(res, { success: true, theme: await settings.getTheme() });
   }
@@ -682,6 +692,7 @@ function createMediaServer(options = {}) {
     '/api/info': apiInfo,
     '/api/settings': apiSettingsGet,
     '/api/theme': apiThemeGet,
+    '/api/movie-categories': apiMovieCatsGet,
     '/api/thumbnail': apiThumbList, '/api/thumbnail.php': apiThumbList,
     '/api/trash': apiTrashGet, '/api/trash.php': apiTrashGet,
     '/api/music_meta': (q, s) => apiMetaGet(s, 'music_meta.json'),
@@ -699,6 +710,7 @@ function createMediaServer(options = {}) {
     '/api/image-meta': apiImageMetaPost,
     '/api/settings/folders': apiSettingsFolders,
     '/api/theme': apiThemeSet,
+    '/api/movie-categories': apiMovieCatsPost,
     '/api/music_meta': apiMusicMetaPost, '/api/music_meta.php': apiMusicMetaPost, '/api/music-meta': apiMusicMetaPost,
   };
 

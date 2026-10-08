@@ -6,7 +6,7 @@
   --acc:#22D3EE;--acc2:#0891B2;--acc-rgb:34,211,238;--acc2-rgb:8,145,178;--hl:#F59E0B;--hl2:#D97706;--hl-rgb:245,158,11;
   --gold:var(--acc);--gold2:var(--acc2);--glow:rgba(var(--acc-rgb),.22);
   --amber:var(--hl);--amber2:var(--hl2);--amber-glow:rgba(var(--hl-rgb),.22);
-  --txt:#E2E8F8;--sub:#5B6882;--border:rgba(var(--acc-rgb),.12);
+  --txt:#E2E8F8;--sub:#5B6882;--txt-rgb:226,232,248;--sub2:#AEB8CF;--border:rgba(var(--acc-rgb),.12);
   --red:#F43F5E;--green:#10B981;--blue:#38BDF8;--rad:12px;
   --font-body:'Outfit','Segoe UI Variable Text','Segoe UI',sans-serif;
   --font-display:'Syne','Bahnschrift','Trebuchet MS',sans-serif;

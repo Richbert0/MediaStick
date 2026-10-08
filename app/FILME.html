@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -9,37 +9,208 @@
 <script src="/js/theme.js"></script>
 <script src="/js/esc-bridge.js"></script>
 <style>
-.filter-bar{display:flex;gap:8px;padding:12px 20px;flex-wrap:wrap;align-items:center}
-body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100%);}
-.filter-bar .search-wrap{flex:1;min-width:160px}
-.sort-sel{padding:9px 12px;background:var(--hover);border:1.5px solid var(--border);border-radius:9px;color:var(--txt);font-size:.82rem;outline:none;cursor:pointer}
-.sort-sel option{background:var(--card)}
+html,body{height:100%}
+body{background:var(--bg);overflow:hidden}
+.page{height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+[hidden]{display:none!important}
+:root{--tile-w:clamp(190px,20vw,280px)}
+body.sz-s{--tile-w:clamp(140px,14vw,190px)}
+body.sz-l{--tile-w:clamp(240px,27vw,380px)}
+body.sz-xl{--tile-w:clamp(300px,36vw,520px)}
 
-.card-prog{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.18);z-index:2}
-.card-prog i{display:block;height:100%;background:var(--gold)}
+/* Kopfleiste */
+.topbar{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:10px;padding:14px 4vw;background:linear-gradient(180deg,rgba(var(--bg-rgb),.9),rgba(var(--bg-rgb),0))}
+.topbar h1{font-family:var(--font-display);font-size:1.15rem;font-weight:800;letter-spacing:.06em;color:var(--hl)}
+.topbar .sp{flex:1}
+.srch{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15)}
+.srch input{background:none;border:none;outline:none;color:#fff;font:inherit;font-size:.86rem;width:min(200px,32vw)}
+.icon-btn{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.45);color:#fff;cursor:pointer;font-size:1rem;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s,transform .3s}
+.icon-btn:hover{background:rgba(255,255,255,.12)}
+.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#edit-btn.on{background:var(--acc);border-color:var(--acc);color:#000;transform:rotate(60deg)}
+.size-pop{position:absolute;top:46px;right:0;display:none;gap:4px;padding:6px;border-radius:12px;background:rgba(var(--card-rgb),.97);border:1px solid rgba(var(--acc-rgb),.25);box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:30}
+.size-pop.open{display:flex}
+.size-pop button{min-width:44px;padding:8px 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--txt);font:inherit;font-size:.8rem;font-weight:800;cursor:pointer}
+.size-pop button.on{background:rgba(var(--acc-rgb),.18);border-color:rgba(var(--acc-rgb),.5);color:var(--acc)}
+.size-wrap{position:relative}
+
+/* Bearbeitungsmodus */
+.edit-banner{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:min(860px,calc(100vw - 24px));z-index:50;display:none;align-items:center;gap:12px;padding:12px 14px 12px 18px;border-radius:14px;background:rgba(var(--card-rgb),.94);border:1px solid rgba(var(--acc-rgb),.45);box-shadow:0 18px 50px rgba(0,0,0,.6);backdrop-filter:blur(12px);font-size:.84rem;line-height:1.45}
+body.editing .rows{padding-bottom:110px}
+body.editing .edit-banner{display:flex}
+.edit-banner b{color:var(--acc)}
+.eb-short{display:none}
+.edit-banner .sp{flex:1}
+.edit-banner a{color:var(--acc);font-weight:700;cursor:pointer;text-decoration:underline}
+.edit-banner .done{padding:7px 16px;border-radius:8px;border:none;background:var(--acc);color:#000;font:inherit;font-weight:800;cursor:pointer}
+
+/* Hero */
+.hero{position:relative;height:min(62vh,560px);min-height:340px;display:flex;align-items:flex-end;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background-size:cover;background-position:center 30%;transform:scale(1.04);transition:opacity .6s ease}
+.hero-bg.ph{background:radial-gradient(ellipse at 70% 30%,rgba(var(--acc-rgb),.35),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(var(--hl-rgb),.25),transparent 50%),linear-gradient(135deg,var(--hover),var(--bg))}
+.hero::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,rgba(var(--bg-rgb),.95) 0%,rgba(var(--bg-rgb),.7) 38%,rgba(var(--bg-rgb),0) 70%),linear-gradient(0deg,var(--bg) 0%,rgba(var(--bg-rgb),0) 45%)}
+.hero-content{position:relative;z-index:2;padding:0 4vw 6vh;max-width:min(640px,92vw)}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--hl);margin-bottom:10px}
+.hero-title{font-family:var(--font-display);font-size:clamp(2rem,5.5vw,4rem);font-weight:800;line-height:1.05;margin-bottom:12px;text-shadow:0 4px 30px rgba(0,0,0,.6);overflow-wrap:break-word;hyphens:auto}
+.hero-title.long{font-size:clamp(1.6rem,3.8vw,2.8rem)}
+.hero-title.xlong{font-size:clamp(1.3rem,2.8vw,2.1rem)}
+.hero-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:.9rem;color:rgba(var(--txt-rgb),.8);margin-bottom:16px}
+.hero-meta .chip{padding:2px 9px;border-radius:999px;border:1px solid rgba(var(--acc-rgb),.4);color:var(--acc);font-size:.75rem;font-weight:700}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap}
+.nbtn{display:inline-flex;align-items:center;gap:9px;padding:12px 24px;border-radius:8px;border:none;font:inherit;font-weight:800;font-size:1rem;cursor:pointer;transition:transform .12s,filter .15s}
+.nbtn:hover{filter:brightness(1.1)}
+.nbtn:active{transform:scale(.97)}
+.nbtn.pri{background:#fff;color:#000}
+.nbtn.sec{background:rgba(109,109,110,.6);color:#fff;backdrop-filter:blur(6px)}
+.nbtn svg{width:20px;height:20px;fill:currentColor}
+.hero-prog{width:min(280px,60vw);height:4px;background:rgba(255,255,255,.25);border-radius:2px;margin:-4px 0 16px;overflow:hidden}
+.hero-prog i{display:block;height:100%;background:var(--acc)}
+
+/* Reihen */
+.rows{position:relative;z-index:3;margin-top:-3vh;padding-bottom:40px}
+.row{margin:0 0 26px}
+.row-h{display:flex;align-items:baseline;gap:10px;margin:0 4vw 8px}
+.row-h h2{font-size:1.1rem;font-weight:800}
+.row-h small{font-size:.75rem;color:var(--sub2);font-weight:600}
+.row-h .sp{flex:1}
+.row-h select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--txt);border-radius:8px;padding:5px 8px;font:inherit;font-size:.78rem}
+.row-h select option{background:var(--card)}
+.slider{display:flex;gap:10px;overflow-x:auto;padding:6px 4vw 14px;scroll-snap-type:x proximity;scrollbar-width:none}
+.slider::-webkit-scrollbar{display:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tile-w),1fr));gap:14px 10px;padding:6px 4vw}
+.empty-row{margin:0 4vw;padding:14px;border:1px dashed rgba(255,255,255,.12);border-radius:10px;color:var(--sub2);font-size:.82rem}
+
+/* Kacheln */
+.tile{position:relative;flex:0 0 var(--tile-w);aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:var(--hover);cursor:pointer;scroll-snap-align:start;transition:transform .22s ease,box-shadow .22s ease;outline:none}
+.grid .tile{flex:none;width:100%}
+.tile:hover,.tile:focus-visible{transform:scale(1.05);box-shadow:0 14px 40px rgba(0,0,0,.6);z-index:2}
+.tile:focus-visible{box-shadow:0 0 0 3px var(--acc)}
+.tile .img{position:absolute;inset:0;background-size:cover;background-position:center}
+.tile .img.ph{display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:800;font-size:1.2rem;color:rgba(255,255,255,.85);text-align:center;padding:12px;
+  background:linear-gradient(135deg,hsl(var(--h),55%,22%),hsl(calc(var(--h) + 40),60%,12%))}
+.tile .shade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,0) 55%)}
+.tile .cap{position:absolute;left:10px;right:10px;bottom:9px}
+.tile .t1{font-weight:800;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .t2{font-size:.72rem;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.sz-s .tile .t1{font-size:.8rem}body.sz-s .tile .t2{display:none}
+body.sz-xl .tile .t1{font-size:1.1rem}
+.tile .bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.2)}
+.tile .bar i{display:block;height:100%;background:var(--acc)}
+.tile .play{position:absolute;left:50%;top:42%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid #fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.tile:hover .play{opacity:1}
+.tile .play svg{width:20px;height:20px;fill:#fff;margin-left:3px}
+.tile .badge{position:absolute;top:8px;right:8px;padding:2px 7px;border-radius:4px;font-size:.66rem;font-weight:800;background:rgba(0,0,0,.6)}
+.tile .badge.new{background:var(--acc2);color:#fff}
+.tile .badge.done{background:rgba(74,222,128,.9);color:#032}
+/* Bearbeiten: Werkzeuge auf jeder Kachel */
+.tile .tools{position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:8px;background:rgba(0,0,0,.45);z-index:3}
+body.editing .tile .tools{display:flex}
+body.editing .tile .play{display:none}
+body.editing .tile{outline:1px dashed rgba(var(--acc-rgb),.5);outline-offset:-1px}
+.tool{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(var(--card-rgb),.85);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .12s,background .15s}
+.tool:hover{transform:scale(1.1);background:rgba(var(--acc-rgb),.35)}
+.tool.danger:hover{background:rgba(244,63,94,.8)}
+body.sz-s .tool{width:32px;height:32px;font-size:.85rem}
+.tile .cats{position:absolute;top:7px;left:7px;right:7px;display:none;gap:4px;flex-wrap:wrap;z-index:4;pointer-events:none}
+body.editing .tile .cats{display:flex}
+.tile .cats span{padding:1px 6px;border-radius:4px;font-size:.62rem;font-weight:800;background:rgba(var(--acc-rgb),.85);color:#000}
+
+/* Dialog: Film bearbeiten */
+.dlg-bg{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.7);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px}
+.dlg-bg.show{display:flex}
+.dlg{width:min(520px,100%);max-height:100%;overflow:auto;background:var(--card);border:1px solid rgba(var(--acc-rgb),.25);border-radius:14px;box-shadow:0 30px 90px rgba(0,0,0,.7)}
+.dlg-head{position:relative;aspect-ratio:16/7;background:var(--hover) center/cover}
+.dlg-head::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,var(--card),rgba(0,0,0,0) 70%)}
+.dlg-x{position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:1rem;cursor:pointer}
+.dlg-body{padding:4px 18px 18px}
+.dlg h3{font-size:1.15rem;font-weight:800;margin-bottom:2px;overflow-wrap:anywhere}
+.dlg .meta{font-size:.78rem;color:var(--sub2);margin-bottom:14px}
+.dlg .lbl{font-size:.7rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--sub2);margin:14px 0 8px}
+.catlist{display:flex;flex-wrap:wrap;gap:8px}
+.catlist label{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);cursor:pointer;font-size:.84rem;user-select:none}
+.catlist label.on{border-color:var(--acc);background:rgba(var(--acc-rgb),.16);color:var(--acc)}
+.catlist input{display:none}
+.catlist .none{font-size:.82rem;color:var(--sub2)}
+.dlg-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.dbtn{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--txt);font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.dbtn:hover{background:rgba(255,255,255,.1)}
+.dbtn.pri{background:var(--acc);border-color:var(--acc);color:#000}
+.dbtn.danger{color:#fb7185;border-color:rgba(244,63,94,.35)}
+.dbtn.danger:hover{background:rgba(244,63,94,.85);color:#fff}
+.dlg-btns .sp{flex:1}
+
+.empty{padding:16vh 6vw;text-align:center;color:var(--sub2)}
+.empty .es-icon{font-size:3.5rem;opacity:.35;margin-bottom:10px}
 #loader{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9900;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
-#loader p{color:var(--sub);font-size:.82rem}
+#loader p{color:var(--sub2);font-size:.82rem}
+
+@media(max-width:640px){
+  .edit-banner{bottom:10px;font-size:.78rem;padding:10px 10px 10px 14px}
+  .eb-long{display:none}.eb-short{display:inline}
+  :root{--tile-w:clamp(150px,44vw,220px)}
+  body.sz-s{--tile-w:clamp(110px,30vw,150px)}
+  body.sz-l{--tile-w:clamp(220px,70vw,300px)}
+  body.sz-xl{--tile-w:calc(100vw - 8vw)}
+  .topbar{padding:10px 3vw;gap:6px}
+  .topbar h1{display:none}
+  .srch{flex:1;min-width:0}.srch input{width:100%}
+  .hero{min-height:300px;height:52vh}
+  .hero-content{padding-bottom:4vh}
+  .nbtn{padding:10px 16px;font-size:.92rem}
+  .tile .play{opacity:1;width:38px;height:38px;margin:-19px 0 0 -19px}
+}
 </style>
 </head>
 <body>
-<div class="mc-page">
-  <div class="filter-bar">
-    <div class="search-wrap" style="flex:1;min-width:160px">
-      <span class="si">🔍</span>
-      <input class="mc-input" id="srch" placeholder="Film suchen…" oninput="render()">
-    </div>
-    <select class="sort-sel" id="srt" onchange="render()">
-      <option value="az">A–Z</option>
-      <option value="za">Z–A</option>
-      <option value="si">Größe ↑</option>
-      <option value="sd">Größe ↓</option>
-    </select>
+<div class="page" id="page">
+  <div class="edit-banner" role="status">
+    <span>⚙️ <b>Bearbeitungsmodus</b><span class="eb-long"> – Vorschaubild ändern 🖼️, Kategorien zuweisen 🏷️ oder Filme in den Papierkorb verschieben 🗑️. Kategorien legst du in den <a onclick="openSettings()">Einstellungen</a> an.</span><span class="eb-short"> · Film antippen zum Bearbeiten · <a onclick="openSettings()">Kategorien</a></span></span>
+    <span class="sp"></span>
+    <button class="done" type="button" onclick="setEdit(false)">Fertig</button>
   </div>
-  <div class="mc-page-body">
-    <div class="section-head">
-      <span class="section-title" id="lbl">Filme</span>
+  <div class="topbar">
+    <h1>FILME</h1>
+    <span class="sp"></span>
+    <label class="srch"><span>🔍</span><input id="q" placeholder="Film suchen…" autocomplete="off" aria-label="Film suchen"></label>
+    <div class="size-wrap">
+      <button class="icon-btn" id="size-btn" type="button" title="Kachelgröße" aria-label="Kachelgröße" aria-haspopup="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+      <div class="size-pop" id="size-pop" role="menu" aria-label="Kachelgröße">
+        <button type="button" data-sz="s">S</button><button type="button" data-sz="m">M</button><button type="button" data-sz="l">L</button><button type="button" data-sz="xl">XL</button>
+      </div>
     </div>
-    <div class="media-grid" id="grid"></div>
+    <button class="icon-btn" id="reload-btn" type="button" title="Mediathek neu einlesen" aria-label="Mediathek neu einlesen" onclick="loadLib(true)">⟳</button>
+    <button class="icon-btn" id="edit-btn" type="button" title="Bearbeiten (Vorschaubilder, Kategorien, Papierkorb)" aria-label="Bearbeitungsmodus" aria-pressed="false" onclick="setEdit(!editing)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  </div>
+
+  <section class="hero" id="hero" hidden>
+    <div class="hero-bg ph" id="hero-bg"></div>
+    <div class="hero-content">
+      <div class="hero-kicker" id="hero-kicker">◆ Film</div>
+      <div class="hero-title" id="hero-title"></div>
+      <div class="hero-meta" id="hero-meta"></div>
+      <div class="hero-prog" id="hero-prog" hidden><i></i></div>
+      <div class="hero-btns" id="hero-btns"></div>
+    </div>
+  </section>
+
+  <div class="rows" id="rows"></div>
+</div>
+
+<div class="dlg-bg" id="dlg" role="dialog" aria-modal="true" aria-label="Film bearbeiten" onclick="if(event.target===this)closeDlg()">
+  <div class="dlg">
+    <div class="dlg-head" id="dlg-head"><button class="dlg-x" type="button" onclick="closeDlg()" aria-label="Schließen">✕</button></div>
+    <div class="dlg-body">
+      <h3 id="dlg-title"></h3>
+      <div class="meta" id="dlg-meta"></div>
+      <div class="lbl">🏷️ Kategorien</div>
+      <div class="catlist" id="dlg-cats"></div>
+      <div class="dlg-btns">
+        <button class="dbtn" type="button" onclick="dlgThumb()">🖼️ Vorschaubild ändern</button>
+        <button class="dbtn danger" type="button" onclick="dlgTrash()">🗑️ In den Papierkorb</button>
+        <span class="sp"></span>
+        <button class="dbtn pri" type="button" onclick="closeDlg()">Fertig</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -49,101 +220,256 @@ body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100
 <script src="/js/player.js"></script>
 <script src="/js/thumbs.js"></script>
 <script>
-var movies=[], thumbs={}, curM=null;
+'use strict';
+var movies=[], thumbs={}, cats=[], assign={}, editing=false, curM=null, dlgMovie=null;
+var SORT_KEY='mc_movie_sort', SIZE_KEY='mc_movie_size';
+var $=function(id){return document.getElementById(id);};
+var esc=function(s){return MC.esc(String(s==null?'':s));};
+var nameOf=function(m){return m.name.replace(/\.[^.]+$/,'').replace(/[._]+/g,' ').replace(/\s+/g,' ').trim();};
+var hueOf=function(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h;};
+var PLAY='<svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>';
 
+/* ── Laden ─────────────────────────────────────────────── */
 async function loadLib(force){
-  document.getElementById('loader').style.display='flex';
-  if(force){await fetch('/api/library?r='+Date.now()).catch(()=>{});}
+  $('loader').style.display='flex';
+  if(force){await fetch('/api/library?refresh=1').catch(function(){});}
   var lib=await MC.loadLibrary();
   var th=await MC.api('/api/thumbnail');
   thumbs=th.thumbnails||{};
   movies=lib.movies||[];
-  document.getElementById('loader').style.display='none';
+  await loadCats();
+  $('loader').style.display='none';
   render();
   // fehlende Vorschaubilder im Hintergrund erzeugen
   var rt=0;
-  movies.forEach(function(m){if(!thumbs[m.path]&&!m.thumbnail)MCThumb.auto(m.path,m.path,function(p){thumbs[m.path]=p;clearTimeout(rt);rt=setTimeout(render,300);});});
+  movies.forEach(function(m){if(!thumbOf(m))MCThumb.auto(m.path,m.path,function(p){thumbs[m.path]=p;clearTimeout(rt);rt=setTimeout(render,300);});});
 }
+async function loadCats(){
+  try{var r=await MC.api('/api/movie-categories');if(r.success){cats=r.categories||[];assign=r.assign||{};}}catch(e){}
+}
+function thumbOf(m){var t=thumbs[m.path]||m.thumbnail;return t?'/'+String(t).replace(/^\//,''):null;}
+function catsOf(m){return assign[m.path]||[];}
 
-function getFiltered(){
-  var q=(document.getElementById('srch').value||'').toLowerCase();
-  var s=document.getElementById('srt').value;
-  var l=q?movies.filter(m=>m.name.toLowerCase().includes(q)):movies.slice();
-  if(s==='az')l.sort((a,b)=>a.name.localeCompare(b.name));
-  else if(s==='za')l.sort((a,b)=>b.name.localeCompare(a.name));
-  else if(s==='si')l.sort((a,b)=>a.size-b.size);
-  else if(s==='sd')l.sort((a,b)=>b.size-a.size);
+/* ── Darstellung ───────────────────────────────────────── */
+function tile(m){
+  var t=thumbOf(m),nm=nameOf(m);
+  var pr=MCProgress.get(m.path),done=pr&&pr.done,pct=pr&&!done?MCProgress.pct(m.path):0;
+  var isNew=m.mtime&&Date.now()-m.mtime<7*864e5;
+  var cn=catsOf(m).map(function(id){var c=cats.find(function(x){return x.id===id;});return c?'<span>'+esc(c.name)+'</span>':'';}).join('');
+  return '<div class="tile" tabindex="0" data-p="'+esc(m.path)+'" title="'+esc(nm)+'">'
+    +(t?'<div class="img" style="background-image:url(\''+esc(t).replace(/'/g,'%27')+'\')"></div>'
+       :'<div class="img ph" style="--h:'+hueOf(nm)+'">'+esc(nm)+'</div>')
+    +'<div class="shade"></div>'
+    +'<div class="play">'+PLAY+'</div>'
+    +(done?'<span class="badge done">✓ GESEHEN</span>':isNew?'<span class="badge new">NEU</span>':'')
+    +'<div class="cats">'+cn+'</div>'
+    +'<div class="cap"><div class="t1">'+esc(nm)+'</div><div class="t2">'+(pct?'noch '+remaining(pr)+' · ':'')+MC.fmtSize(m.size)+'</div></div>'
+    +(pct?'<div class="bar"><i style="width:'+pct+'%"></i></div>':'')
+    +'<div class="tools"><button class="tool" data-a="thumb" title="Vorschaubild ändern" aria-label="Vorschaubild ändern">🖼️</button>'
+    +'<button class="tool" data-a="cats" title="Kategorien" aria-label="Kategorien">🏷️</button>'
+    +'<button class="tool danger" data-a="trash" title="In den Papierkorb" aria-label="In den Papierkorb">🗑️</button></div>'
+    +'</div>';
+}
+function remaining(pr){var s=Math.max(0,(pr.d||0)-(pr.t||0));var m=Math.round(s/60);return m>=60?Math.floor(m/60)+' Std. '+(m%60)+' Min.':m+' Min.';}
+function row(title,list,opts){
+  opts=opts||{};
+  if(!list.length&&!opts.showEmpty)return '';
+  return '<section class="row"><div class="row-h"><h2>'+esc(title)+'</h2><small>'+list.length+'</small><span class="sp"></span>'+(opts.extra||'')+'</div>'
+    +(list.length?'<div class="'+(opts.grid?'grid':'slider')+'">'+list.map(tile).join('')+'</div>'
+      :'<div class="empty-row">'+(opts.emptyText||'Noch keine Filme in dieser Kategorie – im Bearbeitungsmodus über 🏷️ zuweisen.')+'</div>')
+    +'</section>';
+}
+function sorted(list){
+  var s=localStorage.getItem(SORT_KEY)||'az',l=list.slice(),c=new Intl.Collator('de',{numeric:true,sensitivity:'base'});
+  if(s==='az')l.sort(function(a,b){return c.compare(nameOf(a),nameOf(b));});
+  else if(s==='za')l.sort(function(a,b){return c.compare(nameOf(b),nameOf(a));});
+  else if(s==='new')l.sort(function(a,b){return (b.mtime||0)-(a.mtime||0);});
+  else if(s==='sd')l.sort(function(a,b){return b.size-a.size;});
+  else if(s==='si')l.sort(function(a,b){return a.size-b.size;});
   return l;
 }
-
 function render(){
-  var list=getFiltered();
-  document.getElementById('lbl').textContent=list.length+' Film'+(list.length!==1?'e':'');
-  var g=document.getElementById('grid');
-  if(!list.length){
-    g.innerHTML='<div class="empty-state" style="grid-column:1/-1">'
-      +'<div class="es-icon">🎬</div>'
-      +'<div class="es-title">Keine Filme gefunden</div>'
-      +'<div class="es-sub">Noch keine Filme vorhanden. Lade MP4, MKV, AVI oder WebM-Dateien hoch.</div>'
-      +'<button class="es-upload-btn" onclick="window.parent&&window.parent.postMessage({type:\'navigate\',page:\'upload.html\',label:\'☁️ Upload\'},\'*\')">'
-      +'<span class="eu-icon">☁️</span> Jetzt Filme hochladen</button>'
-      +'</div>';
-    g._l=[];return;
+  var q=($('q').value||'').trim().toLowerCase();
+  var rows=$('rows'),hero=$('hero');
+  if(!movies.length){
+    hero.hidden=true;
+    rows.innerHTML='<div class="empty"><div class="es-icon">🎬</div><h2>Noch keine Filme</h2><p style="margin:8px 0 18px">Lege Videos in <b>MediaCenter-Daten/media/Movies</b>, binde in den Einstellungen eigene Ordner ein oder lade sie hoch.</p>'
+      +'<button class="nbtn pri" onclick="window.parent.postMessage({type:\'navigate\',page:\'upload.html\',label:\'☁️ Upload\'},\'*\')">☁️ Filme hochladen</button></div>';
+    return;
   }
-  g._l=list;
-  g.innerHTML=list.map(function(m,i){
-    var tu=thumbs[m.path]?'/'+thumbs[m.path]:(m.thumbnail?'/'+m.thumbnail:null);
-    var th=tu?'<img src="'+MC.esc(tu)+'" onerror="this.style.display=\'none\'" loading="lazy">'
-             :'<span style="font-size:2.5rem">🎬</span>';
-    var nm=m.name.replace(/\.[^.]+$/,'');
-    var pr=MCProgress.get(m.path),pct=pr?(pr.done?100:MCProgress.pct(m.path)):0;
-    return '<div class="media-card" onclick="play('+i+')">'
-      +'<div class="card-thumb">'+th
-      +'<div class="card-overlay"><div class="card-play">▶</div></div>'
-      +(pct?'<div class="card-prog"><i style="width:'+pct+'%"></i></div>':'')
-      +'</div>'
-      +'<div class="card-info">'
-      +'<div class="card-title" title="'+MC.esc(m.name)+'">'+MC.esc(nm)+'</div>'
-      +'<div class="card-meta">'+MC.fmtSize(m.size)+'</div>'
-      +'</div>'
-      +'<div class="card-actions">'
-      +'<button class="card-act-btn" onclick="event.stopPropagation();openTM('+i+')" title="Thumbnail">🖼️</button>'
-      +'<button class="card-act-btn" onclick="event.stopPropagation();trash('+i+')" style="color:var(--red)">🗑️</button>'
-      +'</div>'
-      +'</div>';
-  }).join('');
+  if(q){
+    hero.hidden=true;
+    var hits=movies.filter(function(m){return nameOf(m).toLowerCase().includes(q)||catsOf(m).some(function(id){var c=cats.find(function(x){return x.id===id;});return c&&c.name.toLowerCase().includes(q);});});
+    rows.style.marginTop='0';rows.style.paddingTop='70px';
+    rows.innerHTML=hits.length?row('Suchergebnisse',sorted(hits),{grid:true}):'<div class="empty"><div class="es-icon">🔍</div>Kein Film zu „'+esc(q)+'“ gefunden.</div>';
+    return;
+  }
+  rows.style.marginTop='';rows.style.paddingTop='';
+  renderHero();
+  var html='';
+  var cont=movies.filter(function(m){var p=MCProgress.get(m.path);return p&&!p.done&&MCProgress.pct(m.path)>0;})
+    .sort(function(a,b){return (MCProgress.get(b.path).ts||0)-(MCProgress.get(a.path).ts||0);});
+  html+=row('Weiterschauen',cont);
+  if(movies.length>4){
+    var neu=movies.slice().sort(function(a,b){return (b.mtime||0)-(a.mtime||0);}).slice(0,15);
+    html+=row('Neu hinzugefügt',neu);
+  }
+  cats.forEach(function(c){
+    var l=sorted(movies.filter(function(m){return catsOf(m).indexOf(c.id)>=0;}));
+    html+=row(c.name,l,{showEmpty:editing});
+  });
+  if(cats.length){
+    var none=sorted(movies.filter(function(m){return !catsOf(m).length;}));
+    html+=row('Ohne Kategorie',none);
+  }
+  var s=localStorage.getItem(SORT_KEY)||'az';
+  var sel='<select id="sort" aria-label="Sortierung">'+[['az','A–Z'],['za','Z–A'],['new','Neueste zuerst'],['sd','Größte zuerst'],['si','Kleinste zuerst']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===s?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+  html+=row('Alle Filme',sorted(movies),{grid:true,extra:sel});
+  rows.innerHTML=html;
+}
+function featured(){
+  var cont=movies.filter(function(m){var p=MCProgress.get(m.path);return p&&!p.done&&MCProgress.pct(m.path)>0;})
+    .sort(function(a,b){return (MCProgress.get(b.path).ts||0)-(MCProgress.get(a.path).ts||0);});
+  if(cont.length)return {m:cont[0],kind:'cont'};
+  var withThumb=movies.filter(function(m){return thumbOf(m)&&!(MCProgress.get(m.path)||{}).done;});
+  var pool=withThumb.length?withThumb:movies;
+  // pro Tag ein anderer Film, aber stabil beim Neuzeichnen
+  var day=Math.floor(Date.now()/864e5);
+  var newest=pool.slice().sort(function(a,b){return (b.mtime||0)-(a.mtime||0);});
+  return {m:newest[day%Math.min(newest.length,8)],kind:'pick'};
+}
+function renderHero(){
+  var f=featured(),m=f.m,hero=$('hero');
+  if(!m){hero.hidden=true;return;}
+  hero.hidden=false;
+  var t=thumbOf(m),bg=$('hero-bg');
+  bg.className='hero-bg'+(t?'':' ph');bg.style.backgroundImage=t?'url("'+t+'")':'';
+  $('hero-kicker').textContent=f.kind==='cont'?'◆ Weiterschauen':'◆ Film-Tipp';
+  var ht=$('hero-title'),nl=nameOf(m).length;ht.textContent=nameOf(m);
+  ht.className='hero-title'+(nl>34?' xlong':nl>11?' long':'');
+  var cn=catsOf(m).map(function(id){var c=cats.find(function(x){return x.id===id;});return c?'<span class="chip">'+esc(c.name)+'</span>':'';}).join('');
+  var pr=MCProgress.get(m.path);
+  $('hero-meta').innerHTML=cn+'<span>'+MC.fmtSize(m.size)+'</span>'+(pr&&pr.d?'<span>'+Math.round(pr.d/60)+' Min.</span>':'')+(f.kind==='cont'?'<span>noch '+remaining(pr)+'</span>':'');
+  var hp=$('hero-prog');
+  if(f.kind==='cont'){hp.hidden=false;hp.firstChild.style.width=MCProgress.pct(m.path)+'%';}else hp.hidden=true;
+  $('hero-btns').innerHTML='<button class="nbtn pri" data-hp="play">'+PLAY+(f.kind==='cont'?'Weiterschauen':'Abspielen')+'</button>'
+    +(f.kind==='cont'?'<button class="nbtn sec" data-hp="restart">↺ Von vorn</button>':'')
+    +(editing?'<button class="nbtn sec" data-hp="edit">⚙️ Bearbeiten</button>':'');
+  hero.dataset.p=m.path;
 }
 
-function gl(){return document.getElementById('grid')._l||[];}
+/* ── Interaktion ───────────────────────────────────────── */
+function byPath(p){return movies.find(function(m){return m.path===p;});}
+$('rows').addEventListener('click',function(e){
+  var t=e.target.closest('.tile');if(!t)return;
+  var m=byPath(t.dataset.p);if(!m)return;
+  var a=e.target.closest('[data-a]');
+  if(editing){
+    if(a&&a.dataset.a==='thumb')return openThumb(m);
+    if(a&&a.dataset.a==='trash')return trash(m);
+    return openDlg(m);
+  }
+  play(m);
+});
+$('rows').addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  var t=e.target.closest('.tile');if(!t||e.target!==t)return;
+  e.preventDefault();var m=byPath(t.dataset.p);if(m)(editing?openDlg:play)(m);
+});
+$('rows').addEventListener('change',function(e){if(e.target.id==='sort'){localStorage.setItem(SORT_KEY,e.target.value);render();}});
+$('hero-btns').addEventListener('click',function(e){
+  var b=e.target.closest('[data-hp]');if(!b)return;
+  var m=byPath($('hero').dataset.p);if(!m)return;
+  if(b.dataset.hp==='restart'){MCProgress.clear(m.path);play(m);}
+  else if(b.dataset.hp==='edit')openDlg(m);
+  else play(m);
+});
+var qt=0;$('q').addEventListener('input',function(){clearTimeout(qt);qt=setTimeout(render,120);});
 
-function play(i){
-  var m=gl()[i];if(!m)return;
+function setEdit(on){
+  editing=!!on;
+  document.body.classList.toggle('editing',editing);
+  $('edit-btn').classList.toggle('on',editing);
+  $('edit-btn').setAttribute('aria-pressed',editing);
+  $('edit-btn').title=editing?'Bearbeitungsmodus beenden':'Bearbeiten (Vorschaubilder, Kategorien, Papierkorb)';
+  if(!editing)closeDlg();
+  render();
+}
+function openSettings(){try{window.parent.postMessage({type:'navigate',page:'EINSTELLUNGEN.html#filme',label:'⚙️ Einstellungen'},'*');}catch(e){}}
+
+/* Kachelgröße (pro Gerät) */
+function applySize(sz){
+  if(['s','m','l','xl'].indexOf(sz)<0)sz='m';
+  document.body.classList.remove('sz-s','sz-l','sz-xl');
+  if(sz!=='m')document.body.classList.add('sz-'+sz);
+  document.querySelectorAll('#size-pop [data-sz]').forEach(function(b){b.classList.toggle('on',b.dataset.sz===sz);});
+}
+applySize(localStorage.getItem(SIZE_KEY)||'m');
+$('size-btn').addEventListener('click',function(e){e.stopPropagation();$('size-pop').classList.toggle('open');});
+$('size-pop').addEventListener('click',function(e){var b=e.target.closest('[data-sz]');if(!b)return;try{localStorage.setItem(SIZE_KEY,b.dataset.sz);}catch(x){}applySize(b.dataset.sz);$('size-pop').classList.remove('open');});
+document.addEventListener('click',function(e){if(!e.target.closest('.size-wrap'))$('size-pop').classList.remove('open');});
+window.addEventListener('storage',function(e){
+  if(e.key===SIZE_KEY)applySize(e.newValue);
+  if(e.key==='mc_moviecats_v')loadCats().then(render);
+});
+
+/* ── Bearbeiten-Dialog ─────────────────────────────────── */
+function openDlg(m){
+  dlgMovie=m;
+  var t=thumbOf(m);
+  $('dlg-head').style.backgroundImage=t?'url("'+t+'")':'';
+  $('dlg-title').textContent=nameOf(m);
+  $('dlg-meta').textContent=m.name+' · '+MC.fmtSize(m.size);
+  renderDlgCats();
+  $('dlg').classList.add('show');
+}
+function renderDlgCats(){
+  var m=dlgMovie;if(!m)return;
+  var mine=catsOf(m);
+  $('dlg-cats').innerHTML=cats.length?cats.map(function(c){var on=mine.indexOf(c.id)>=0;
+    return '<label class="'+(on?'on':'')+'"><input type="checkbox" value="'+c.id+'"'+(on?' checked':'')+'>'+(on?'✓ ':'')+esc(c.name)+'</label>';}).join('')
+    :'<span class="none">Noch keine Kategorien. Lege sie in den <a style="color:var(--acc);cursor:pointer;text-decoration:underline" onclick="openSettings()">Einstellungen → Film-Kategorien</a> an.</span>';
+}
+$('dlg-cats').addEventListener('change',async function(){
+  var m=dlgMovie;if(!m)return;
+  var ids=[].slice.call($('dlg-cats').querySelectorAll('input:checked')).map(function(i){return i.value;});
+  var r=await MC.api('/api/movie-categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'assign',path:m.path,ids:ids})});
+  if(r.success){assign=r.assign||{};renderDlgCats();render();}else MC.toast('Fehler: '+(r.error||r.message),'err');
+});
+function closeDlg(){$('dlg').classList.remove('show');dlgMovie=null;}
+function dlgThumb(){var m=dlgMovie;if(m)openThumb(m);}
+function dlgTrash(){var m=dlgMovie;if(m)trash(m);}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('dlg').classList.contains('show')){e.preventDefault();closeDlg();}});
+
+function openThumb(m){
+  MCThumb.open({path:m.path,name:m.name,onSaved:function(p){thumbs[m.path]=p;render();if(dlgMovie===m)openDlg(m);}});
+}
+async function trash(m){
+  if(!confirm('„'+nameOf(m)+'“ in den Papierkorb verschieben?'))return;
+  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'move',path:m.path,type:'video'})});
+  if(r.success){MC.toast('🗑️ In den Papierkorb verschoben','ok');movies=movies.filter(function(x){return x.path!==m.path;});closeDlg();render();}
+  else MC.toast('Fehler: '+(r.error||r.message),'err');
+}
+
+/* ── Abspielen ─────────────────────────────────────────── */
+function play(m){
+  if(typeof m==='number')m=movies[m];
+  if(!m)return;
   curM=m;
   MCPlayer.open({
     src:'/api/media?file='+encodeURIComponent(m.path),
     key:m.path,
-    title:m.name.replace(/\.[^.]+$/,''),
+    title:nameOf(m),
     subtitle:'Film',
     onThumb:async function(data){var p=await MCThumb.upload(m.path,data);if(p){thumbs[m.path]=p;render();}return !!p;},
-    onEnded:function(){MCPlayer.card({center:true,title:'Film zu Ende',text:m.name.replace(/\.[^.]+$/,''),buttons:[{label:'Nochmal ansehen',run:function(){MCProgress.clear(m.path);play(i);}},{label:'Zurück zur Übersicht',primary:true,run:MCPlayer.close}]});},
+    onEnded:function(){MCPlayer.card({center:true,title:'Film zu Ende',text:nameOf(m),buttons:[{label:'Nochmal ansehen',run:function(){MCProgress.clear(m.path);play(m);}},{label:'Zurück zur Übersicht',primary:true,run:MCPlayer.close}]});},
     onClose:function(){curM=null;render();}
   });
 }
+// für Tests/ältere Aufrufe: Index in der Gesamtliste
+function gl(){return movies;}
 
-async function trash(i){
-  var m=gl()[i];if(!m||!confirm('In Papierkorb: '+m.name+'?'))return;
-  var r=await MC.api('/api/trash',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'move',path:m.path,type:'video'})});
-  if(r.success){MC.toast('🗑️ Verschoben','ok');movies=movies.filter(x=>x.path!==m.path);render();}
-  else MC.toast('Fehler: '+r.error,'err');
-}
-
-function openTM(i){
-  var m=gl()[i];if(!m)return;
-  MCThumb.open({path:m.path,name:m.name,onSaved:function(p){thumbs[m.path]=p;render();}});
-}
-
-/* Volume vom Parent anfordern */
-try{window.parent.postMessage({type:'get-volume'},'*');}catch{}
+try{window.parent.postMessage({type:'get-volume'},'*');}catch(e){}
 loadLib();
 </script>
 </body>

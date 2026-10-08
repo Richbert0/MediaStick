@@ -54,7 +54,7 @@ MediaCenter macht aus einem USB-Stick oder einem beliebigen Ordner eine eigene M
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.4.0-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.5.0-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
     │   ├── 📁 Movies      ← Filme
@@ -100,21 +100,32 @@ Videos werden per **HTTP-Range-Streaming** ausgeliefert. Vorspulen klappt deshal
 
 | Bereich | Was du damit machen kannst |
 |---|---|
-| 🎬 **Filme** | Echtes Vollbild, eine Steuerleiste, die sich bei Inaktivität ausblendet, und Weiterschauen an der letzten Stelle mit Fortschrittsbalken. Dazu Suche und Sortierung. Das **Vorschaubild** wählst du an einer beliebigen Stelle im Video (Regler, ±1 s/±10 s, Zufall) oder lädst ein eigenes Bild hoch. Fehlende Vorschaubilder entstehen automatisch, schwarze Bilder werden verworfen. |
+| 🎬 **Filme** | Ansicht im Streaming-Stil mit großem Titelbild, den Reihen „Weiterschauen“ und „Neu hinzugefügt“, **eigenen Kategorien** als Reihen und „Alle Filme“ mit Sortierung. Die **Kachelgröße** stellst du über ⊞ ein (S, M, L, XL; pro Gerät). Das **⚙️-Zahnrad** oben rechts schaltet den Bearbeitungsmodus frei: Erst dort lassen sich Vorschaubilder ändern, Kategorien zuweisen und Filme in den Papierkorb verschieben. Der Player bietet echtes Vollbild, eine automatisch ausblendende Steuerleiste und Weiterschauen. Das Vorschaubild wählst du an einer beliebigen Stelle im Video oder lädst ein eigenes Bild hoch. |
 | 📺 **Serien** | Ansicht im Streaming-Stil mit Titelbild, den Reihen „Weiterschauen“ und „Neu hinzugefügt“ und Fortschritt pro Folge. Die nächste Folge startet nach einem Countdown. **Am Staffelende fragt die App, ob es mit der nächsten Staffel weitergeht.** Einzelne Folgen kannst du als gesehen markieren oder den Fortschritt zurücksetzen. |
-| 🎵 **Musik** | Ein Hintergrund-Player, der beim Wechsel zwischen den Bereichen weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet. Dazu ein **Visualizer** (Spektrum, Welle, Kreis-Spektrum in der Vinyl-Vollbildansicht), Zufall, Wiederholen und Playlists aus Ordnern. Auf dem Handy liegt die Steuerung unten: Visualizer, darunter die Tasten, darunter Titel, Zeit und Lautstärke. |
+| 🎵 **Musik** | Ein Hintergrund-Player, der beim Wechsel zwischen den Bereichen weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet. Dazu ein **Visualizer** (Spektrum, Welle, Kreis-Spektrum in der Vinyl-Vollbildansicht), Zufall, Wiederholen und Playlists aus Ordnern. Auf dem Handy liegt die Steuerung unten: Visualizer, darunter die Tasten, darunter Titel, Zeit und Lautstärke. Auf dem Handy sind die Playlists eine wischbare Leiste. Über „＋ Neue Playlist“ legst du auch im Hochformat neue an, optional gleich mit dem laufenden Song. |
 | 🖼️ **Fotos** | Galerie mit Vollbildansicht, Titeln und Beschreibungen. |
 | ☁️ **Upload** | Dateien per Drag & Drop hochladen, auch vom Handy per QR-Code. Die App sortiert sie automatisch in die richtige Kategorie. Große Videos werden direkt auf den Stick geschrieben. Gelöschtes landet im Papierkorb und lässt sich wiederherstellen. |
 | 💬 **LAN-Chat** | Text- und Sprachchat für alle Geräte im Netz. Das Fenster lässt sich frei verschieben, auf dem PC auch in der Größe ändern. Position und Größe merkt sich die App. Der 📌-Modus macht es halbtransparent. |
-| ⚙️ **Einstellungen** | Eigene Medienordner, **Designfarbe**, Speicherort und Netzwerkadresse. |
+| ⚙️ **Einstellungen** | Eigene Medienordner, **Film-Kategorien** (anlegen, umbenennen, sortieren, löschen), Kachelgröße der Filme, **Designfarbe**, Speicherort und Netzwerkadresse. |
 
 ### 🎨 Designfarbe
 
-Unter **⚙️ Einstellungen → Designfarbe** stehen neun abgestimmte Paletten zur Auswahl: Cyan, Blau, Violett, Pink, Rot, Orange, Gold, Grün und Silber. Mit **Eigene Farbe** wählst du jede beliebige Farbe. Jede Palette besteht aus einem Akzent, einem passenden Highlight und einem leicht getönten, dunklen Hintergrund. Eigene Farben werden automatisch in einen gut lesbaren Helligkeitsbereich gebracht, damit kein Farbchaos entsteht.
+Unter **⚙️ Einstellungen → Designfarbe** stehen neun abgestimmte Paletten zur Auswahl: Cyan, Blau, Violett, Pink, Rot, Orange, Gold, Grün und Silber. Mit **Eigene Farbe** wählst du eine beliebige **Hauptfarbe** und, wenn du willst, auch die **Zweitfarbe** (sonst sucht die App eine passende aus). Jede Palette besteht aus Hauptfarbe, Zweitfarbe, einem leicht getönten dunklen Hintergrund und passend getönter Schrift. Eigene Farben werden automatisch in einen gut lesbaren Helligkeitsbereich gebracht, damit kein Farbchaos entsteht.
 
 Die Farbe wird auf dem Stick gespeichert. Sie gilt sofort für alle Bereiche, für die Spiele und den Visualizer, und auch für alle verbundenen Handys und PCs.
 
+### 🎬 Film-Kategorien
+
+1. Unter **⚙️ Einstellungen → Film-Kategorien** legst du Kategorien an, z. B. *Action*, *Familie* oder *Weihnachten*. Dort kannst du sie auch umbenennen, mit ▲▼ sortieren und löschen.
+2. Auf der Filme-Seite schaltest du mit dem **⚙️-Zahnrad** oben rechts den Bearbeitungsmodus ein, tippst einen Film an und hakst die Kategorien an. Ein Film kann in mehreren Kategorien stehen.
+3. Jede Kategorie erscheint als eigene Reihe in der von dir festgelegten Reihenfolge. Filme ohne Kategorie stehen unter „Ohne Kategorie“, und die Suche findet auch Kategorienamen.
+
+Kategorien und Zuordnungen werden auf dem Stick gespeichert. Sie gelten für alle Geräte.
+
 ### 🖥️ Bedienung: Vollbild, Kiosk und Tastenkürzel
+
+Ganz oben liegt **eine einzige Leiste** mit Logo, aktuellem Bereich, der **Adresse mit Port** für andere Geräte (Klick kopiert sie), Lautstärke, Neu laden, Vollbild und Kiosk. In der Desktop-App sitzen dort auch Minimieren, Maximieren und Schließen, und die Leiste dient zum Verschieben des Fensters.
+
 
 | Modus | So startest du ihn | Was passiert |
 |---|---|---|
@@ -183,8 +194,8 @@ Alle Spiele haben dasselbe Design und dieselbe Bedienung: Pause (`P`/`Esc`), Neu
 Das eignet sich für einen Heim-PC oder Mini-Server ohne Bildschirm:
 
 ```bash
-MediaCenter-3.4.0-portable.exe --server          # Windows
-./MediaCenter-3.4.0-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
+MediaCenter-3.5.0-portable.exe --server          # Windows
+./MediaCenter-3.5.0-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
 ```
 
 Optionen: `--port 9000` (anderer Port) und die Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).

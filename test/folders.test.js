@@ -117,3 +117,31 @@ test('Designfarbe: speichern, prüfen, auf Stick ablegen', async () => {
   assert.deepStrictEqual(saved.theme, { preset: 'gruen' });
   assert.ok(Array.isArray(saved.folders), 'Ordner bleiben erhalten');
 });
+
+test('Designfarbe: eigene Haupt- und Zweitfarbe', async () => {
+  let r = await post('/api/theme', { theme: { custom: '#22AA88', custom2: '#FF00AA' } });
+  assert.deepStrictEqual(r.theme, { custom: '#22aa88', custom2: '#ff00aa' });
+  r = await post('/api/theme', { theme: { custom: '#22AA88', custom2: 'x' } });
+  assert.deepStrictEqual(r.theme, { custom: '#22aa88' });
+});
+
+test('Film-Kategorien: anlegen, umbenennen, sortieren, zuweisen, löschen', async () => {
+  const api = b => post('/api/movie-categories', b);
+  let r = await api({ action: 'add', name: '  Action  ' });
+  assert.ok(r.success);
+  r = await api({ action: 'add', name: 'Familie' });
+  r = await api({ action: 'add', name: 'action' });
+  assert.ok(!r.success, 'doppelte Namen werden abgelehnt');
+  r = await (await fetch(base + '/api/movie-categories')).json();
+  assert.deepStrictEqual(r.categories.map(c => c.name), ['Action', 'Familie']);
+  const [a, f] = r.categories;
+  r = await api({ action: 'move', id: f.id, dir: -1 });
+  assert.deepStrictEqual(r.categories.map(c => c.name), ['Familie', 'Action']);
+  r = await api({ action: 'rename', id: a.id, name: 'Action & Abenteuer' });
+  assert.strictEqual(r.categories[1].name, 'Action & Abenteuer');
+  r = await api({ action: 'assign', path: 'media/Movies/Film.mp4', ids: [a.id, f.id, 'deadbeef'] });
+  assert.deepStrictEqual(r.assign['media/Movies/Film.mp4'], [a.id, f.id]);
+  r = await api({ action: 'remove', id: a.id });
+  assert.deepStrictEqual(r.assign['media/Movies/Film.mp4'], [f.id]);
+  assert.deepStrictEqual(r.categories.map(c => c.name), ['Familie']);
+});

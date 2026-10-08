@@ -17,7 +17,7 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .panel h2{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;display:flex;align-items:center;gap:8px}
 .panel .desc{color:var(--sub);font-size:.82rem;line-height:1.6;margin-bottom:14px}
 .cats{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px}
-.cats span{font-size:.72rem;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(226,232,248,.75)}
+.cats span{font-size:.72rem;padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);color:rgba(var(--txt-rgb),.75)}
 .folders{display:grid;gap:8px}
 .folder{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
 .folder.off{opacity:.55}
@@ -25,7 +25,7 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .folder .ico{font-size:1.6rem}
 .folder .nm{font-weight:800;font-size:.92rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .folder .pth{font-family:ui-monospace,Consolas,monospace;font-size:.74rem;color:var(--sub);word-break:break-all;margin-top:2px}
-.folder .cnt{font-size:.72rem;color:rgba(226,232,248,.6);margin-top:5px}
+.folder .cnt{font-size:.72rem;color:rgba(var(--txt-rgb),.6);margin-top:5px}
 .folder .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .folder select,.addrow select{background:rgba(14,17,32,.9);color:var(--txt);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 10px;font:inherit;font-size:.8rem}
 .toggle{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:var(--sub);cursor:pointer;user-select:none}
@@ -39,6 +39,16 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .kv dt{color:var(--sub)}
 .kv dd{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.mcats{display:grid;gap:6px}
+.mcat{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
+.mcat .ord{display:flex;flex-direction:column;gap:2px}
+.mcat .ord button{width:26px;height:18px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--sub2);font-size:.6rem;cursor:pointer;line-height:1}
+.mcat .ord button:disabled{opacity:.25;cursor:default}
+.mcat input{background:transparent;border:1px solid transparent;border-radius:8px;color:var(--txt);font:inherit;font-weight:700;padding:6px 8px;min-width:0}
+.mcat input:hover,.mcat input:focus{border-color:rgba(var(--acc-rgb),.4);background:rgba(0,0,0,.25);outline:none}
+.mcat .cnt{font-size:.72rem;color:var(--sub2);white-space:nowrap}
+.mcat .act{display:flex;gap:8px;align-items:center}
+.msize{background:rgba(var(--card-rgb),.9);color:var(--txt);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 10px;font:inherit;font-size:.82rem}
 /* Designfarbe */
 .themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
 .th{position:relative;display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:14px;cursor:pointer;font:inherit;color:var(--txt);text-align:left;
@@ -49,9 +59,18 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .th .nm{font-size:.8rem;font-weight:800}
 .th.sel::after{content:'✓';position:absolute;top:6px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--ta);color:#000;font-size:.72rem;font-weight:900;display:flex;align-items:center;justify-content:center}
 .th.custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.th-custom{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin-top:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.th-custom[hidden]{display:none}
+.th-pick{display:flex;align-items:center;gap:10px;cursor:pointer}
+.th-pick input{width:44px;height:36px;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:none;padding:2px;cursor:pointer}
+.th-pick input:disabled{opacity:.4;cursor:not-allowed}
+.th-pick span{display:flex;flex-direction:column;font-size:.82rem}
+.th-pick small{color:var(--sub2);font-size:.7rem}
 .th-preview{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
 .th-preview .chip{padding:5px 10px;border-radius:999px;font-size:.74rem;font-weight:800;background:rgba(var(--acc-rgb),.12);color:var(--acc);border:1px solid rgba(var(--acc-rgb),.3)}
 .th-preview .chip.hl{background:rgba(var(--hl-rgb),.12);color:var(--hl);border-color:rgba(var(--hl-rgb),.3)}
+.th-preview .txtdemo{font-size:.85rem;color:var(--txt)}
+.th-preview .txtdemo small{color:var(--sub2)}
 .th-preview .bar{flex:1;min-width:120px;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .th-preview .bar i{display:block;width:62%;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc))}
 @media(max-width:700px){.addrow{grid-template-columns:1fr}.folder{grid-template-columns:auto 1fr}.folder .act{grid-column:1/-1;justify-content:flex-start}.kv{grid-template-columns:1fr}}
@@ -92,13 +111,32 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
     </p>
   </section>
 
+  <section class="panel" id="filme" aria-labelledby="h-mcats">
+    <h2 id="h-mcats">🎬 Film-Kategorien</h2>
+    <p class="note" style="margin:0 0 12px">Eigene Kategorien erscheinen auf der Filme-Seite als eigene Reihen. Zuweisen kannst du Filme dort über das ⚙️-Zahnrad oben rechts (Bearbeitungsmodus → 🏷️). Ein Film kann in mehreren Kategorien sein.</p>
+    <div class="mcats" id="mcats"></div>
+    <div class="addrow" style="grid-template-columns:1fr auto">
+      <input class="mc-input" id="mcat-name" maxlength="40" placeholder="Neue Kategorie, z. B. Action, Familie, Weihnachten …" autocomplete="off">
+      <button class="btn" id="mcat-add" type="button">＋ Kategorie anlegen</button>
+    </div>
+    <div class="row" style="align-items:center;margin-top:16px">
+      <label for="msize" style="font-size:.84rem">Kachelgröße der Filme <span style="color:var(--sub2)">(auf diesem Gerät)</span></label>
+      <select id="msize" class="msize"><option value="s">Klein</option><option value="m">Mittel</option><option value="l">Groß</option><option value="xl">Sehr groß</option></select>
+    </div>
+  </section>
+
   <section class="panel" aria-labelledby="h-theme">
     <h2 id="h-theme">🎨 Designfarbe</h2>
-    <p class="note" style="margin:0 0 12px">Wähle eine Farbe für die ganze Oberfläche. Jede Palette ist aufeinander abgestimmt (Akzent, Highlight und leicht getönter Hintergrund). Die Einstellung wird auf dem Stick gespeichert und gilt sofort für alle Bereiche und alle verbundenen Geräte.</p>
+    <p class="note" style="margin:0 0 12px">Wähle eine Farbe für die ganze Oberfläche. Jede Palette ist aufeinander abgestimmt: Hauptfarbe, Zweitfarbe, leicht getönter Hintergrund und passend getönte Schrift. Bei „Eigene Farbe“ wählst du Haupt- und Zweitfarbe selbst. Die Einstellung wird auf dem Stick gespeichert und gilt sofort für alle Bereiche und alle verbundenen Geräte.</p>
     <div class="themes" id="themes" role="radiogroup" aria-label="Designfarbe"></div>
+    <div class="th-custom" id="th-custom" hidden>
+      <label class="th-pick"><input type="color" id="th-c1" value="#8b5cf6"><span><b>Hauptfarbe</b><small>Buttons, Markierungen, Fortschritt</small></span></label>
+      <label class="th-pick"><input type="color" id="th-c2" value="#fbbf24" disabled><span><b>Zweitfarbe</b><small>Überschriften, Hinweise, Akzente</small></span></label>
+      <label class="toggle"><input type="checkbox" id="th-c2-auto" checked> Zweitfarbe automatisch passend wählen</label>
+    </div>
     <div class="th-preview" aria-hidden="true">
       <button class="btn" type="button" tabindex="-1">Beispiel-Button</button>
-      <span class="chip">Akzent</span><span class="chip hl">Highlight</span>
+      <span class="chip">Hauptfarbe</span><span class="chip hl">Zweitfarbe</span><span class="txtdemo">Text <small>und gedämpfter Text</small></span>
       <div class="bar"><i></i></div>
     </div>
   </section>
@@ -222,9 +260,65 @@ $('rescan').onclick = async () => {
 };
 load();
 
+// ── Film-Kategorien ──────────────────────────────────────
+(function () {
+  const box = document.getElementById('mcats'), inp = document.getElementById('mcat-name');
+  let data = { categories: [], assign: {} };
+  const esc = s => MC.esc(String(s));
+  async function api(body) {
+    const r = await MC.api('/api/movie-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!r.success) { MC.toast(r.error || r.message || 'Fehler', 'err'); return false; }
+    data = r; render(); return true;
+  }
+  function counts() {
+    const c = {};
+    Object.values(data.assign || {}).forEach(l => l.forEach(id => { c[id] = (c[id] || 0) + 1; }));
+    return c;
+  }
+  function render() {
+    const c = counts(), cs = data.categories || [];
+    box.innerHTML = cs.length ? cs.map((k, i) => '<div class="mcat" data-id="' + k.id + '">'
+      + '<div class="ord"><button type="button" data-m="-1" title="Nach oben"' + (i ? '' : ' disabled') + '>▲</button><button type="button" data-m="1" title="Nach unten"' + (i < cs.length - 1 ? '' : ' disabled') + '>▼</button></div>'
+      + '<input value="' + esc(k.name) + '" maxlength="40" aria-label="Name der Kategorie">'
+      + '<div class="act"><span class="cnt">' + (c[k.id] || 0) + ' Film' + ((c[k.id] || 0) === 1 ? '' : 'e') + '</span><button class="btn btn-ghost btn-sm" type="button" data-del="1" style="color:var(--red)">Löschen</button></div>'
+      + '</div>').join('') : '<div class="empty">Noch keine Film-Kategorien angelegt.</div>';
+  }
+  async function load() { try { const r = await MC.api('/api/movie-categories'); if (r.success) { data = r; render(); } } catch {} }
+  async function add() { const n = inp.value.trim(); if (!n) return inp.focus(); if (await api({ action: 'add', name: n })) { inp.value = ''; MC.toast('✅ Kategorie „' + n + '“ angelegt', 'ok'); } }
+  document.getElementById('mcat-add').addEventListener('click', add);
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+  box.addEventListener('click', async e => {
+    const row = e.target.closest('.mcat'); if (!row) return;
+    const id = row.dataset.id;
+    const mv = e.target.closest('[data-m]');
+    if (mv) return api({ action: 'move', id, dir: +mv.dataset.m });
+    if (e.target.closest('[data-del]')) {
+      const k = data.categories.find(x => x.id === id);
+      if (k && confirm('Kategorie „' + k.name + '“ löschen? Die Filme selbst bleiben erhalten.')) api({ action: 'remove', id });
+    }
+  });
+  box.addEventListener('change', e => {
+    if (e.target.tagName !== 'INPUT') return;
+    const row = e.target.closest('.mcat'), k = data.categories.find(x => x.id === row.dataset.id);
+    const n = e.target.value.trim();
+    if (!n || (k && n === k.name)) { if (k) e.target.value = k.name; return; }
+    api({ action: 'rename', id: row.dataset.id, name: n }).then(ok => { if (!ok && k) e.target.value = k.name; });
+  });
+  box.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur(); });
+  // Kachelgröße (gleicher Speicher wie die Filme-Seite)
+  const sz = document.getElementById('msize');
+  try { sz.value = localStorage.getItem('mc_movie_size') || 'm'; } catch {}
+  sz.addEventListener('change', () => { try { localStorage.setItem('mc_movie_size', sz.value); } catch {} MC.toast('Kachelgröße gespeichert', 'ok', 1500); });
+  window.addEventListener('storage', e => { if (e.key === 'mc_moviecats_v') load(); if (e.key === 'mc_movie_size') sz.value = e.newValue || 'm'; });
+  load();
+  if (location.hash === '#filme') setTimeout(() => document.getElementById('filme').scrollIntoView({ behavior: 'smooth' }), 300);
+})();
+
 // ── Designfarbe ──────────────────────────────────────────
 (function () {
   const box = document.getElementById('themes');
+  const cbox = document.getElementById('th-custom');
+  const in1 = document.getElementById('th-c1'), in2 = document.getElementById('th-c2'), auto2 = document.getElementById('th-c2-auto');
   function render() {
     const cur = MCTheme.get() || {};
     const tiles = Object.entries(MCTheme.PRESETS).map(([id, p]) => {
@@ -232,25 +326,39 @@ load();
       const sel = !cur.custom && (cur.preset || 'cyan') === id;
       return '<button type="button" class="th' + (sel ? ' sel' : '') + '" role="radio" aria-checked="' + sel + '" data-p="' + id + '" style="--ta:' + p.acc + ';--ta2:' + p.acc2 + ';--th:' + p.hl + ';--tb:' + v['--card'] + '"><span class="sw"></span><span class="nm">' + p.name + '</span></button>';
     });
-    const cp = MCTheme.palette(cur.custom ? cur : { custom: '#8b5cf6' });
-    const cv = MCTheme.vars(cur.custom ? cur : { custom: '#8b5cf6' });
-    tiles.push('<label class="th custom' + (cur.custom ? ' sel' : '') + '" role="radio" aria-checked="' + !!cur.custom + '" style="--ta:' + cp.acc + ';--ta2:' + cp.acc2 + ';--th:' + cp.hl + ';--tb:' + cv['--card'] + '"><span class="sw"></span><span class="nm">🎨 Eigene Farbe</span><input type="color" value="' + (cur.custom || '#8b5cf6') + '" aria-label="Eigene Farbe wählen"></label>');
+    const ct = cur.custom ? cur : { custom: in1.value || '#8b5cf6' };
+    const cp = MCTheme.palette(ct), cv = MCTheme.vars(ct);
+    tiles.push('<button type="button" class="th' + (cur.custom ? ' sel' : '') + '" role="radio" aria-checked="' + !!cur.custom + '" data-custom="1" style="--ta:' + cp.acc + ';--ta2:' + cp.acc2 + ';--th:' + cp.hl + ';--tb:' + cv['--card'] + '"><span class="sw"></span><span class="nm">🎨 Eigene Farbe</span></button>');
     box.innerHTML = tiles.join('');
+    cbox.hidden = !cur.custom;
+    if (cur.custom) {
+      in1.value = cur.custom;
+      auto2.checked = !cur.custom2;
+      in2.disabled = !cur.custom2;
+      in2.value = cur.custom2 || MCTheme.palette({ custom: cur.custom }).hl.toLowerCase();
+    }
   }
   async function choose(t) {
     const ok = await MCTheme.set(t);
     render();
     if (!ok) MC.toast('Farbe nur auf diesem Gerät gespeichert (Server nicht erreichbar)', 'warn');
   }
-  box.addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b) choose({ preset: b.dataset.p }); });
-  let t = 0;
-  box.addEventListener('input', e => {
-    if (e.target.type !== 'color') return;
-    const v = e.target.value;
-    MCTheme.apply({ custom: v }); // Live-Vorschau beim Ziehen
-    clearTimeout(t); t = setTimeout(() => choose({ custom: v }), 350);
+  function customTheme() {
+    const t = { custom: in1.value };
+    if (!auto2.checked) t.custom2 = in2.value;
+    return t;
+  }
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-p]');
+    if (b) return choose({ preset: b.dataset.p });
+    if (e.target.closest('[data-custom]')) choose(customTheme());
   });
-  window.addEventListener('mc-theme', () => { if (!box.contains(document.activeElement) || document.activeElement.type !== 'color') render(); });
+  let t = 0;
+  function live() { const th = customTheme(); MCTheme.apply(th); clearTimeout(t); t = setTimeout(() => choose(th), 350); }
+  in1.addEventListener('input', live);
+  in2.addEventListener('input', live);
+  auto2.addEventListener('change', () => { in2.disabled = auto2.checked; live(); });
+  window.addEventListener('mc-theme', () => { if (!cbox.contains(document.activeElement)) render(); });
   render();
 })();
 </script>

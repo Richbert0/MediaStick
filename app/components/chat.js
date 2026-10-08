@@ -36,7 +36,7 @@ var css=`
   position:fixed;left:auto;top:auto;right:16px;bottom:16px;
   width:360px;height:480px;min-width:260px;min-height:240px;
   max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);
-  resize:both;touch-action:auto;
+  resize:both;touch-action:auto;-webkit-app-region:no-drag;
   display:flex;flex-direction:column;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   pointer-events:all;border-radius:18px;overflow:hidden;
@@ -568,12 +568,21 @@ function viewport(){
   var vv=window.visualViewport;
   return vv?{x:vv.offsetLeft,y:vv.offsetTop,w:vv.width,h:vv.height}:{x:0,y:0,w:innerWidth,h:innerHeight};
 }
+/* Oberkante: in der Desktop-App nicht unter die Titelleiste schieben – dort greift sonst
+   das Fenster-Ziehen des Betriebssystems und der Chat ließe sich nicht mehr fassen */
+function topLimit(v){
+  var b=document.body,bar=document.getElementById('ctrl-bar');
+  if(b&&b.classList.contains('desktop-app')&&!b.classList.contains('kiosk')&&bar){
+    var bb=bar.getBoundingClientRect();if(bb.height)return Math.max(v.y+8,bb.bottom+6);
+  }
+  return v.y+8;
+}
 function clampTo(x,y){
-  var v=viewport(),r=pan.getBoundingClientRect(),m=8;
+  var v=viewport(),r=pan.getBoundingClientRect(),m=8,minY=topLimit(v);
   x=Math.min(Math.max(x,v.x+m),v.x+v.w-r.width-m);
-  y=Math.min(Math.max(y,v.y+m),v.y+v.h-Math.min(r.height,v.h-2*m)-m);
+  y=Math.min(Math.max(y,minY),v.y+v.h-Math.min(r.height,v.h-2*m)-m);
   pan.style.left=Math.round(Math.max(v.x+m,x))+'px';
-  pan.style.top=Math.round(Math.max(v.y+m,y))+'px';
+  pan.style.top=Math.round(Math.max(minY,y))+'px';
   pan.style.right='auto';pan.style.bottom='auto';
 }
 function placePanel(){
@@ -664,6 +673,7 @@ function connect(){
       try{
         var d=JSON.parse(e.data);
         if(d.action==='theme'&&window.MCTheme)MCTheme.receive(d.theme);
+        if(d.action==='movie_cats'){try{localStorage.setItem('mc_moviecats_v',String(Date.now()));}catch(ex){}}
         if(d.action==='global_chat_message')addMsg(d);
         if(d.action==='global_chat_history'){(d.messages||[]).forEach(function(m){addMsg(m,true);});scrollB();}
         if(d.action==='typing'&&d.name&&d.name!==chatName){

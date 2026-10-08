@@ -90,6 +90,17 @@ body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100
 .vol-row{display:flex;align-items:center;gap:6px}
 .vol-sl{-webkit-appearance:none;appearance:none;width:72px;height:3px;background:rgba(255,255,255,.15);border-radius:2px;outline:none;cursor:pointer}
 .vol-sl::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--gold);cursor:pointer}
+/* Neue Playlist als Fenster (Handy) */
+.pl-new{display:none}
+#pl-sheet{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);display:none;align-items:flex-end;justify-content:center}
+#pl-sheet.open{display:flex}
+.pl-sheet-box{width:100%;max-width:480px;background:var(--card);border:1px solid rgba(var(--acc-rgb),.25);border-bottom:0;border-radius:18px 18px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;animation:plsh .2s ease}
+@keyframes plsh{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.pl-sheet-h{font-weight:800;color:var(--acc)}
+#pl-sheet-inp{font-size:16px;padding:12px 14px}
+.pl-sheet-row{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--sub2)}
+.pl-sheet-row input{accent-color:var(--acc);width:18px;height:18px}
+.pl-sheet-btns{display:flex;gap:10px}.pl-sheet-btns .btn{flex:1;justify-content:center;padding:12px}
 /* Smartphone: Visualizer → Steuerung → Infos untereinander, Playlists als Chips */
 @media(max-width:640px){
   body{height:100%;height:100dvh}
@@ -100,6 +111,8 @@ body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100
   .pl-list::-webkit-scrollbar{display:none}
   .pl-item{flex-shrink:0;padding:6px 12px;border-radius:999px;border-color:rgba(255,255,255,.08);white-space:nowrap}
   .pl-item .pl-name{overflow:visible}
+  .pl-new{display:flex;border-style:dashed!important;border-color:rgba(var(--acc-rgb),.45)!important;color:var(--acc)}
+  .tr-act select{font-size:.75rem;padding:5px 6px}
   .track-head{padding:8px 10px}
   .track-list{padding:4px 6px}
   .tr-row{padding:10px 8px;gap:8px}
@@ -213,6 +226,16 @@ body{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 50%,var(--bg) 100
   </div>
 </div>
 
+<!-- Neue Playlist (Handy) -->
+<div id="pl-sheet" role="dialog" aria-modal="true" aria-labelledby="pl-sheet-h" onclick="if(event.target===this)closePlSheet()">
+  <div class="pl-sheet-box">
+    <div class="pl-sheet-h" id="pl-sheet-h">📋 Neue Playlist</div>
+    <input class="mc-input" id="pl-sheet-inp" placeholder="Name der Playlist" maxlength="40" enterkeyhint="done" onkeydown="if(event.key==='Enter')createPlFromSheet();if(event.key==='Escape')closePlSheet()">
+    <label class="pl-sheet-row" id="pl-sheet-addrow"><input type="checkbox" id="pl-sheet-add"> Aktuellen Song gleich hinzufügen</label>
+    <div class="pl-sheet-btns"><button class="btn btn-ghost" type="button" onclick="closePlSheet()">Abbrechen</button><button class="btn" type="button" onclick="createPlFromSheet()">Erstellen</button></div>
+  </div>
+</div>
+
 <!-- VINYL FULLSCREEN OVERLAY -->
 <div id="vinyl-overlay">
   <button class="vp-close" onclick="closeVinyl()" title="Schließen">✕</button>
@@ -303,6 +326,23 @@ function addPl(){
   playlists[n]=[];savePls();document.getElementById('pl-inp').value='';
   renderPlaylists();MC.toast('✅ "'+n+'" erstellt','ok');
 }
+function openPlSheet(){
+  var sh=document.getElementById('pl-sheet');sh.classList.add('open');
+  var inp=document.getElementById('pl-sheet-inp');inp.value='';
+  document.getElementById('pl-sheet-add').checked=curIdx>=0&&!!curList[curIdx];
+  document.getElementById('pl-sheet-addrow').style.display=curIdx>=0&&curList[curIdx]?'':'none';
+  setTimeout(function(){inp.focus();},60);
+}
+function closePlSheet(){document.getElementById('pl-sheet').classList.remove('open');}
+function createPlFromSheet(){
+  var n=(document.getElementById('pl-sheet-inp').value||'').trim();
+  if(!n){document.getElementById('pl-sheet-inp').focus();return;}
+  if(playlists[n]){MC.toast('Playlist existiert bereits','err');return;}
+  playlists[n]=[];
+  if(document.getElementById('pl-sheet-add').checked&&curList[curIdx])playlists[n].push(curList[curIdx].path);
+  savePls();closePlSheet();renderPlaylists();
+  MC.toast('✅ "'+n+'" erstellt – Songs mit „+ PL“ hinzufügen','ok',3500);
+}
 function delPl(n){
   if(!confirm('Playlist "'+n+'" löschen?'))return;
   delete playlists[n];savePls();
@@ -331,6 +371,8 @@ function renderPlaylists(){
     +'<span class="pl-count">'+playlists[n].length+'</span>'
     +'<button onclick="event.stopPropagation();delPl(\''+MC.esc(n)+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:2px 4px">✕</button>'
     +'</div>').join('');
+  // Handy (Hochformat): Playlists sind eine Chip-Leiste – „＋ Neu“ öffnet ein Eingabefenster
+  html+='<div class="pl-item pl-new" onclick="openPlSheet()" role="button" aria-label="Neue Playlist erstellen"><span class="pl-icon">＋</span><span class="pl-name">Neue Playlist</span></div>';
   document.getElementById('pllist').innerHTML=html;
 }
 </script>
