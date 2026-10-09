@@ -37,6 +37,7 @@ MediaCenter macht aus einem USB-Stick oder einem beliebigen Ordner eine eigene M
    |---|---|---|
    | **Windows 10/11** (64 Bit) | `MediaCenter-x.y.z-portable.exe` | Doppelklick |
    | **Linux** (x64) | `MediaCenter-x.y.z-x86_64.AppImage` | `chmod +x MediaCenter-*.AppImage`, dann starten |
+   | **Raspberry Pi 4/5** & andere ARM64-Geräte | `MediaCenter-x.y.z-arm64.AppImage` | wie Linux, siehe [Raspberry Pi](#-raspberry-pi) |
 
 2. Lege die Datei auf den USB-Stick und starte sie. Daneben entsteht der Ordner `MediaCenter-Daten`.
 3. Füge Medien hinzu: über **☁️ Upload**, per Kopieren in die Ordner unten oder mit **⚙️ Einstellungen → Eigene Medienordner**.
@@ -46,7 +47,7 @@ MediaCenter macht aus einem USB-Stick oder einem beliebigen Ordner eine eigene M
 > `sudo apt install libfuse2` (ab Ubuntu 24.04: `sudo apt install libfuse2t64`).
 > Ohne Installation geht es so: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
-**Systemvoraussetzungen:** Windows 10/11 x64 oder eine aktuelle Linux-Distribution (x64). Die App selbst braucht etwa 100–120 MB, dazu kommt der Platz für deine Medien. Für die LAN-Funktionen müssen alle Geräte im selben Netzwerk sein.
+**Systemvoraussetzungen:** Windows 10/11 x64, eine aktuelle Linux-Distribution (x64) oder ein Raspberry Pi 4/5 mit 64-Bit-Raspberry-Pi-OS. Die App selbst braucht etwa 100–120 MB, dazu kommt der Platz für deine Medien. Für die LAN-Funktionen müssen alle Geräte im selben Netzwerk sein.
 
 ---
 
@@ -54,7 +55,7 @@ MediaCenter macht aus einem USB-Stick oder einem beliebigen Ordner eine eigene M
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.5.0-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.5.1-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
     │   ├── 📁 Movies      ← Filme
@@ -194,11 +195,65 @@ Alle Spiele haben dasselbe Design und dieselbe Bedienung: Pause (`P`/`Esc`), Neu
 Das eignet sich für einen Heim-PC oder Mini-Server ohne Bildschirm:
 
 ```bash
-MediaCenter-3.5.0-portable.exe --server          # Windows
-./MediaCenter-3.5.0-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
+MediaCenter-3.5.1-portable.exe --server          # Windows
+./MediaCenter-3.5.1-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
+./MediaCenter-3.5.1-arm64.AppImage --server      # Raspberry Pi
 ```
 
 Optionen: `--port 9000` (anderer Port) und die Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
+
+---
+
+## 🍓 Raspberry Pi
+
+MediaCenter läuft als portables AppImage auch auf dem **Raspberry Pi 4 und 5** und auf anderen ARM64-Rechnern. Der Pi eignet sich gut als stromsparende Mediathek am Fernseher oder als dauerhaft laufender Heimserver für Handys und PCs.
+
+**Voraussetzungen**
+- Raspberry Pi 4 (empfohlen ab 4 GB RAM) oder Raspberry Pi 5
+- **Raspberry Pi OS 64 Bit** (Bookworm oder neuer). Die 32-Bit-Version wird nicht unterstützt. Ob du 64 Bit hast, zeigt `uname -m`: Dort muss `aarch64` stehen.
+- Medien auf einem USB-Stick, einer USB-Festplatte oder einer SSD. Die SD-Karte ist für viele Filme meist zu klein und zu langsam.
+
+**Einrichten**
+
+```bash
+sudo apt install libfuse2                           # einmalig (Raspberry Pi OS Bookworm); ab Trixie: libfuse2t64
+chmod +x MediaCenter-*-arm64.AppImage
+./MediaCenter-*-arm64.AppImage                      # mit Fenster (Desktop)
+./MediaCenter-*-arm64.AppImage --server             # nur Server, z. B. ohne Bildschirm
+```
+
+Wie überall entsteht der Ordner `MediaCenter-Daten` neben dem AppImage. Liegt das AppImage auf dem USB-Stick, kannst du den Stick zwischen Pi und PC hin- und herstecken.
+
+**Automatisch beim Start des Pi öffnen** (mit Bildschirm): Lege die Datei `~/.config/autostart/mediacenter.desktop` an und passe den Pfad zum AppImage an:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=MediaCenter
+Exec=/media/pi/STICK/MediaCenter-3.5.1-arm64.AppImage
+```
+
+Mit dem Knopf **📺 Kiosk** läuft die App danach bildschirmfüllend wie eine TV-Oberfläche. Bedienen kannst du sie per Maus, mit der eingebauten Fernbedienung oder über das Handy.
+
+**Als Heimserver ohne Bildschirm** startet ein systemd-Dienst MediaCenter bei jedem Hochfahren. Datei `/etc/systemd/system/mediacenter.service`:
+
+```ini
+[Unit]
+Description=MediaCenter
+After=network-online.target
+
+[Service]
+User=pi
+ExecStart=/home/pi/MediaCenter-3.5.1-arm64.AppImage --server --appimage-extract-and-run
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Ersetze `pi` und die Pfade durch deinen Benutzernamen und den Speicherort des AppImages. Danach aktivierst du den Dienst mit `sudo systemctl enable --now mediacenter`. Erreichbar ist er unter `http://<IP-des-Pi>:8080`; die IP zeigt `hostname -I`.
+
+> **Hinweis zur Leistung:** Der Pi 5 spielt Full-HD-Videos (H.264) im Fenster flüssig ab. Der Pi 4 schafft Full-HD meist, bei hohen Bitraten kann es aber ruckeln. 4K-Videos spielt man besser auf dem Handy oder PC ab und nutzt den Pi nur als Server.
 
 ---
 
@@ -272,12 +327,13 @@ npm start            # Desktop-App im Entwicklungsmodus
 npm run server       # nur der Server, im Browser: http://localhost:8080
 npm test             # Server- und LAN-Tests
 npm run build:win    # portable Windows-EXE  → dist/
-npm run build:linux  # Linux-AppImage        → dist/
+npm run build:linux  # Linux-AppImage (x64)  → dist/
+npm run build:linux-arm64  # AppImage für Raspberry Pi / ARM64 → dist/
 ```
 
 Unter Windows erledigen `start.bat` (Server-Modus) und `BUILD.bat` (Build-Menü) dasselbe per Doppelklick.
 
-**Automatische Builds:** Jeder Push und jeder Pull Request wird per [GitHub Actions](.github/workflows/build.yml) getestet und auf Windows und Linux gebaut, inklusive Start-Test der fertigen App. Pushes auf `main` veröffentlichen die Dateien automatisch als **Release**.
+**Automatische Builds:** Jeder Push und jeder Pull Request wird per [GitHub Actions](.github/workflows/build.yml) getestet und für Windows, Linux (x64) und ARM64 (Raspberry Pi) gebaut. Das ARM-Paket entsteht nativ auf einem ARM-Runner, und jedes Paket durchläuft einen Start-Test. Pushes auf `main` veröffentlichen die Dateien automatisch als **Release**.
 
 ### Aufbau
 

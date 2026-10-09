@@ -41,11 +41,20 @@ jobs:
             script: build:win
             artifact: dist/*.exe
             exe: dist/win-unpacked/MediaCenter.exe
+            upload: MediaCenter-Windows
           - os: ubuntu-latest
             name: Linux AppImage
             script: build:linux
             artifact: dist/*.AppImage
             exe: dist/linux-unpacked/mediacenter
+            upload: MediaCenter-Linux
+          # Raspberry Pi 4/5 & andere ARM64-Geräte – nativ auf einem ARM-Runner gebaut und getestet
+          - os: ubuntu-24.04-arm
+            name: Linux AppImage ARM64 (Raspberry Pi)
+            script: build:linux-arm64
+            artifact: dist/*.AppImage
+            exe: dist/linux-arm64-unpacked/mediacenter
+            upload: MediaCenter-Linux-ARM64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +122,10 @@ jobs:
         run: |
           export MEDIACENTER_DATA_DIR="$RUNNER_TEMP/mc-data"
           export MEDIACENTER_PORT=18080
-          "${{ matrix.exe }}" --server --no-sandbox > "$RUNNER_TEMP/server.log" 2>&1 &
+          EXE="${{ matrix.exe }}"
+          [ -e "$EXE" ] || EXE=$(ls dist/*-unpacked/mediacenter 2>/dev/null | head -1)
+          file "$EXE" 2>/dev/null || true
+          "$EXE" --server --no-sandbox > "$RUNNER_TEMP/server.log" 2>&1 &
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:18080/api/info; then echo; break; fi
             sleep 1
@@ -123,7 +135,7 @@ jobs:
           cat "$RUNNER_TEMP/server.log" || true
       - uses: actions/upload-artifact@v4
         with:
-          name: MediaCenter-${{ runner.os }}
+          name: ${{ matrix.upload }}
           path: ${{ matrix.artifact }}
           if-no-files-found: error
           retention-days: 30
