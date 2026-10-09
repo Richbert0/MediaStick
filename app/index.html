@@ -28,7 +28,7 @@
   --font-body:'Outfit','MC Symbols','MC Emoji','Segoe UI Variable Text','Segoe UI',sans-serif;
   --font-display:'Syne','MC Symbols','MC Emoji','Bahnschrift','Trebuchet MS',sans-serif;
 }
-html,body{height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-family:var(--font-body);overscroll-behavior:none;}
+html,body{overflow-x:hidden;height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-family:var(--font-body);overscroll-behavior:none;}
 .app{height:100vh;height:100dvh;display:flex;overflow:hidden;}
 .sidebar{width:60px;background:linear-gradient(180deg,#0A0D1A,#060810);border-right:1px solid rgba(var(--acc-rgb),.1);transition:width .25s ease;display:flex;flex-direction:column;padding-top:10px;flex-shrink:0;z-index:10;height:100%;overflow-y:auto;overflow-x:hidden;}
 .sidebar.open{width:165px;}
@@ -153,7 +153,7 @@ body.video-fs #page-frame,body.immersive #page-frame{width:100vw!important;heigh
 .qa-chat-btn.active{background:var(--gold)!important;color:#000!important;box-shadow:0 0 18px var(--glow);}
 #mc-panel{z-index:7000!important;}
 #mc-toggle{display:none!important;}
-.qa-radio{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(14,17,32,.97),rgba(6,8,16,.99));border:1px solid rgba(var(--acc-rgb),.14);border-radius:14px;padding:8px 10px 8px 14px;min-width:275px;max-width:320px;box-shadow:0 4px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(var(--acc-rgb),.05);flex-shrink:0;position:relative;transition:opacity .7s,filter .7s;}
+.qa-radio{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(14,17,32,.97),rgba(6,8,16,.99));border:1px solid rgba(var(--acc-rgb),.14);border-radius:14px;padding:8px 10px 8px 14px;width:320px;min-width:320px;max-width:320px;box-shadow:0 4px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(var(--acc-rgb),.05);flex-shrink:0;position:relative;transition:opacity .7s,filter .7s;}
 .qa-radio::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:linear-gradient(180deg,var(--amber),var(--amber2));border-radius:0 3px 3px 0;box-shadow:0 0 10px var(--amber-glow);}
 .qa-radio.offline{opacity:.22;filter:grayscale(1) brightness(.45);}
 .qa-radio.offline *{pointer-events:none!important;cursor:not-allowed!important;}
@@ -168,9 +168,13 @@ body.video-fs #page-frame,body.immersive #page-frame{width:100vw!important;heigh
 .qr-track-box{overflow:hidden;background:rgba(0,0,0,.35);border:1px solid rgba(var(--acc-rgb),.07);border-radius:6px;padding:3px 7px;cursor:default;position:relative;}
 .qr-track-box::after{content:'';position:absolute;right:0;top:0;bottom:0;width:18px;background:linear-gradient(90deg,transparent,rgba(6,8,16,.95));pointer-events:none;opacity:0;transition:opacity .2s;}
 .qr-track-box.overflow::after{opacity:1;}
-.qr-track{font-size:.76rem;font-weight:700;color:var(--txt);white-space:nowrap;display:inline-block;}
-.qr-track.scrolling{animation:qr-marquee var(--marquee-dur,9s) linear infinite;}
-@keyframes qr-marquee{0%,12%{transform:translateX(0)}85%,100%{transform:translateX(var(--scroll-dist,-120px))}}
+.qr-track{font-size:.76rem;font-weight:700;color:var(--txt);white-space:nowrap;display:block;overflow:hidden;text-overflow:ellipsis;}
+/* Laufschrift: lange Titel wandern endlos von rechts nach links */
+.qr-track.marquee{overflow:visible;text-overflow:clip;display:inline-flex;animation:qr-marquee var(--marquee-dur,12s) linear infinite;will-change:transform}
+.qr-track.marquee span{padding-right:2.5em}
+.qr-track-box:hover .qr-track.marquee{animation-play-state:paused}
+@keyframes qr-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.qr-track-box{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 8px,#000 calc(100% - 14px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 8px,#000 calc(100% - 14px),transparent)}
 .qr-prog-wrap{display:flex;flex-direction:column;gap:2px;margin-top:2px;}
 .qr-prog{height:4px;background:rgba(255,255,255,.08);border-radius:2px;cursor:pointer;position:relative;overflow:visible;transition:height .15s;flex-shrink:0;}
 .qr-prog:hover{height:6px;}
@@ -187,31 +191,15 @@ body.video-fs #page-frame,body.immersive #page-frame{width:100vw!important;heigh
 .qr-btn:active{transform:scale(.88);}
 .qr-btn.play-btn{width:36px;height:36px;font-size:1rem;background:rgba(var(--hl-rgb),.1);border:1.5px solid rgba(var(--hl-rgb),.3);color:var(--amber);border-radius:50%;}
 .qr-btn.play-btn.active{background:rgba(var(--hl-rgb),.2);border-color:var(--amber);box-shadow:0 0 14px var(--amber-glow);}
-#add-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;}
-#add-overlay.open{display:flex;}
 .modal-box{background:linear-gradient(145deg,var(--card),#090B18);border:1px solid rgba(var(--acc-rgb),.18);border-radius:18px;width:100%;max-width:420px;overflow:hidden;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.6);}
 .modal-head{padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between;}
 .modal-head h3{font-size:.95rem;font-weight:800;color:var(--amber);font-family:var(--font-display);}
 .modal-close{background:none;border:none;color:var(--sub);font-size:1.4rem;cursor:pointer;line-height:1;}.modal-close:hover{color:var(--txt);}
 .modal-body{padding:20px 22px 28px;}
-.preset-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
-.page-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid transparent;border-radius:12px;cursor:pointer;transition:.2s;}
-.page-item:hover{border-color:rgba(var(--acc-rgb),.28);}
-.page-item.added{border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.04);}
-.pi-icon{font-size:1.4rem;}.pi-info{flex:1;}.pi-name{font-weight:700;font-size:.85rem;}.pi-url{font-size:.7rem;color:var(--sub);}
-.pi-badge{font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:8px;}
-.badge-add{background:rgba(var(--acc-rgb),.08);color:var(--gold);border:1px solid var(--border);}
-.badge-added{background:rgba(16,185,129,.08);color:var(--green);border:1px solid rgba(16,185,129,.25);}
 .modal-sec{font-size:.7rem;color:var(--sub);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;margin-top:14px;}
 .inp-row{display:flex;gap:8px;margin-bottom:10px;}
 .m-inp{flex:1;padding:11px 13px;background:var(--hover);border:1px solid rgba(255,255,255,.07);border-radius:9px;color:var(--txt);font-size:.88rem;outline:none;transition:.2s;}
 .m-inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--glow);}
-.icon-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-.icon-opt{width:38px;height:38px;background:var(--hover);border:2px solid transparent;border-radius:8px;font-size:1.2rem;cursor:pointer;transition:.15s;}
-.icon-opt:hover{border-color:rgba(var(--acc-rgb),.3);}
-.icon-opt.sel{border-color:var(--gold);background:rgba(var(--acc-rgb),.1);}
-.file-label{display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--hover);border:1px dashed rgba(var(--acc-rgb),.15);border-radius:9px;cursor:pointer;font-size:.82rem;color:var(--sub);margin-bottom:10px;transition:.2s;}
-.file-label:hover{border-color:var(--gold);color:var(--txt);}
 .m-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;color:#000;font-size:.9rem;font-weight:800;cursor:pointer;transition:.2s;}
 .m-btn:hover{transform:scale(1.02);box-shadow:0 4px 16px var(--glow);}
 /* Vollbild & Kiosk */
@@ -456,9 +444,9 @@ body.video-fs #kiosk-menu,body.immersive #kiosk-menu{display:none!important}
                   style="display:none;position:absolute;top:4px;right:4px;background:var(--red);
                   color:#fff;font-size:.5rem;font-weight:900;padding:1px 4px;border-radius:10px;min-width:14px;text-align:center"></span>
               </button>
-              <button class="qa-btn" onclick="openModal()" title="Schnellzugriff hinzufügen">
+              <button class="qa-btn" onclick="MCShortcuts.open()" title="Eigene Seiten anheften und verwalten">
                 <span class="qa-btn-icon">✚</span>
-                <span>Hinzu</span>
+                <span>Seiten</span>
               </button>
             </div>
           </div>
@@ -517,30 +505,7 @@ body.video-fs #kiosk-menu,body.immersive #kiosk-menu{display:none!important}
 <button id="fs-resume" type="button" hidden>⛶ Vollbild fortsetzen</button>
 <button id="kiosk-menu" type="button" title="Menü einblenden" aria-label="Menü einblenden">⋯</button>
 
-<!-- ADD SHORTCUT MODAL -->
-<div id="add-overlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3>⚡ Schnellzugriff hinzufügen</h3>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="modal-sec">Seiten</div>
-      <div class="preset-list" id="preset-list"></div>
-      <div class="modal-sec">Eigene Verknüpfung</div>
-      <div class="inp-row">
-        <input class="m-inp" id="c-name" placeholder="Name" maxlength="20">
-        <input class="m-inp" id="c-url"  placeholder="URL / Pfad">
-      </div>
-      <div class="modal-sec">Icon</div>
-      <div class="icon-grid" id="icon-grid"></div>
-      <label class="file-label" for="c-img">🖼️ Bild wählen <span id="c-img-name"></span></label>
-      <input type="file" id="c-img" accept="image/*" style="display:none">
-      <button class="m-btn" onclick="addCustom()">✅ Hinzufügen</button>
-    </div>
-  </div>
-</div>
-
+<script src="/js/shortcuts.js"></script>
 <script>
 /* ─── Sidebar ─────────────────────────────────────────────── */
 function toggleSidebar(){
@@ -641,6 +606,18 @@ function loadPage(src,label){
   const home=document.getElementById('home-screen');
   const pc=document.getElementById('page-container');
   const bgMusik=document.getElementById('musik-bg-frame');
+
+  // Eigene Webseiten (Schnellzugriff) – Musik läuft im Hintergrund weiter
+  if(window.MCWeb&&MCWeb.isWeb(src)){
+    try{document.getElementById('page-frame')?.contentWindow?.postMessage({type:'media-pause-all'},'*');}catch{}
+    home.style.display='none';pc.classList.remove('active');bgMusik.style.display='none';
+    document.getElementById('page-frame').src='';
+    MCWeb.open(src,label);
+    currentSrc=src;currentLabel=label;
+    setActiveNav('');_syncCtrlBar();
+    return;
+  }
+  if(window.MCWeb)MCWeb.hide();
 
   // Home
   if(!src){
@@ -841,99 +818,7 @@ window.addEventListener('message',e=>{
   }
 });
 
-/* ─── Quick Access – Shortcuts ───────────────────────────── */
-const PRESETS=[
-  {name:'Home',   url:'',              icon:'🏠'},
-  {name:'Filme',  url:'FILME.html',    icon:'🎬'},
-  {name:'Serien', url:'SERIEN.html',   icon:'📺'},
-  {name:'Musik',  url:'MUSIK.html',    icon:'🎵'},
-  {name:'Fotos',  url:'FOTOS.html',    icon:'🖼️'},
-  {name:'Spiele', url:'SPIELE.html',   icon:'🎮'},
-  {name:'Lobby',  url:'SPIELE.html#lan',icon:'🕹️'},
-  {name:'Upload', url:'upload.html',   icon:'📤'},
-];
-const ICONS=['🎮','🕹️','🎬','📺','🎵','🖼️','📤','📁','⭐','🔥','💎','🌐','🔧','📚','🎯','🚀','💡','📸'];
-let selIcon=ICONS[0];
-let customs=[];
-
-function loadCustoms(){try{customs=JSON.parse(localStorage.getItem('mc_shortcuts')||'[]');}catch{customs=[];}}
-function saveCustoms(){localStorage.setItem('mc_shortcuts',JSON.stringify(customs));}
-
-function renderQA(){
-  const wrap=document.getElementById('qa-custom');
-  wrap.innerHTML=customs.map((s,i)=>{
-    const ic=s.image
-      ?`<img src="${esc(s.image)}" style="width:26px;height:26px;border-radius:5px;object-fit:cover" class="qa-btn-icon">`
-      :`<span class="qa-btn-icon">${esc(s.icon)}</span>`;
-    return `<button class="qa-btn qa-custom"
-      onclick="loadPage('${esc(s.url)}','${esc(s.name)}')"
-      oncontextmenu="event.preventDefault();removeCustom(${i})"
-      title="${esc(s.name)} (Rechtsklick: entfernen)">${ic}<span>${esc(s.name.substring(0,9))}</span></button>`;
-  }).join('');
-}
-function removeCustom(i){
-  if(confirm('Verknüpfung entfernen?')){
-    customs.splice(i,1);saveCustoms();renderQA();renderPresets();
-  }
-}
-
-function openModal(){renderPresets();renderIconGrid();document.getElementById('add-overlay').classList.add('open');}
-function closeModal(){document.getElementById('add-overlay').classList.remove('open');}
-
-function renderPresets(){
-  document.getElementById('preset-list').innerHTML=PRESETS.map(p=>{
-    const has=customs.some(s=>s.url===p.url);
-    return `<div class="page-item ${has?'added':''}" onclick="togglePreset('${esc(p.url)}','${esc(p.name)}','${esc(p.icon)}')">
-      <div class="pi-icon">${p.icon}</div>
-      <div class="pi-info"><div class="pi-name">${p.name}</div><div class="pi-url">${p.url||'Home'}</div></div>
-      <span class="pi-badge ${has?'badge-added':'badge-add'}">${has?'✓ Dabei':'+ Hinzu'}</span>
-    </div>`;
-  }).join('');
-}
-function togglePreset(url,name,icon){
-  const i=customs.findIndex(s=>s.url===url);
-  if(i>=0)customs.splice(i,1);else customs.push({url,name,icon});
-  saveCustoms();renderQA();renderPresets();
-}
-function renderIconGrid(){
-  document.getElementById('icon-grid').innerHTML=ICONS.map(ic=>
-    `<button class="icon-opt ${ic===selIcon?'sel':''}" onclick="pickIcon('${ic}',this)">${ic}</button>`
-  ).join('');
-}
-function pickIcon(ic,btn){
-  selIcon=ic;
-  document.querySelectorAll('.icon-opt').forEach(b=>b.classList.remove('sel'));
-  btn.classList.add('sel');
-}
-function addCustom(){
-  const name=(document.getElementById('c-name').value||'').trim();
-  const url=(document.getElementById('c-url').value||'').trim();
-  if(!name||!url){alert('Name und URL eingeben');return;}
-  if(customs.some(s=>s.url===url)){alert('URL bereits vorhanden');return;}
-  const imageEl=document.getElementById('c-img');
-  function _save(img){
-    customs.push({name,url,icon:selIcon,image:img||null});
-    saveCustoms();renderQA();closeModal();
-    document.getElementById('c-name').value='';
-    document.getElementById('c-url').value='';
-    const nm=document.getElementById('c-img-name');
-    if(nm)nm.textContent='';
-  }
-  if(imageEl&&imageEl.files[0]){
-    const r=new FileReader();r.onload=e=>_save(e.target.result);r.readAsDataURL(imageEl.files[0]);
-  } else _save(null);
-}
-
-document.getElementById('add-overlay').addEventListener('click',e=>{
-  if(e.target===e.currentTarget)closeModal();
-});
-document.addEventListener('change',e=>{
-  if(e.target.id==='c-img'){
-    const nm=document.getElementById('c-img-name');
-    if(nm)nm.textContent=e.target.files[0]?.name||'';
-  }
-});
-
+/* ─── Quick Access – eigene Seiten: siehe /js/shortcuts.js ─── */
 function esc(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -970,27 +855,26 @@ function qaRadioUpdateDisplay(){
   const trackBox=document.getElementById('qr-track-box');
   const txt=s.trackName||(s.isPlaying?'...':'Kein Song');
 
-  trackEl.classList.remove('scrolling','long');
-  trackEl.style.removeProperty('--scroll-dist');
+  if(trackEl.dataset.txt!==txt){
+  trackEl.dataset.txt=txt;
+  trackEl.classList.remove('marquee');
   trackEl.style.removeProperty('--marquee-dur');
-  trackBox?.classList.remove('overflow');
   trackEl.textContent=txt;
+  trackEl.title=txt;
 
   clearTimeout(qaRadioScrollTimer);
   qaRadioScrollTimer=setTimeout(()=>{
     if(!trackBox)return;
-    const boxW=trackBox.clientWidth-14;
-    const txtW=trackEl.scrollWidth;
-    if(txtW>boxW+4){
-      const dist=-(txtW-boxW+8);
-      const dur=Math.max(5,Math.abs(dist)/22)+'s';
-      trackEl.style.setProperty('--scroll-dist',dist+'px');
-      trackEl.style.setProperty('--marquee-dur',dur);
-      trackEl.classList.add('long');
-      trackBox.classList.add('overflow');
-      if(s.isPlaying)trackEl.classList.add('scrolling');
+    // passt der Titel nicht in die (feste) Breite → endlose Laufschrift, zweimal hintereinander für nahtlosen Übergang
+    if(trackEl.scrollWidth>trackBox.clientWidth-12){
+      const t=esc(txt);
+      trackEl.innerHTML='<span>'+t+'</span><span aria-hidden="true">'+t+'</span>';
+      trackEl.classList.add('marquee');
+      const half=trackEl.scrollWidth/2;
+      trackEl.style.setProperty('--marquee-dur',Math.max(6,half/32).toFixed(1)+'s');
     }
-  },80);
+  },60);
+  }
 
   const statEl=document.getElementById('qr-status');
   const playBtn=document.getElementById('qr-play-btn');
@@ -1251,8 +1135,6 @@ if('serviceWorker'in navigator){
 }
 
 /* ─── Init ──────────────────────────────────────────────── */
-loadCustoms();
-renderQA();
 setActiveNav('nav-home');
 
 /* Upload-Button auf Home nur zeigen wenn Bibliothek leer */

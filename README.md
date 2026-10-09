@@ -55,7 +55,7 @@ MediaCenter macht aus einem USB-Stick oder einem beliebigen Ordner eine eigene M
 
 ```
 📁 USB-Stick
-├── MediaCenter-3.5.1-portable.exe      (bzw. .AppImage)
+├── MediaCenter-3.6.0-portable.exe      (bzw. .AppImage)
 └── 📁 MediaCenter-Daten
     ├── 📁 media
     │   ├── 📁 Movies      ← Filme
@@ -106,6 +106,7 @@ Videos werden per **HTTP-Range-Streaming** ausgeliefert. Vorspulen klappt deshal
 | 🎵 **Musik** | Ein Hintergrund-Player, der beim Wechsel zwischen den Bereichen weiterspielt und nur pausiert, wenn ein Film oder eine Serie startet. Dazu ein **Visualizer** (Spektrum, Welle, Kreis-Spektrum in der Vinyl-Vollbildansicht), Zufall, Wiederholen und Playlists aus Ordnern. Auf dem Handy liegt die Steuerung unten: Visualizer, darunter die Tasten, darunter Titel, Zeit und Lautstärke. Auf dem Handy sind die Playlists eine wischbare Leiste. Über „＋ Neue Playlist“ legst du auch im Hochformat neue an, optional gleich mit dem laufenden Song. |
 | 🖼️ **Fotos** | Galerie mit Vollbildansicht, Titeln und Beschreibungen. |
 | ☁️ **Upload** | Dateien per Drag & Drop hochladen, auch vom Handy per QR-Code. Die App sortiert sie automatisch in die richtige Kategorie. Große Videos werden direkt auf den Stick geschrieben. Gelöschtes landet im Papierkorb und lässt sich wiederherstellen. |
+| 🌐 **Schnellzugriff** | Unten in der App: der Mini-Player mit fester Breite und durchlaufendem Titel, der Chat und deine **angehefteten Webseiten**. Über **✚ Seiten** heftest du beliebte Seiten mit einem Klick an (YouTube, TikTok, Instagram, WhatsApp, Discord, Twitch, Spotify u. a.) oder fügst eigene Adressen hinzu, mit Symbol oder eigenem Bild, sortierbar. |
 | 💬 **LAN-Chat** | Text- und Sprachchat für alle Geräte im Netz. Das Fenster lässt sich frei verschieben, auf dem PC auch in der Größe ändern. Position und Größe merkt sich die App. Der 📌-Modus macht es halbtransparent. |
 | ⚙️ **Einstellungen** | Eigene Medienordner, **Film-Kategorien** (anlegen, umbenennen, sortieren, löschen), Kachelgröße der Filme, **Designfarbe**, Speicherort und Netzwerkadresse. |
 
@@ -122,6 +123,14 @@ Die Farbe wird auf dem Stick gespeichert. Sie gilt sofort für alle Bereiche, f�
 3. Jede Kategorie erscheint als eigene Reihe in der von dir festgelegten Reihenfolge. Filme ohne Kategorie stehen unter „Ohne Kategorie“, und die Suche findet auch Kategorienamen.
 
 Kategorien und Zuordnungen werden auf dem Stick gespeichert. Sie gelten für alle Geräte.
+
+### 🌐 Eigene Webseiten
+
+Angeheftete Seiten öffnen sich direkt in MediaCenter. Eine Leiste darüber bietet Zurück, Vorwärts, Neu laden, „Im Browser öffnen“ und Schließen. Die Musik läuft dabei weiter.
+
+- **Desktop-App (Windows, Linux, Raspberry Pi):** Seiten laufen in einer eigenen, abgeschotteten Browser-Ansicht. So funktionieren auch YouTube, Instagram, WhatsApp Web & Co., inklusive Anmeldung. Kamera, Mikrofon und Standort sind dort gesperrt, die Daten der Seiten bleiben getrennt von MediaCenter.
+- **Im Browser (Handy, Tablet, anderer PC):** Viele große Seiten verbieten aus Sicherheitsgründen die Anzeige innerhalb anderer Webseiten. MediaCenter prüft das vorab und zeigt dann eine Meldung mit **„In neuem Tab öffnen“** statt einer leeren Fläche. Seiten, die es erlauben, erscheinen direkt in der App.
+- Ist eine Seite nicht erreichbar (z. B. kein Internet), erscheint ebenfalls eine Meldung mit „Nochmal versuchen“.
 
 ### 🖥️ Bedienung: Vollbild, Kiosk und Tastenkürzel
 
@@ -195,9 +204,9 @@ Alle Spiele haben dasselbe Design und dieselbe Bedienung: Pause (`P`/`Esc`), Neu
 Das eignet sich für einen Heim-PC oder Mini-Server ohne Bildschirm:
 
 ```bash
-MediaCenter-3.5.1-portable.exe --server          # Windows
-./MediaCenter-3.5.1-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
-./MediaCenter-3.5.1-arm64.AppImage --server      # Raspberry Pi
+MediaCenter-3.6.0-portable.exe --server          # Windows
+./MediaCenter-3.6.0-x86_64.AppImage --server     # Linux (auch ohne grafische Oberfläche)
+./MediaCenter-3.6.0-arm64.AppImage --server      # Raspberry Pi
 ```
 
 Optionen: `--port 9000` (anderer Port) und die Umgebungsvariable `MEDIACENTER_DATA_DIR=/pfad` (anderer Datenordner).
@@ -230,7 +239,7 @@ Wie überall entsteht der Ordner `MediaCenter-Daten` neben dem AppImage. Liegt d
 [Desktop Entry]
 Type=Application
 Name=MediaCenter
-Exec=/media/pi/STICK/MediaCenter-3.5.1-arm64.AppImage
+Exec=/media/pi/STICK/MediaCenter-3.6.0-arm64.AppImage
 ```
 
 Mit dem Knopf **📺 Kiosk** läuft die App danach bildschirmfüllend wie eine TV-Oberfläche. Bedienen kannst du sie per Maus, mit der eingebauten Fernbedienung oder über das Handy.
@@ -244,7 +253,7 @@ After=network-online.target
 
 [Service]
 User=pi
-ExecStart=/home/pi/MediaCenter-3.5.1-arm64.AppImage --server --appimage-extract-and-run
+ExecStart=/home/pi/MediaCenter-3.6.0-arm64.AppImage --server --appimage-extract-and-run
 Restart=on-failure
 
 [Install]
