@@ -1,7 +1,7 @@
 /* MediaCenter Service Worker – Netzwerk zuerst, Cache nur als Offline-Rückfall */
-const CACHE = 'mc-v3';
+const CACHE = 'mc-v4';
 const STATIC = ['/', '/index.html', '/manifest.json', '/css/main.css', '/js/app.js', '/components/chat.js',
-  '/images/movie-default.svg', '/fonts/fonts.css', '/SPIELE.html', '/games/shared/kit.css', '/games/shared/kit.js'];
+  '/images/movie-default.svg', '/fonts/fonts.css', '/fonts/symbols.css', '/fonts/mc-emoji.woff2', '/SPIELE.html', '/games/shared/kit.css', '/games/shared/kit.js'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();

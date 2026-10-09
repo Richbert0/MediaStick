@@ -38,7 +38,7 @@ var css=`
   max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);
   resize:both;touch-action:auto;-webkit-app-region:no-drag;
   display:flex;flex-direction:column;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-family:var(--font-body,'Outfit','MC Symbols','MC Emoji',sans-serif);
   pointer-events:all;border-radius:18px;overflow:hidden;
   background:rgba(8,8,20,.97);border:1.5px solid rgba(var(--acc-rgb),.38);
   box-shadow:0 12px 50px rgba(0,0,0,.9);}

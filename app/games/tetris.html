@@ -267,11 +267,11 @@ function render(ctx, b, label, color) {
   ctx.fillStyle = 'rgba(255,255,255,.03)';
   ctx.fillRect(px, 0, PANEL, BH);
   ctx.textAlign = 'center';
-  ctx.font = '700 13px system-ui,sans-serif';
+  ctx.font = '700 13px system-ui,"MC Symbols","MC Emoji",sans-serif';
   const cx = px + PANEL / 2;
   const lab = (t, y) => { ctx.fillStyle = '#8391ad'; ctx.fillText(t, cx, y); };
-  const val = (t, y) => { ctx.fillStyle = '#e6ecfa'; ctx.font = '800 22px ui-monospace,Consolas,monospace'; ctx.fillText(t, cx, y); ctx.font = '700 13px system-ui,sans-serif'; };
-  if (label) { ctx.fillStyle = color || '#f59e0b'; ctx.font = '800 15px system-ui,sans-serif'; ctx.fillText(label.slice(0, 14), cx, 24); ctx.font = '700 13px system-ui,sans-serif'; }
+  const val = (t, y) => { ctx.fillStyle = '#e6ecfa'; ctx.font = '800 22px ui-monospace,Consolas,"MC Symbols","MC Emoji",monospace'; ctx.fillText(t, cx, y); ctx.font = '700 13px system-ui,"MC Symbols","MC Emoji",sans-serif'; };
+  if (label) { ctx.fillStyle = color || '#f59e0b'; ctx.font = '800 15px system-ui,"MC Symbols","MC Emoji",sans-serif'; ctx.fillText(label.slice(0, 14), cx, 24); ctx.font = '700 13px system-ui,"MC Symbols","MC Emoji",sans-serif'; }
   lab('HALTEN', 52); drawMini(ctx, b.hold, cx, 62, 0.7);
   lab('NÄCHSTE', 130);
   (b.queue || []).slice(0, 3).forEach((t, i) => drawMini(ctx, t, cx, 140 + i * 58, 0.6));
@@ -282,7 +282,7 @@ function render(ctx, b, label, color) {
     ctx.fillStyle = 'rgba(5,7,14,.7)';
     ctx.fillRect(0, BH / 2 - 40, COLS * CS, 80);
     ctx.fillStyle = '#f43f5e';
-    ctx.font = '800 30px system-ui,sans-serif';
+    ctx.font = '800 30px system-ui,"MC Symbols","MC Emoji",sans-serif';
     ctx.fillText('K.O.', COLS * CS / 2, BH / 2 + 10);
   }
 }

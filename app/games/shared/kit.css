@@ -20,9 +20,9 @@
   --gk-p3:#facc15;
   --gk-p4:#4ade80;
   --gk-rad:14px;
-  --gk-font:'Outfit','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,sans-serif;
-  --gk-display:'Syne','Bahnschrift','Segoe UI Variable Display','Trebuchet MS',sans-serif;
-  --gk-mono:'Cascadia Mono','Consolas','JetBrains Mono',ui-monospace,monospace;
+  --gk-font:'Outfit','MC Symbols','MC Emoji','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,sans-serif;
+  --gk-display:'Syne','MC Symbols','MC Emoji','Bahnschrift','Segoe UI Variable Display','Trebuchet MS',sans-serif;
+  --gk-mono:'Cascadia Mono','Consolas','JetBrains Mono',ui-monospace,'MC Symbols','MC Emoji',monospace;
   color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}

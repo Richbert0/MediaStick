@@ -116,6 +116,14 @@
   function same(a, b) { return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
   function store(t) { try { localStorage.setItem(KEY, JSON.stringify(t)); } catch { /* privat */ } }
 
+  // Mitgelieferte Symbol-/Emoji-Schriften früh laden – auch für Zeichnungen auf <canvas> (Spiele)
+  try {
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('16px "MC Emoji"', '\u{1F3AE}\u{1F40D}\u2699');
+      document.fonts.load('16px "MC Symbols"', '\u25B6\u23EE\u3030\u2713');
+    }
+  } catch { /* älterer Browser */ }
+
   let current = read() || { preset: 'cyan' };
   apply(current);
 

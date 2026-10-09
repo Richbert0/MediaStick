@@ -8,8 +8,8 @@
   --amber:var(--hl);--amber2:var(--hl2);--amber-glow:rgba(var(--hl-rgb),.22);
   --txt:#E2E8F8;--sub:#5B6882;--txt-rgb:226,232,248;--sub2:#AEB8CF;--border:rgba(var(--acc-rgb),.12);
   --red:#F43F5E;--green:#10B981;--blue:#38BDF8;--rad:12px;
-  --font-body:'Outfit','Segoe UI Variable Text','Segoe UI',sans-serif;
-  --font-display:'Syne','Bahnschrift','Trebuchet MS',sans-serif;
+  --font-body:'Outfit','MC Symbols','MC Emoji','Segoe UI Variable Text','Segoe UI',sans-serif;
+  --font-display:'Syne','MC Symbols','MC Emoji','Bahnschrift','Trebuchet MS',sans-serif;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--font-body);overscroll-behavior:none}

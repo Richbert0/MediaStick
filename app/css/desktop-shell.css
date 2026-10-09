@@ -5,7 +5,7 @@ body.desktop-app{
     radial-gradient(circle at bottom right,rgba(var(--hl-rgb),.06),transparent 28%),
     linear-gradient(180deg,#04060E 0%,#06080F 100%);
   color-scheme:dark;
-  font-family:var(--font-body,"Outfit","Segoe UI Variable Text","Segoe UI",sans-serif);
+  font-family:var(--font-body,"Outfit",'MC Symbols','MC Emoji',"Segoe UI Variable Text","Segoe UI",sans-serif);
 }
 
 body.desktop-app .sidebar{
@@ -25,7 +25,7 @@ body.desktop-app .hdr{
   backdrop-filter:blur(18px);
 }
 body.desktop-app .hdr-title{
-  font-family:var(--font-display,"Syne","Bahnschrift",sans-serif);
+  font-family:var(--font-display,"Syne",'MC Symbols','MC Emoji',"Bahnschrift",sans-serif);
   letter-spacing:.12em;
 }
 
@@ -42,7 +42,7 @@ body.desktop-app .mp-card{
   box-shadow:0 20px 50px rgba(0,0,0,.4),inset 0 1px 0 rgba(var(--acc-rgb),.06);
 }
 body.desktop-app .mp-title{
-  font-family:var(--font-display,"Syne","Bahnschrift",sans-serif);
+  font-family:var(--font-display,"Syne",'MC Symbols','MC Emoji',"Bahnschrift",sans-serif);
   font-size:1.35rem;letter-spacing:.14em;
 }
 body.desktop-app .mp-sub{color:rgba(var(--txt-rgb),.5);font-size:.8rem}

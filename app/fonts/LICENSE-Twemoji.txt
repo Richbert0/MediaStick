@@ -1,0 +1,16 @@
+MC Emoji (app/fonts/mc-emoji.woff2)
+===================================
+Twemoji-Grafiken: Copyright 2019 Twitter, Inc. und weitere Mitwirkende
+Lizenz: Creative Commons Attribution 4.0 International (CC-BY 4.0)
+        https://creativecommons.org/licenses/by/4.0/
+Quelle: https://github.com/twitter/twemoji
+
+Schriftdatei: "Twemoji Mozilla" (COLR/CPAL-Farbschrift) von Mozilla
+Quelle: https://github.com/mozilla/twemoji-colr  (Code: Apache-2.0 / MIT)
+
+Die Datei wurde unverändert nach WOFF2 umgewandelt (tools/build-fonts.py).
+
+MC Symbols (app/fonts/mc-symbols-*.woff2)
+=========================================
+Teilmengen von Noto Sans Symbols, Noto Sans Symbols 2, Noto Sans Math und Noto Sans
+Copyright 2022 The Noto Project Authors – SIL Open Font License 1.1 (siehe LICENSE-OFL.txt)
