@@ -193,7 +193,7 @@ function draw(ctx, g) {
     ctx.arc(d.x, d.y, 11, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#06080f';
-    ctx.font = '800 13px system-ui';
+    ctx.font = '800 13px system-ui,"MC Symbols","MC Emoji",sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(pw.l, d.x, d.y + 5);
   }
@@ -211,25 +211,25 @@ function draw(ctx, g) {
   // HUD
   ctx.textAlign = 'left';
   ctx.fillStyle = '#e6ecfa';
-  ctx.font = '800 20px ui-monospace,Consolas,monospace';
+  ctx.font = '800 20px ui-monospace,Consolas,"MC Symbols","MC Emoji",monospace';
   ctx.fillText(String(g.score != null ? g.score : g.s), 16, 36);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#f472b6';
   ctx.fillText('♥'.repeat(Math.max(0, g.lives != null ? g.lives : g.l)), W - 16, 36);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#8391ad';
-  ctx.font = '700 14px system-ui';
+  ctx.font = '700 14px system-ui,"MC Symbols","MC Emoji",sans-serif';
   ctx.fillText('Level ' + ((g.level != null ? g.level : g.lv) + 1), W / 2, 34);
   const alive = g.alive != null ? g.alive : g.a;
   if (!alive) {
     ctx.fillStyle = 'rgba(5,7,14,.7)';
     ctx.fillRect(0, H / 2 - 50, W, 100);
     ctx.fillStyle = '#f43f5e';
-    ctx.font = '800 36px system-ui';
+    ctx.font = '800 36px system-ui,"MC Symbols","MC Emoji",sans-serif';
     ctx.fillText('Keine Leben mehr', W / 2, H / 2 + 12);
   } else if (balls.length === 1 && g.balls && g.balls[0].stuck) {
     ctx.fillStyle = 'rgba(255,255,255,.6)';
-    ctx.font = '600 16px system-ui';
+    ctx.font = '600 16px system-ui,"MC Symbols","MC Emoji",sans-serif';
     ctx.fillText(GK.isTouch ? 'Tippen zum Starten' : 'Leertaste / Klick zum Starten', W / 2, H / 2 + 120);
   }
 }

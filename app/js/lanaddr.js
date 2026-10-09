@@ -46,8 +46,8 @@
 
   const st = document.createElement('style');
   st.textContent = `.mca-lbl{font-size:.7rem;opacity:.7;margin:8px 0 4px;width:100%}
-  .mca-chip{font:inherit;font-size:.72rem;font-family:monospace;padding:4px 8px;margin:0 4px 4px 0;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:rgba(148,163,184,.08);color:inherit;cursor:pointer}
-  .mca-chip small{font-family:system-ui,sans-serif;opacity:.65}
+  .mca-chip{font:inherit;font-size:.72rem;font-family:'MC Symbols','MC Emoji',monospace;padding:4px 8px;margin:0 4px 4px 0;border-radius:8px;border:1px solid rgba(148,163,184,.3);background:rgba(148,163,184,.08);color:inherit;cursor:pointer}
+  .mca-chip small{font-family:system-ui,'MC Symbols','MC Emoji',sans-serif;opacity:.65}
   .mca-chip.on{border-color:var(--acc);background:rgba(var(--acc-rgb),.18);color:#e0faff}
   .mca-chip.virt{opacity:.6}
   .mca-tip{font-size:.7rem;opacity:.7;margin-top:6px;line-height:1.4}`;

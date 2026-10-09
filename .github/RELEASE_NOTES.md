@@ -16,6 +16,7 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. D
 > Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
 ### Neu in 3.5.1
+- **Alle Symbole auf jedem System:** Emojis und Sonderzeichen (z. B. 🎵 🐍 🧱 🔢 🧨 🏓 🔴 💬 〰, Schnellzugriff, Einstellungen, Upload) erscheinen jetzt auch ohne installierte Emoji-Schrift, etwa auf dem Raspberry Pi. Die App bringt dafür eigene Schriften mit (Twemoji, Noto Symbols).
 - **Raspberry Pi:** Neues portables AppImage für Raspberry Pi 4/5 und andere ARM64-Geräte (`MediaCenter-*-arm64.AppImage`). Es wird nativ auf ARM gebaut und getestet. Anleitung inkl. Autostart und Server-Betrieb steht in der README.
 
 ### Neu in 3.5.0

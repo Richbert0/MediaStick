@@ -357,4 +357,4 @@ Unter Windows erledigen `start.bat` (Server-Modus) und `BUILD.bat` (Build-Menü)
 └── .github/workflows/      CI: Tests, Builds, Releases
 ```
 
-**Lizenz:** [MIT](LICENSE). Alle Abhängigkeiten der fertigen App sind Open Source und gebündelt: Electron (Chromium + Node.js), `ws` (WebSocket) und `qrcode`. Die Schriftarten Syne und Outfit liegen lokal unter `app/fonts` (SIL Open Font License).
+**Lizenz:** [MIT](LICENSE). Alle Abhängigkeiten der fertigen App sind Open Source und gebündelt: Electron (Chromium + Node.js), `ws` (WebSocket) und `qrcode`. Die Schriftarten liegen lokal unter `app/fonts`: Syne, Outfit und Noto Sans Symbols (SIL Open Font License) sowie Twemoji (CC-BY 4.0, siehe `app/fonts/LICENSE-Twemoji.txt`). Dadurch erscheinen alle Symbole und Emojis auf jedem System, auch ohne installierte Emoji-Schrift (z. B. Raspberry Pi OS).

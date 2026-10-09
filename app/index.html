@@ -25,8 +25,8 @@
   --amber:var(--hl);--amber2:var(--hl2);--amber-glow:rgba(var(--hl-rgb),.18);
   --txt:#E2E8F8;--sub:#5B6882;--txt-rgb:226,232,248;--sub2:#AEB8CF;--border:rgba(var(--acc-rgb),.12);
   --red:#F43F5E;--green:#10B981;--rad:12px;
-  --font-body:'Outfit','Segoe UI Variable Text','Segoe UI',sans-serif;
-  --font-display:'Syne','Bahnschrift','Trebuchet MS',sans-serif;
+  --font-body:'Outfit','MC Symbols','MC Emoji','Segoe UI Variable Text','Segoe UI',sans-serif;
+  --font-display:'Syne','MC Symbols','MC Emoji','Bahnschrift','Trebuchet MS',sans-serif;
 }
 html,body{height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-family:var(--font-body);overscroll-behavior:none;}
 .app{height:100vh;height:100dvh;display:flex;overflow:hidden;}
@@ -51,7 +51,7 @@ html,body{height:100%;height:100dvh;background:var(--bg);color:var(--txt);font-f
 .ctrl-brand{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0}
 .ctrl-brand-logo{width:32px;height:32px;flex-shrink:0;filter:drop-shadow(0 3px 10px rgba(var(--acc-rgb),.3))}
 .ctrl-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04);color:var(--sub2,rgba(var(--txt-rgb),.72));font-size:.7rem;line-height:1.2;white-space:nowrap;flex-shrink:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.ctrl-pill.addr{font-family:ui-monospace,Consolas,monospace;cursor:copy}
+.ctrl-pill.addr{font-family:ui-monospace,Consolas,'MC Symbols','MC Emoji',monospace;cursor:copy}
 .ctrl-pill.addr::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--hl);flex-shrink:0}
 .ctrl-pill.addr.live::before{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,.7)}
 .desktop-actions{display:flex;align-items:center;gap:4px;margin-left:6px;padding-left:8px;border-left:1px solid rgba(255,255,255,.07)}

@@ -24,7 +24,7 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .folder.missing{border-color:rgba(244,63,94,.35)}
 .folder .ico{font-size:1.6rem}
 .folder .nm{font-weight:800;font-size:.92rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.folder .pth{font-family:ui-monospace,Consolas,monospace;font-size:.74rem;color:var(--sub);word-break:break-all;margin-top:2px}
+.folder .pth{font-family:ui-monospace,Consolas,'MC Symbols','MC Emoji',monospace;font-size:.74rem;color:var(--sub);word-break:break-all;margin-top:2px}
 .folder .cnt{font-size:.72rem;color:rgba(var(--txt-rgb),.6);margin-top:5px}
 .folder .act{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .folder select,.addrow select{background:rgba(14,17,32,.9);color:var(--txt);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 10px;font:inherit;font-size:.8rem}
@@ -37,7 +37,7 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
 .warn{padding:10px 12px;border-radius:10px;background:rgba(var(--hl-rgb),.08);border:1px solid rgba(var(--hl-rgb),.25);color:#fcd34d;font-size:.8rem;margin-bottom:12px}
 .kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:.84rem}
 .kv dt{color:var(--sub)}
-.kv dd{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
+.kv dd{font-family:ui-monospace,Consolas,'MC Symbols','MC Emoji',monospace;word-break:break-all}
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .mcats{display:grid;gap:6px}
 .mcat{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}
@@ -117,7 +117,7 @@ h1{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spaci
     <div class="mcats" id="mcats"></div>
     <div class="addrow" style="grid-template-columns:1fr auto">
       <input class="mc-input" id="mcat-name" maxlength="40" placeholder="Neue Kategorie, z. B. Action, Familie, Weihnachten …" autocomplete="off">
-      <button class="btn" id="mcat-add" type="button">＋ Kategorie anlegen</button>
+      <button class="btn" id="mcat-add" type="button">+ Kategorie anlegen</button>
     </div>
     <div class="row" style="align-items:center;margin-top:16px">
       <label for="msize" style="font-size:.84rem">Kachelgröße der Filme <span style="color:var(--sub2)">(auf diesem Gerät)</span></label>

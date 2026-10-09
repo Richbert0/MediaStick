@@ -371,8 +371,8 @@ function renderPlaylists(){
     +'<span class="pl-count">'+playlists[n].length+'</span>'
     +'<button onclick="event.stopPropagation();delPl(\''+MC.esc(n)+'\')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:2px 4px">✕</button>'
     +'</div>').join('');
-  // Handy (Hochformat): Playlists sind eine Chip-Leiste – „＋ Neu“ öffnet ein Eingabefenster
-  html+='<div class="pl-item pl-new" onclick="openPlSheet()" role="button" aria-label="Neue Playlist erstellen"><span class="pl-icon">＋</span><span class="pl-name">Neue Playlist</span></div>';
+  // Handy (Hochformat): Playlists sind eine Chip-Leiste – „+ Neu“ öffnet ein Eingabefenster
+  html+='<div class="pl-item pl-new" onclick="openPlSheet()" role="button" aria-label="Neue Playlist erstellen"><span class="pl-icon">+</span><span class="pl-name">Neue Playlist</span></div>';
   document.getElementById('pllist').innerHTML=html;
 }
 </script>
