@@ -174,7 +174,7 @@ function createMainWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      webviewTag: false,
+      webviewTag: true, // eigene Seiten (YouTube, Instagram …) laufen in einer abgeschotteten Browser-Ansicht
       spellcheck: false,
       backgroundThrottling: false, // Musik & LAN-Spiele laufen im Hintergrund weiter
       autoplayPolicy: 'no-user-gesture-required', // Musik/Visualizer starten ohne Extra-Klick
@@ -273,6 +273,44 @@ ipcMain.on('open-data-dir', (_, sub) => {
 ipcMain.handle('show-message-box', (_, opts) => dialog.showMessageBox(mainWindow, opts));
 ipcMain.handle('show-open-dialog', (_, opts) => dialog.showOpenDialog(mainWindow, opts));
 
+// ─── Eigene Seiten: abgeschottete Browser-Ansicht (<webview>) ─────────────────
+const WEB_PARTITION = 'persist:web';
+app.on('web-contents-created', (_e, contents) => {
+  // Nur die Hauptoberfläche darf Browser-Ansichten anlegen – und nur mit sicheren Einstellungen
+  contents.on('will-attach-webview', (event, webPreferences, params) => {
+    const src = params.src || 'about:blank';
+    if (!isAppUrl(contents.getURL()) || !(/^https?:\/\//i.test(src) || src === 'about:blank')) {
+      event.preventDefault();
+      return;
+    }
+    delete webPreferences.preload;
+    webPreferences.nodeIntegration = false;
+    webPreferences.nodeIntegrationInSubFrames = false;
+    webPreferences.contextIsolation = true;
+    webPreferences.sandbox = true;
+    webPreferences.webSecurity = true;
+    params.partition = WEB_PARTITION;
+    delete params.preload;
+  });
+  if (contents.getType() !== 'webview') return;
+  // Links mit target=_blank in derselben Ansicht öffnen statt neuer Fenster
+  contents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) contents.loadURL(url).catch(() => {});
+    return { action: 'deny' };
+  });
+  contents.on('will-navigate', (event, url) => {
+    if (!/^(https?:|about:blank)/i.test(url)) event.preventDefault();
+  });
+});
+
+function setupWebSession() {
+  const ses = session.fromPartition(WEB_PARTITION);
+  // Ohne „Electron“ im User-Agent – manche Seiten (z. B. WhatsApp Web) sperren sonst den Zugriff
+  ses.setUserAgent(app.userAgentFallback.replace(/\s*(Electron|MediaCenter|mediacenter)\/\S+/g, ''));
+  // Fremde Seiten: Vollbild (Videos) und Kopieren erlauben, Kamera/Mikrofon/Standort usw. nicht
+  ses.setPermissionRequestHandler((wc, permission, cb) => cb(['fullscreen', 'clipboard-sanitized-write'].includes(permission)));
+}
+
 // ─── Lebenszyklus ───────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
   // Mikrofon (Voice-Chat) und Vollbild nur für die eigene App erlauben
@@ -280,6 +318,8 @@ app.whenReady().then(async () => {
     const own = isAppUrl(details.requestingUrl || wc.getURL());
     cb(own && ['media', 'fullscreen', 'clipboard-sanitized-write', 'notifications'].includes(permission));
   });
+
+  setupWebSession();
 
   try {
     await startServer();

@@ -20,6 +20,7 @@ const { Library } = require('./library');
 const { parseMultipart, readJsonBody, httpError } = require('./multipart');
 const { Hub } = require('./hub');
 const { Settings, CATEGORIES } = require('./settings');
+const { checkFrame } = require('./framecheck');
 
 let QRCode = null;
 try { QRCode = require('qrcode'); } catch { /* optional */ }
@@ -631,6 +632,13 @@ function createMediaServer(options = {}) {
     sendJson(res, Object.assign({ success: true }, r));
   }
 
+  // Darf eine fremde Seite eingebettet werden? (für Browser-Geräte; die Desktop-App nutzt eine eigene Ansicht)
+  async function apiFrameCheck(req, res, url) {
+    const target = url.searchParams.get('url') || '';
+    if (!target || target.length > 2000) return sendError(res, 'url fehlt');
+    sendJson(res, Object.assign({ success: true }, await checkFrame(target)));
+  }
+
   async function apiThemeGet(req, res) {
     sendJson(res, { success: true, theme: await settings.getTheme() });
   }
@@ -692,6 +700,7 @@ function createMediaServer(options = {}) {
     '/api/info': apiInfo,
     '/api/settings': apiSettingsGet,
     '/api/theme': apiThemeGet,
+    '/api/frame-check': apiFrameCheck,
     '/api/movie-categories': apiMovieCatsGet,
     '/api/thumbnail': apiThumbList, '/api/thumbnail.php': apiThumbList,
     '/api/trash': apiTrashGet, '/api/trash.php': apiTrashGet,

@@ -15,6 +15,11 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. D
 > `sudo apt install libfuse2` (Ubuntu 24.04 und neuer: `sudo apt install libfuse2t64`).
 > Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
 
+### Neu in 3.6.0
+- **Schnellzugriff überarbeitet:** Angeheftet werden nur noch eigene Webseiten, denn Filme, Musik usw. sind in der Seitenleiste. Ein breiterer Dialog bietet 14 beliebte Seiten zum Anheften mit einem Klick (YouTube, TikTok, Instagram, WhatsApp, Snapchat, Discord, Twitch, Spotify, Netflix, Reddit, Pinterest, ChatGPT, Wikipedia, Google Maps). Eigene Adressen fügst du auch ohne `https://` hinzu, mit Symbol oder Bild, sortier- und entfernbar. Lange Adressen verschieben die Ansicht nicht mehr.
+- **Webseiten öffnen sich in MediaCenter:** In der Desktop-App in einer abgeschotteten Browser-Ansicht mit Zurück, Vorwärts, Neu laden und „Im Browser öffnen“. Im Browser eingebettet, wenn die Seite es erlaubt, sonst mit Meldung und „In neuem Tab öffnen“.
+- **Mini-Player:** feste Breite; lange Titel laufen endlos von rechts nach links durch (beim Darüberfahren angehalten).
+
 ### Neu in 3.5.1
 - **Alle Symbole auf jedem System:** Emojis und Sonderzeichen (z. B. 🎵 🐍 🧱 🔢 🧨 🏓 🔴 💬 〰, Schnellzugriff, Einstellungen, Upload) erscheinen jetzt auch ohne installierte Emoji-Schrift, etwa auf dem Raspberry Pi. Die App bringt dafür eigene Schriften mit (Twemoji, Noto Symbols).
 - **Raspberry Pi:** Neues portables AppImage für Raspberry Pi 4/5 und andere ARM64-Geräte (`MediaCenter-*-arm64.AppImage`). Es wird nativ auf ARM gebaut und getestet. Anleitung inkl. Autostart und Server-Betrieb steht in der README.
