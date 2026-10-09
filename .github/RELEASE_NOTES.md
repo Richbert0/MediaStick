@@ -6,6 +6,7 @@
 |---|---|
 | 🪟 Windows 10/11 (64 Bit) | `MediaCenter-*-portable.exe` – Doppelklick |
 | 🐧 Linux (x64) | `MediaCenter-*-x86_64.AppImage` – `chmod +x` und starten |
+| 🍓 Raspberry Pi 4/5 (64-Bit-OS) & ARM64 | `MediaCenter-*-arm64.AppImage` – `chmod +x` und starten |
 
 Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. Dort liegen Medien, Einstellungen, Spielstände und Bestenlisten.
 
@@ -13,6 +14,9 @@ Beim ersten Start entsteht neben der Datei der Ordner **`MediaCenter-Daten`**. D
 > **Linux: AppImage startet nicht?** Aktuelle Distributionen (Ubuntu 22.04+, Linux Mint 21+, Debian 12) brauchen einmalig **libfuse2**:
 > `sudo apt install libfuse2` (Ubuntu 24.04 und neuer: `sudo apt install libfuse2t64`).
 > Ohne Installation: `./MediaCenter-*.AppImage --appimage-extract-and-run`
+
+### Neu in 3.5.1
+- **Raspberry Pi:** Neues portables AppImage für Raspberry Pi 4/5 und andere ARM64-Geräte (`MediaCenter-*-arm64.AppImage`). Es wird nativ auf ARM gebaut und getestet. Anleitung inkl. Autostart und Server-Betrieb steht in der README.
 
 ### Neu in 3.5.0
 - **Filme im Streaming-Stil:** Titelbild, „Weiterschauen“, „Neu hinzugefügt“, eigene Kategorien als Reihen und „Alle Filme“ mit Sortierung. Die Kachelgröße ist einstellbar (S–XL).
